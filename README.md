@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SchoolBank
+
+SchoolBank is a seedling-stage school economy app. The first build focuses on a small, useful loop:
+
+- teachers award or deduct fake currency
+- students see balances, goals, and store options
+- admins manage the economy rules and review the ledger
+
+The current app is a minimal authenticated shell backed by PostgreSQL. The signed-in user controls which empty dashboard frame is shown, and each view currently has a skeleton navigation bar with Dashboard and Settings.
+
+## Tech Stack
+
+- Next.js
+- TypeScript
+- Tailwind CSS
+- ESLint
+
+Planned next additions:
+
+- Prisma
+- PostgreSQL connection
+- Real sessions
 
 ## Getting Started
 
-First, run the development server:
+Install Node.js 22 LTS or newer. Next.js also supports Node 20.9+, but the local machine should be upgraded from Node 20.7 before regular development.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Create `.env.local` from `.env.example` and adjust the credentials for your Postgres container:
+
+```txt
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DATABASE=schoolbank
+POSTGRES_USER=schoolbank_app
+POSTGRES_PASSWORD=change_me
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+```bash
+npm install
+npm run dev
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Open http://localhost:3000.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Demo password for seeded local database accounts:
 
-## Learn More
+```txt
+demo123
+```
 
-To learn more about Next.js, take a look at the following resources:
+Demo usernames:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```txt
+admin
+teacher
+ava.patel
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Early Roadmap
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Rebuild the teacher dashboard one workflow at a time.
+2. Rebuild the student dashboard with student-only data.
+3. Rebuild the admin dashboard around setup and audit tools.
+4. Add database tables only when the matching feature is built.
+5. Add proper password hashing after the basic login flow is stable.
