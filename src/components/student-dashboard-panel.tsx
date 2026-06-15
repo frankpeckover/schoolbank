@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { StudentShopRequestsPanel } from "@/components/shop/student-shop-requests-panel";
 import { TransactionLogPanel } from "@/components/transactions/transaction-log-panel";
 import { getStudentBalance } from "@/lib/actions";
 import type { SessionUser } from "@/lib/session";
@@ -44,17 +45,18 @@ export function StudentDashboardPanel({
 
   return (
     <>
-      <section className="mt-5 rounded-md border border-border bg-surface p-5 shadow-sm">
-        <div>
-          <h2 className="text-2xl font-semibold">Current Balance</h2>
-          <p className="mt-1 text-sm text-text-muted">
-            Your available {currencyName.toLowerCase()}.
+      <section className="mt-5 rounded-md border border-border bg-surface p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold">Current Balance</h2>
+            <p className="mt-1 text-sm text-text-muted">
+              Your available {currencyName.toLowerCase()}.
+            </p>
+          </div>
+          <p className="text-3xl font-semibold text-brand">
+            {balance} {currencyName}
           </p>
         </div>
-
-        <p className="mt-5 text-4xl font-semibold text-brand">
-          {balance} {currencyName}
-        </p>
 
         {error && (
           <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
@@ -62,6 +64,11 @@ export function StudentDashboardPanel({
           </p>
         )}
       </section>
+
+      <StudentShopRequestsPanel
+        currencyName={currencyName}
+        currentUser={currentUser}
+      />
 
       <TransactionLogPanel
         currencyName={currencyName}

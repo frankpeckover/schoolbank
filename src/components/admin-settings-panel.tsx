@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
-import { getSchoolInfo, updateSchoolInfo } from "@/lib/actions";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { getSchoolInfo, updateSchoolInfo, uploadSchoolLogo } from "@/lib/actions";
 import type { SchoolInfo } from "@/services/school-service";
 
 const fallbackSchoolInfo: SchoolInfo = {
@@ -9,7 +9,9 @@ const fallbackSchoolInfo: SchoolInfo = {
   address: "",
   planType: "trial",
   currencyName: "credits",
+  logoUrl: "",
 };
+const logoHelpText = "PNG, JPG, WebP, or GIF. Max 2 MB.";
 
 type AdminSettingsPanelProps = {
   onSchoolInfoUpdated: (schoolInfo: SchoolInfo) => void;
@@ -21,6 +23,7 @@ export function AdminSettingsPanel({
   const [form, setForm] = useState<SchoolInfo>(fallbackSchoolInfo);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -51,11 +54,30 @@ export function AdminSettingsPanel({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSaving(true);
+    setError(null);
+
+    let logoUrl = form.logoUrl;
+
+    if (logoFile) {
+      const logoFormData = new FormData();
+      logoFormData.append("logo", logoFile);
+
+      const uploadResult = await uploadSchoolLogo(logoFormData);
+
+      if (!uploadResult.ok) {
+        setError(uploadResult.message);
+        setIsSaving(false);
+        return;
+      }
+
+      logoUrl = uploadResult.logoUrl;
+    }
 
     const result = await updateSchoolInfo({
       name: form.name,
       address: form.address,
       currencyName: form.currencyName,
+      logoUrl,
     });
 
     if (!result.ok) {
@@ -67,7 +89,19 @@ export function AdminSettingsPanel({
     setError(null);
     setMessage("School settings saved.");
     setIsSaving(false);
-    onSchoolInfoUpdated(form);
+    setLogoFile(null);
+
+    const savedSchoolInfo = {
+      ...form,
+      logoUrl,
+    };
+
+    setForm(savedSchoolInfo);
+    onSchoolInfoUpdated(savedSchoolInfo);
+  }
+
+  function handleLogoChange(event: ChangeEvent<HTMLInputElement>) {
+    setLogoFile(event.target.files?.[0] ?? null);
   }
 
   return (
@@ -102,6 +136,11 @@ export function AdminSettingsPanel({
             setForm((current) => ({ ...current, address: value }))
           }
           value={form.address}
+        />
+        <LogoUploadField
+          currentLogoUrl={form.logoUrl}
+          fileName={logoFile?.name ?? ""}
+          onChange={handleLogoChange}
         />
 
         <div className="md:col-span-2">
@@ -152,6 +191,58 @@ function TextField({
         value={value}
       />
     </div>
+  );
+}
+
+function LogoUploadField({
+  currentLogoUrl,
+  fileName,
+  onChange,
+}: {
+  currentLogoUrl: string;
+  fileName: string;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <div>
+      <label className="text-sm font-semibold text-text-control" htmlFor="logo">
+        Logo
+      </label>
+      <div className="mt-2 flex items-center gap-3">
+        <LogoPreview logoUrl={currentLogoUrl} />
+        <div className="min-w-0 flex-1">
+          <input
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none ring-brand transition file:mr-3 file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white focus:ring-2"
+            id="logo"
+            onChange={onChange}
+            type="file"
+          />
+          <p className="mt-2 truncate text-sm text-text-muted">
+            {fileName || logoHelpText}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LogoPreview({ logoUrl }: { logoUrl: string }) {
+  if (!logoUrl) {
+    return (
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-panel-soft text-sm font-bold text-text-control">
+        SB
+      </div>
+    );
+  }
+
+  return (
+    <div
+      aria-label="Current logo"
+      className="h-14 w-14 shrink-0 rounded-md border border-border-subtle bg-surface bg-contain bg-center bg-no-repeat"
+      role="img"
+      style={{ backgroundImage: `url("${logoUrl}")` }}
+    />
   );
 }
 

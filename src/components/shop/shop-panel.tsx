@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import {
   listShopItems,
-  purchaseShopItem,
   removeShopItem,
+  requestShopItem,
 } from "@/lib/actions";
 import type { SessionUser } from "@/lib/session";
 import type { ShopItem } from "@/services/shop-service";
@@ -91,14 +91,14 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   }
 
   async function handlePurchase(itemId: string) {
-    const result = await purchaseShopItem(currentUser.id, itemId);
+    const result = await requestShopItem(currentUser, itemId);
 
     if (!result.ok) {
       setError(result.message);
       return;
     }
 
-    setMessage("Purchase recorded.");
+    setMessage("Request submitted.");
     refreshItems();
   }
 
@@ -109,7 +109,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   }
 
   return (
-    <section className="mt-5 rounded-md border border-border bg-surface p-5 shadow-sm">
+    <section className="mt-5 rounded-md border border-border bg-surface p-4 shadow-sm">
       <ShopPanelHeader canManage={canManage} onNewItem={openNewItemModal} />
       <ShopMessages error={error} message={message} />
 
@@ -152,16 +152,16 @@ function ShopPanelHeader({
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h2 className="text-2xl font-semibold">Shop</h2>
+        <h2 className="text-xl font-semibold">Shop</h2>
         <p className="mt-1 text-sm text-text-muted">
           {canManage
             ? "Manage store items students can purchase."
-            : "Purchase available rewards."}
+            : "Request available rewards."}
         </p>
       </div>
       {canManage && (
         <button
-          className="rounded-md bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-hover"
+          className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-hover"
           onClick={onNewItem}
           type="button"
         >

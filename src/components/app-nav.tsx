@@ -4,9 +4,8 @@ const defaultNavigationItems = [
   "Dashboard",
   "Shop",
   "Transaction Log",
-  "Settings",
 ] as const;
-const studentNavigationItems = ["Dashboard", "Shop", "Settings"] as const;
+const studentNavigationItems = ["Dashboard", "Shop"] as const;
 const adminNavigationItems = [
   "Dashboard",
   "Users",

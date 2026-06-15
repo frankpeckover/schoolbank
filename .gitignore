@@ -28,3 +28,7 @@ Thumbs.db
 
 # Secrets
 *.pem
+
+# Runtime uploads
+public/uploads/*
+!public/uploads/.gitkeep

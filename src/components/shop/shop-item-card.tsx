@@ -68,7 +68,7 @@ function ShopItemActions({
           onClick={() => onPurchase(item.id)}
           type="button"
         >
-          Purchase
+          Request
         </button>
       </div>
     );
