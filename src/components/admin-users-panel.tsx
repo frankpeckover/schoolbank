@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { listUsers } from "@/lib/actions";
+import { appConfig } from "@/lib/app-config";
 import { UserFiltersPanel } from "@/components/admin-users/user-filters";
 import { matchesUserFilters } from "@/components/admin-users/user-filter-utils";
 import {
@@ -11,14 +12,19 @@ import {
 import { UserImportModal } from "@/components/admin-users/user-import-modal";
 import { UserModal } from "@/components/admin-users/user-modal";
 import { UsersTable } from "@/components/admin-users/users-table";
+import { IconButton } from "@/components/ui/icon-button";
+import { FileUpIcon, FilterIcon, PlusIcon } from "@/components/ui/icons";
+import { PageHeader } from "@/components/ui/page-header";
+import type { SessionUser } from "@/lib/session";
 import type { UserListItem } from "@/services/user-service";
 
-export function AdminUsersPanel() {
+export function AdminUsersPanel({ currentUser }: { currentUser: SessionUser }) {
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [filters, setFilters] = useState<UserFilters>(emptyFilters);
   const [showInactiveUsers, setShowInactiveUsers] = useState(false);
   const [editingUser, setEditingUser] = useState<UserListItem | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,40 +94,55 @@ export function AdminUsersPanel() {
   );
 
   return (
-    <section className="mt-5 rounded-md border border-border bg-surface p-5 shadow-sm">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">Users</h2>
-          <p className="mt-1 text-sm text-text-muted">
-            Manage who can access SchoolBank.
-          </p>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
+    <section className="motion-panel mt-5 rounded-md border border-border bg-surface p-5 shadow-sm">
+      <PageHeader
+        actions={
+          <>
+          <IconButton
+            ariaExpanded={areFiltersOpen}
+            label={areFiltersOpen ? "Hide filters" : "Show filters"}
+            onClick={() => setAreFiltersOpen((isOpen) => !isOpen)}
+          >
+            <FilterIcon />
+          </IconButton>
           <button
-            className="rounded-md border border-button-border px-4 py-3 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
+            aria-label="Import users from CSV"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-button-border text-text-control transition hover:bg-panel-soft sm:w-auto sm:px-4 sm:text-sm sm:font-semibold"
             onClick={() => setIsImportModalOpen(true)}
+            title="Import users from CSV"
             type="button"
           >
-            Import CSV
+            <FileUpIcon />
+            <span className="hidden sm:ml-2 sm:inline">Import CSV</span>
           </button>
           <button
-            className="rounded-md bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-hover"
+            aria-label="New user"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-brand text-white transition hover:bg-brand-hover sm:w-auto sm:px-4 sm:text-sm sm:font-semibold"
             onClick={() => setIsCreateModalOpen(true)}
+            title="New user"
             type="button"
           >
-            New User
+            <PlusIcon />
+            <span className="hidden sm:ml-2 sm:inline">New User</span>
           </button>
-        </div>
-      </div>
-
-      <UserFiltersPanel
-        filters={filters}
-        onFiltersChange={setFilters}
-        onShowInactiveUsersChange={setShowInactiveUsers}
-        showInactiveUsers={showInactiveUsers}
+          </>
+        }
+        description={`Manage who can access ${appConfig.name}.`}
+        title="Users"
       />
 
-      <div className="mt-5 overflow-x-auto">
+      <div>
+        {areFiltersOpen && (
+          <UserFiltersPanel
+            filters={filters}
+            onFiltersChange={setFilters}
+            onShowInactiveUsersChange={setShowInactiveUsers}
+            showInactiveUsers={showInactiveUsers}
+          />
+        )}
+      </div>
+
+      <div className="mt-5">
         {isLoading && <p className="text-sm text-text-muted">Loading users...</p>}
         {error && (
           <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
@@ -146,6 +167,7 @@ export function AdminUsersPanel() {
 
       {isCreateModalOpen && (
         <UserModal
+          currentUser={currentUser}
           mode="create"
           onClose={() => setIsCreateModalOpen(false)}
           onSaved={() => handleUserSaved("User created.")}
@@ -154,6 +176,7 @@ export function AdminUsersPanel() {
 
       {isImportModalOpen && (
         <UserImportModal
+          currentUser={currentUser}
           onClose={() => setIsImportModalOpen(false)}
           onImportCompleted={refreshUsers}
           onImported={handleUsersImported}
@@ -162,6 +185,7 @@ export function AdminUsersPanel() {
 
       {editingUser && (
         <UserModal
+          currentUser={currentUser}
           mode="edit"
           onClose={() => setEditingUser(null)}
           onSaved={() => handleUserSaved("User updated.")}

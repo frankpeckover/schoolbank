@@ -2,14 +2,18 @@
 
 import { useEffect, useState } from "react";
 import {
+  getStudentBalance,
   listShopItems,
   removeShopItem,
   requestShopItem,
 } from "@/lib/actions";
+import { formatCurrencyAmount } from "@/lib/formatters";
 import type { SessionUser } from "@/lib/session";
 import type { ShopItem } from "@/services/shop-service";
 import { ShopItemCard } from "@/components/shop/shop-item-card";
 import { ShopItemModal } from "@/components/shop/shop-item-modal";
+import { PlusIcon, WalletIcon } from "@/components/ui/icons";
+import { PageHeader } from "@/components/ui/page-header";
 
 type ShopPanelProps = {
   currencyName: string;
@@ -19,6 +23,8 @@ type ShopPanelProps = {
 export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   const canManage = currentUser.role === "admin" || currentUser.role === "teacher";
   const [items, setItems] = useState<ShopItem[]>([]);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [requestedItemIds, setRequestedItemIds] = useState<string[]>([]);
   const [editingItem, setEditingItem] = useState<ShopItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,6 +42,19 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
       setError("Could not load shop items.");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function refreshBalance() {
+    if (canManage) {
+      return;
+    }
+
+    try {
+      const currentBalance = await getStudentBalance(currentUser);
+      setBalance(currentBalance);
+    } catch {
+      setError("Could not load wallet balance.");
     }
   }
 
@@ -68,6 +87,34 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
     };
   }, [canManage]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadBalance() {
+      if (canManage) {
+        return;
+      }
+
+      try {
+        const currentBalance = await getStudentBalance(currentUser);
+
+        if (isMounted) {
+          setBalance(currentBalance);
+        }
+      } catch {
+        if (isMounted) {
+          setError("Could not load wallet balance.");
+        }
+      }
+    }
+
+    loadBalance();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [canManage, currentUser]);
+
   function openNewItemModal() {
     setEditingItem(null);
     setIsModalOpen(true);
@@ -79,7 +126,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   }
 
   async function handleRemove(itemId: string) {
-    const result = await removeShopItem(itemId);
+    const result = await removeShopItem(currentUser, itemId);
 
     if (!result.ok) {
       setError(result.message);
@@ -99,6 +146,10 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
     }
 
     setMessage("Request submitted.");
+    setRequestedItemIds((current) =>
+      current.includes(itemId) ? current : [...current, itemId],
+    );
+    refreshBalance();
     refreshItems();
   }
 
@@ -109,8 +160,13 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   }
 
   return (
-    <section className="mt-5 rounded-md border border-border bg-surface p-4 shadow-sm">
-      <ShopPanelHeader canManage={canManage} onNewItem={openNewItemModal} />
+    <section className="motion-panel mt-5 rounded-md border border-border bg-surface p-4 shadow-sm">
+      <ShopPanelHeader
+        balance={balance}
+        canManage={canManage}
+        currencyName={currencyName}
+        onNewItem={openNewItemModal}
+      />
       <ShopMessages error={error} message={message} />
 
       <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -127,12 +183,14 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
               onEdit={openEditItemModal}
               onPurchase={handlePurchase}
               onRemove={handleRemove}
+              requested={requestedItemIds.includes(item.id)}
             />
           ))}
       </div>
 
       {isModalOpen && (
         <ShopItemModal
+          currentUser={currentUser}
           item={editingItem}
           onClose={() => setIsModalOpen(false)}
           onSaved={handleItemSaved}
@@ -143,32 +201,50 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
 }
 
 function ShopPanelHeader({
+  balance,
   canManage,
+  currencyName,
   onNewItem,
 }: {
+  balance: number | null;
   canManage: boolean;
+  currencyName: string;
   onNewItem: () => void;
 }) {
+  const walletLabel =
+    balance === null ? "Loading wallet..." : formatCurrencyAmount(balance, currencyName);
+
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h2 className="text-xl font-semibold">Shop</h2>
-        <p className="mt-1 text-sm text-text-muted">
-          {canManage
-            ? "Manage store items students can purchase."
-            : "Request available rewards."}
-        </p>
-      </div>
-      {canManage && (
-        <button
-          className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-hover"
-          onClick={onNewItem}
-          type="button"
-        >
-          New Item
-        </button>
-      )}
-    </div>
+    <PageHeader
+      actions={
+        <div className="flex items-center gap-2">
+          {!canManage && (
+            <div className="inline-flex h-10 items-center gap-2 rounded-md border border-border-subtle bg-panel-soft px-3 text-sm font-semibold text-text-control">
+              <WalletIcon />
+              <span>{walletLabel}</span>
+            </div>
+          )}
+          {canManage && (
+            <button
+              aria-label="New item"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand text-white transition hover:bg-brand-hover"
+              onClick={onNewItem}
+              title="New item"
+              type="button"
+            >
+              <PlusIcon />
+            </button>
+          )}
+        </div>
+      }
+      description={
+        canManage
+          ? "Manage store items students can purchase."
+          : "Browse rewards and place requests."
+      }
+      title="Shop"
+      titleSize="base"
+    />
   );
 }
 

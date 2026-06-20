@@ -92,14 +92,6 @@ export function AdminDashboardPanel({
               label="Student Accounts"
               value={String(summary.studentAccounts)}
             />
-            <MetricCard
-              label="Money In"
-              value={formatCurrencyAmount(summary.moneyIn, currencyName)}
-            />
-            <MetricCard
-              label="Money Out"
-              value={formatCurrencyAmount(summary.moneyOut, currencyName)}
-            />
             <MetricCard label="Active Users" value={String(summary.activeUsers)} />
             <MetricCard label="Total Users" value={String(summary.totalUsers)} />
           </div>
@@ -134,53 +126,107 @@ function RecentLedgerActivity({
     <div className="mt-5">
       <h3 className="text-lg font-semibold">Recent Ledger Activity</h3>
 
-      <div className="mt-3 overflow-x-auto">
+      <div className="mt-3">
         {entries.length === 0 && (
           <p className="text-sm text-text-muted">No ledger activity yet.</p>
         )}
         {entries.length > 0 && (
-          <table className="w-full min-w-[680px] border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b border-border-subtle text-text-muted">
-                <th className="py-2 pr-4 font-semibold">Date</th>
-                <th className="py-2 pr-4 font-semibold">Account</th>
-                <th className="py-2 pr-4 font-semibold">Description</th>
-                <th className="py-2 pr-4 font-semibold">Type</th>
-                <th className="py-2 text-right font-semibold">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((entry) => (
-                <tr
-                  className="border-b border-border-subtle"
-                  key={`${entry.createdAt}-${entry.studentName}-${entry.amount}`}
-                >
-                  <td className="py-2 pr-4 text-text-muted">
-                    {formatDateTime(entry.createdAt)}
-                  </td>
-                  <td className="py-2 pr-4 text-text-muted">
-                    {entry.studentName}
-                  </td>
-                  <td className="py-2 pr-4 font-semibold">
-                    {entry.description}
-                  </td>
-                  <td className="py-2 pr-4 text-text-muted">
-                    {formatEntryType(entry.type)}
-                  </td>
-                  <td
-                    className={`py-2 text-right font-semibold ${
-                      entry.amount >= 0 ? "text-success" : "text-danger-strong"
-                    }`}
-                  >
-                    {formatSignedCurrencyAmount(entry.amount, currencyName)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <RecentLedgerList currencyName={currencyName} entries={entries} />
         )}
       </div>
     </div>
+  );
+}
+
+function RecentLedgerList({
+  currencyName,
+  entries,
+}: {
+  currencyName: string;
+  entries: AdminDashboardEntry[];
+}) {
+  return (
+    <>
+      <div className="grid gap-3 md:hidden">
+        {entries.map((entry) => (
+          <RecentLedgerCard
+            currencyName={currencyName}
+            entry={entry}
+            key={`${entry.createdAt}-${entry.studentName}-${entry.amount}`}
+          />
+        ))}
+      </div>
+
+      <table className="hidden w-full border-collapse text-left text-sm md:table">
+        <thead>
+          <tr className="border-b border-border-subtle text-text-muted">
+            <th className="py-2 pr-4 font-semibold">Date</th>
+            <th className="py-2 pr-4 font-semibold">Account</th>
+            <th className="py-2 pr-4 font-semibold">Description</th>
+            <th className="py-2 pr-4 font-semibold">Type</th>
+            <th className="py-2 text-right font-semibold">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map((entry) => (
+            <tr
+              className="border-b border-border-subtle"
+              key={`${entry.createdAt}-${entry.studentName}-${entry.amount}`}
+            >
+              <td className="py-2 pr-4 text-text-muted">
+                {formatDateTime(entry.createdAt)}
+              </td>
+              <td className="py-2 pr-4 text-text-muted">
+                {entry.studentName}
+              </td>
+              <td className="py-2 pr-4 font-semibold">{entry.description}</td>
+              <td className="py-2 pr-4 text-text-muted">
+                {formatEntryType(entry.type)}
+              </td>
+              <td
+                className={`py-2 text-right font-semibold ${
+                  entry.amount >= 0 ? "text-success" : "text-danger-strong"
+                }`}
+              >
+                {formatSignedCurrencyAmount(entry.amount, currencyName)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+function RecentLedgerCard({
+  currencyName,
+  entry,
+}: {
+  currencyName: string;
+  entry: AdminDashboardEntry;
+}) {
+  const amountClassName =
+    entry.amount >= 0 ? "text-success" : "text-danger-strong";
+
+  return (
+    <article className="rounded-md border border-border-subtle bg-panel-soft p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h4 className="truncate text-sm font-semibold">
+            {entry.description}
+          </h4>
+          <p className="truncate text-sm text-text-muted">
+            {entry.studentName}
+          </p>
+        </div>
+        <span className={`text-sm font-semibold ${amountClassName}`}>
+          {formatSignedCurrencyAmount(entry.amount, currencyName)}
+        </span>
+      </div>
+      <p className="mt-2 text-xs text-text-muted">
+        {formatEntryType(entry.type)} - {formatDateTime(entry.createdAt)}
+      </p>
+    </article>
   );
 }
 

@@ -3,13 +3,21 @@ import path from "path";
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
 import type { ActionResult } from "@/lib/action-results";
+import { appConfig } from "@/lib/app-config";
+import { defaultCurrencyName } from "@/lib/school-defaults";
+import type { SessionUser } from "@/lib/session";
+import { AuditService } from "@/services/audit-service";
 
 export type SchoolInfo = {
   name: string;
   address: string;
+  contactEmail: string;
   planType: string;
   currencyName: string;
   logoUrl: string;
+  phone: string;
+  website: string;
+  timezone: string;
 };
 
 export type UpdateSchoolInfoInput = Omit<SchoolInfo, "planType">;
@@ -27,11 +35,16 @@ export type UploadSchoolLogoResult =
 type SchoolInfoRow = {
   name: string;
   address: string;
+  contact_email: string;
   plan_type: string;
   currency_name: string;
   logo_url: string;
+  phone: string;
+  website: string;
+  timezone: string;
 };
 
+const auditService = new AuditService();
 const logoUploadDirectory = path.join(process.cwd(), "public", "uploads", "logos");
 const logoPublicPath = "/uploads/logos";
 const bytesPerKilobyte = 1024;
@@ -48,8 +61,19 @@ const allowedLogoTypes = new Map([
 
 export class SchoolService {
   async getSchoolInfo(): Promise<SchoolInfo> {
+    await ensureSchoolInfoColumns();
+
     const result = await db.query<SchoolInfoRow>(`
-      select name, address, plan_type, currency_name, logo_url
+      select
+        name,
+        address,
+        contact_email,
+        plan_type,
+        currency_name,
+        logo_url,
+        phone,
+        website,
+        timezone
       from school_info
       where id = 1
       limit 1
@@ -59,22 +83,33 @@ export class SchoolService {
 
     if (!schoolInfo) {
       return {
-        name: "SchoolBank School",
+        name: appConfig.defaultSchoolName,
         address: "",
+        contactEmail: "",
         planType: "trial",
-        currencyName: "credits",
+        currencyName: defaultCurrencyName,
         logoUrl: "",
+        phone: "",
+        website: "",
+        timezone: "",
       };
     }
 
     return this.mapSchoolInfoRow(schoolInfo);
   }
 
-  async updateSchoolInfo(input: UpdateSchoolInfoInput): Promise<ActionResult> {
+  async updateSchoolInfo(
+    currentUser: SessionUser,
+    input: UpdateSchoolInfoInput,
+  ): Promise<ActionResult> {
     const name = input.name.trim();
     const address = input.address.trim();
+    const contactEmail = input.contactEmail.trim().toLowerCase();
     const currencyName = input.currencyName.trim();
     const logoUrl = input.logoUrl.trim();
+    const phone = input.phone.trim();
+    const website = input.website.trim();
+    const timezone = input.timezone.trim();
 
     if (!name || !currencyName) {
       return {
@@ -83,29 +118,75 @@ export class SchoolService {
       };
     }
 
+    const client = await db.connect();
+
     try {
-      await db.query(
+      await client.query("begin");
+      await ensureSchoolInfoColumns(client);
+
+      await client.query(
         `
-          insert into school_info (id, name, address, currency_name, logo_url)
-          values (1, $1, $2, $3, $4)
+          insert into school_info (
+            id,
+            name,
+            address,
+            contact_email,
+            currency_name,
+            logo_url,
+            phone,
+            website,
+            timezone
+          )
+          values (1, $1, $2, $3, $4, $5, $6, $7, $8)
           on conflict (id) do update
           set name = excluded.name,
               address = excluded.address,
+              contact_email = excluded.contact_email,
               currency_name = excluded.currency_name,
               logo_url = excluded.logo_url,
+              phone = excluded.phone,
+              website = excluded.website,
+              timezone = excluded.timezone,
               updated_at = now()
         `,
-        [name, address, currencyName, logoUrl],
+        [
+          name,
+          address,
+          contactEmail,
+          currencyName,
+          logoUrl,
+          phone,
+          website,
+          timezone,
+        ],
       );
 
+      await auditService.logWithClient(client, {
+        action: "school_info.updated",
+        actorUserId: currentUser.id,
+        details: {
+          contactEmail,
+          currencyName,
+          hasLogo: Boolean(logoUrl),
+          name,
+          timezone,
+        },
+        entityId: null,
+        entityType: "school_info",
+      });
+
+      await client.query("commit");
       return { ok: true };
     } catch (error) {
+      await client.query("rollback");
       console.error("Update school info failed", error);
 
       return {
         ok: false,
         message: "Could not update school info.",
       };
+    } finally {
+      client.release();
     }
   }
 
@@ -160,9 +241,23 @@ export class SchoolService {
     return {
       name: row.name,
       address: row.address,
+      contactEmail: row.contact_email,
       planType: row.plan_type,
       currencyName: row.currency_name,
       logoUrl: row.logo_url,
+      phone: row.phone,
+      website: row.website,
+      timezone: row.timezone,
     };
   }
+}
+
+async function ensureSchoolInfoColumns(client: Pick<typeof db, "query"> = db) {
+  await client.query(`
+    alter table school_info
+      add column if not exists contact_email text not null default '',
+      add column if not exists phone text not null default '',
+      add column if not exists website text not null default '',
+      add column if not exists timezone text not null default ''
+  `);
 }

@@ -1,7 +1,12 @@
 import { db } from "@/lib/db";
-import { generateTemporaryPassword, hashPassword } from "@/lib/passwords";
+import {
+  generateTemporaryPassword,
+  hashPassword,
+  verifyPassword,
+} from "@/lib/passwords";
 import type { ActionResult } from "@/lib/action-results";
-import type { Role } from "@/lib/session";
+import type { Role, SessionUser } from "@/lib/session";
+import { AuditService } from "@/services/audit-service";
 import { LedgerService } from "@/services/ledger-service";
 
 export type UserListItem = {
@@ -63,6 +68,11 @@ export type ResetUserPasswordInput = {
   password: string;
 };
 
+export type ChangeOwnPasswordInput = {
+  currentPassword: string;
+  newPassword: string;
+};
+
 export type CreateUserResult =
   | {
       ok: true;
@@ -109,6 +119,8 @@ type StudentListRow = {
 };
 
 const ledgerService = new LedgerService();
+const auditService = new AuditService();
+const defaultStudentSearchLimit = 12;
 
 export class UserService {
   async listUsers(): Promise<UserListItem[]> {
@@ -122,13 +134,29 @@ export class UserService {
   }
 
   async listStudents(): Promise<StudentListItem[]> {
+    return this.searchStudents("", defaultStudentSearchLimit);
+  }
+
+  async searchStudents(
+    searchTerm: string,
+    limit = defaultStudentSearchLimit,
+  ): Promise<StudentListItem[]> {
+    const normalizedSearchTerm = `%${searchTerm.trim().toLowerCase()}%`;
     const result = await db.query<StudentListRow>(`
       select id, first_name, last_name, username
       from users
       where role = 'student'
         and is_active = true
+        and (
+          $1 = '%%'
+          or lower(first_name) like $1
+          or lower(last_name) like $1
+          or lower(username) like $1
+          or lower(first_name || ' ' || last_name) like $1
+        )
       order by last_name, first_name
-    `);
+      limit $2
+    `, [normalizedSearchTerm, limit]);
 
     return result.rows.map((student) => ({
       id: student.id,
@@ -139,7 +167,10 @@ export class UserService {
     }));
   }
 
-  async createUser(input: CreateUserInput): Promise<CreateUserResult> {
+  async createUser(
+    input: CreateUserInput,
+    currentUser?: SessionUser,
+  ): Promise<CreateUserResult> {
     const username = input.username.trim().toLowerCase();
     const firstName = capitaliseName(input.firstName);
     const lastName = capitaliseName(input.lastName);
@@ -180,6 +211,17 @@ export class UserService {
         await ledgerService.ensureStudentAccount(client, result.rows[0].id);
       }
 
+      await auditService.logWithClient(client, {
+        action: "user.created",
+        actorUserId: currentUser?.id,
+        details: {
+          role: input.role,
+          username,
+        },
+        entityId: result.rows[0].id,
+        entityType: "user",
+      });
+
       await client.query("commit");
 
       return {
@@ -199,7 +241,10 @@ export class UserService {
     }
   }
 
-  async importUsers(input: ImportUsersInput): Promise<ImportUsersResult> {
+  async importUsers(
+    input: ImportUsersInput,
+    currentUser?: SessionUser,
+  ): Promise<ImportUsersResult> {
     const createdUsers: ImportedUserCredential[] = [];
     const errors: ImportUserError[] = [];
     let createdCount = 0;
@@ -210,7 +255,7 @@ export class UserService {
       const result = await this.createUser({
         ...user,
         password: temporaryPassword,
-      });
+      }, currentUser);
 
       if (result.ok) {
         createdCount += 1;
@@ -235,7 +280,10 @@ export class UserService {
     };
   }
 
-  async updateUser(input: UpdateUserInput): Promise<UserActionResult> {
+  async updateUser(
+    input: UpdateUserInput,
+    currentUser?: SessionUser,
+  ): Promise<UserActionResult> {
     const username = input.username.trim().toLowerCase();
     const firstName = capitaliseName(input.firstName);
     const lastName = capitaliseName(input.lastName);
@@ -291,6 +339,19 @@ export class UserService {
         await ledgerService.ensureStudentAccount(client, user.id);
       }
 
+      await auditService.logWithClient(client, {
+        action: "user.updated",
+        actorUserId: currentUser?.id,
+        details: {
+          email,
+          isActive: input.isActive,
+          role: input.role,
+          username,
+        },
+        entityId: user.id,
+        entityType: "user",
+      });
+
       await client.query("commit");
 
       return {
@@ -310,7 +371,10 @@ export class UserService {
     }
   }
 
-  async resetPassword(input: ResetUserPasswordInput): Promise<ActionResult> {
+  async resetPassword(
+    input: ResetUserPasswordInput,
+    currentUser?: SessionUser,
+  ): Promise<ActionResult> {
     if (!input.id || !input.password) {
       return {
         ok: false,
@@ -318,9 +382,13 @@ export class UserService {
       };
     }
 
+    const client = await db.connect();
+
     try {
       const passwordHash = await hashPassword(input.password);
-      const result = await db.query(
+      await client.query("begin");
+
+      const result = await client.query(
         `
           update users
           set password_hash = $1,
@@ -331,26 +399,129 @@ export class UserService {
       );
 
       if (result.rowCount === 0) {
+        await client.query("rollback");
         return {
           ok: false,
           message: "User was not found.",
         };
       }
 
+      await auditService.logWithClient(client, {
+        action: "user.password_reset",
+        actorUserId: currentUser?.id,
+        entityId: input.id,
+        entityType: "user",
+      });
+
+      await client.query("commit");
       return { ok: true };
     } catch (error) {
+      await client.query("rollback");
       console.error("Reset password failed", error);
 
       return {
         ok: false,
         message: "Could not reset password.",
       };
+    } finally {
+      client.release();
     }
   }
 
-  async setUserActive(userId: string, isActive: boolean): Promise<ActionResult> {
+  async changeOwnPassword(
+    currentUser: SessionUser,
+    input: ChangeOwnPasswordInput,
+  ): Promise<ActionResult> {
+    if (!input.currentPassword || !input.newPassword) {
+      return {
+        ok: false,
+        message: "Enter your current password and a new password.",
+      };
+    }
+
+    if (input.newPassword.length < 8) {
+      return {
+        ok: false,
+        message: "New password must be at least 8 characters.",
+      };
+    }
+
+    const client = await db.connect();
+
     try {
-      const result = await db.query(
+      await client.query("begin");
+
+      const currentPasswordResult = await client.query<{
+        password_hash: string;
+      }>(
+        `
+          select password_hash
+          from users
+          where id = $1
+            and is_active = true
+          for update
+        `,
+        [currentUser.id],
+      );
+
+      const passwordHash = currentPasswordResult.rows[0]?.password_hash;
+
+      if (
+        !passwordHash ||
+        !(await verifyPassword(input.currentPassword, passwordHash))
+      ) {
+        await client.query("rollback");
+        return {
+          ok: false,
+          message: "Current password is incorrect.",
+        };
+      }
+
+      const newPasswordHash = await hashPassword(input.newPassword);
+
+      await client.query(
+        `
+          update users
+          set password_hash = $1,
+              updated_at = now()
+          where id = $2
+        `,
+        [newPasswordHash, currentUser.id],
+      );
+
+      await auditService.logWithClient(client, {
+        action: "user.password_changed",
+        actorUserId: currentUser.id,
+        entityId: currentUser.id,
+        entityType: "user",
+      });
+
+      await client.query("commit");
+      return { ok: true };
+    } catch (error) {
+      await client.query("rollback");
+      console.error("Change own password failed", error);
+
+      return {
+        ok: false,
+        message: "Could not change password.",
+      };
+    } finally {
+      client.release();
+    }
+  }
+
+  async setUserActive(
+    userId: string,
+    isActive: boolean,
+    currentUser?: SessionUser,
+  ): Promise<ActionResult> {
+    const client = await db.connect();
+
+    try {
+      await client.query("begin");
+
+      const result = await client.query(
         `
           update users
           set is_active = $1,
@@ -361,20 +532,32 @@ export class UserService {
       );
 
       if (result.rowCount === 0) {
+        await client.query("rollback");
         return {
           ok: false,
           message: "User was not found.",
         };
       }
 
+      await auditService.logWithClient(client, {
+        action: isActive ? "user.enabled" : "user.disabled",
+        actorUserId: currentUser?.id,
+        entityId: userId,
+        entityType: "user",
+      });
+
+      await client.query("commit");
       return { ok: true };
     } catch (error) {
+      await client.query("rollback");
       console.error("Set user active failed", error);
 
       return {
         ok: false,
         message: "Could not update user status.",
       };
+    } finally {
+      client.release();
     }
   }
 

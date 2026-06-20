@@ -9,6 +9,8 @@ import {
 import type { SessionUser } from "@/lib/session";
 import type { ShopPurchaseRequest } from "@/services/shop-service";
 import { formatCurrencyAmount, formatDateTime } from "@/lib/formatters";
+import { IconButton } from "@/components/ui/icon-button";
+import { CheckIcon, XIcon } from "@/components/ui/icons";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
 import { TextReasonModal } from "@/components/ui/text-reason-modal";
 
@@ -156,7 +158,7 @@ export function ShopRequestsPanel({
         </p>
       )}
 
-      <div className="mt-4 overflow-x-auto">
+      <div className="mt-4">
         {isLoading && (
           <p className="text-sm text-text-muted">Loading requests...</p>
         )}
@@ -168,67 +170,12 @@ export function ShopRequestsPanel({
           </p>
         )}
         {!isLoading && visibleRequests.length > 0 && (
-          <table className="w-full min-w-[680px] border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b border-border-subtle text-text-muted">
-                <th className="py-2 pr-4 font-semibold">Requested</th>
-                <th className="py-2 pr-4 font-semibold">Student</th>
-                <th className="py-2 pr-4 font-semibold">Item</th>
-                <th className="py-2 pr-4 font-semibold">Status</th>
-                <th className="py-2 pr-4 text-right font-semibold">Cost</th>
-                <th className="py-2 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleRequests.map((request) => (
-                <tr className="border-b border-border-subtle" key={request.id}>
-                  <td className="py-2 pr-4 text-text-muted">
-                    {formatDateTime(request.purchasedAt)}
-                  </td>
-                  <td className="py-2 pr-4 text-text-muted">
-                    {request.studentName}
-                    <span className="block text-xs">
-                      {request.studentUsername}
-                    </span>
-                  </td>
-                  <td className="py-2 pr-4 font-semibold">
-                    {request.itemName}
-                    {request.decisionNote && (
-                      <span className="block text-xs font-normal text-text-muted">
-                        {request.decisionNote}
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-2 pr-4">
-                    <ShopRequestStatusBadge request={request} />
-                  </td>
-                  <td className="py-2 pr-4 text-right text-text-muted">
-                    {formatCurrencyAmount(request.price, currencyName)}
-                  </td>
-                  <td className="py-2">
-                    {request.status === "pending" && (
-                      <div className="flex flex-col gap-2 sm:flex-row">
-                        <button
-                          className="rounded-md bg-success px-3 py-2 text-sm font-semibold text-white transition hover:bg-success-hover"
-                          onClick={() => handleApprove(request.id)}
-                          type="button"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          className="rounded-md border border-danger-button-border px-3 py-2 text-sm font-semibold text-danger-strong transition hover:bg-danger-soft"
-                          onClick={() => setDenyingRequestId(request.id)}
-                          type="button"
-                        >
-                          Deny
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <ShopRequestList
+            currencyName={currencyName}
+            onApprove={handleApprove}
+            onDeny={setDenyingRequestId}
+            requests={visibleRequests}
+          />
         )}
       </div>
 
@@ -243,6 +190,156 @@ export function ShopRequestsPanel({
         />
       )}
     </section>
+  );
+}
+
+function ShopRequestList({
+  currencyName,
+  onApprove,
+  onDeny,
+  requests,
+}: {
+  currencyName: string;
+  onApprove: (purchaseId: string) => void;
+  onDeny: (purchaseId: string) => void;
+  requests: ShopPurchaseRequest[];
+}) {
+  return (
+    <>
+      <div className="grid gap-3 md:hidden">
+        {requests.map((request) => (
+          <ShopRequestCard
+            currencyName={currencyName}
+            key={request.id}
+            onApprove={onApprove}
+            onDeny={onDeny}
+            request={request}
+          />
+        ))}
+      </div>
+
+      <table className="hidden w-full border-collapse text-left text-sm md:table">
+        <thead>
+          <tr className="border-b border-border-subtle text-text-muted">
+            <th className="py-2 pr-4 font-semibold">Requested</th>
+            <th className="py-2 pr-4 font-semibold">Student</th>
+            <th className="py-2 pr-4 font-semibold">Item</th>
+            <th className="py-2 pr-4 font-semibold">Status</th>
+            <th className="py-2 pr-4 text-right font-semibold">Cost</th>
+            <th className="py-2 font-semibold">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {requests.map((request) => (
+            <tr className="border-b border-border-subtle" key={request.id}>
+              <td className="py-2 pr-4 text-text-muted">
+                {formatDateTime(request.purchasedAt)}
+              </td>
+              <td className="py-2 pr-4 text-text-muted">
+                {request.studentName}
+                <span className="block text-xs">{request.studentUsername}</span>
+              </td>
+              <td className="py-2 pr-4 font-semibold">
+                {request.itemName}
+                {request.decisionNote && (
+                  <span className="block text-xs font-normal text-text-muted">
+                    {request.decisionNote}
+                  </span>
+                )}
+              </td>
+              <td className="py-2 pr-4">
+                <ShopRequestStatusBadge request={request} />
+              </td>
+              <td className="py-2 pr-4 text-right text-text-muted">
+                {formatCurrencyAmount(request.price, currencyName)}
+              </td>
+              <td className="py-2">
+                <ShopRequestActions
+                  onApprove={onApprove}
+                  onDeny={onDeny}
+                  request={request}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+function ShopRequestCard({
+  currencyName,
+  onApprove,
+  onDeny,
+  request,
+}: {
+  currencyName: string;
+  onApprove: (purchaseId: string) => void;
+  onDeny: (purchaseId: string) => void;
+  request: ShopPurchaseRequest;
+}) {
+  return (
+    <article className="rounded-md border border-border-subtle bg-surface p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h4 className="truncate text-sm font-semibold">{request.itemName}</h4>
+          <p className="truncate text-sm text-text-muted">
+            {request.studentName} ({request.studentUsername})
+          </p>
+        </div>
+        <ShopRequestActions
+          onApprove={onApprove}
+          onDeny={onDeny}
+          request={request}
+        />
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <ShopRequestStatusBadge request={request} />
+        <span className="text-sm font-semibold text-text-muted">
+          {formatCurrencyAmount(request.price, currencyName)}
+        </span>
+      </div>
+      <p className="mt-2 text-xs text-text-muted">
+        {formatDateTime(request.purchasedAt)}
+      </p>
+      {request.decisionNote && (
+        <p className="mt-2 text-sm text-text-muted">{request.decisionNote}</p>
+      )}
+    </article>
+  );
+}
+
+function ShopRequestActions({
+  onApprove,
+  onDeny,
+  request,
+}: {
+  onApprove: (purchaseId: string) => void;
+  onDeny: (purchaseId: string) => void;
+  request: ShopPurchaseRequest;
+}) {
+  if (request.status !== "pending") {
+    return null;
+  }
+
+  return (
+    <div className="flex gap-2">
+      <IconButton
+        label={`Approve ${request.itemName} for ${request.studentName}`}
+        onClick={() => onApprove(request.id)}
+        tone="primary"
+      >
+        <CheckIcon />
+      </IconButton>
+      <IconButton
+        label={`Deny ${request.itemName} for ${request.studentName}`}
+        onClick={() => onDeny(request.id)}
+        tone="danger"
+      >
+        <XIcon />
+      </IconButton>
+    </div>
   );
 }
 

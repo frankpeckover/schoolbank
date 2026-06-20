@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { appConfig } from "@/lib/app-config";
 import { verifyPassword } from "@/lib/passwords";
 import type { Role, SessionUser } from "@/lib/session";
 
@@ -69,8 +70,7 @@ export class AuthService {
 
       return {
         ok: false,
-        message:
-          "Could not connect to the SchoolBank database. Check the POSTGRES and PLATFORM_POSTGRES settings in .env.local.",
+        message: `Could not connect to the ${appConfig.name} database. Check the POSTGRES and PLATFORM_POSTGRES settings in .env.local.`,
       };
     }
   }

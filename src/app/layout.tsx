@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { appConfig } from "@/lib/app-config";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SchoolBank",
+  title: appConfig.name,
   description: "A school economy platform for fake currency rewards and spending.",
 };
 

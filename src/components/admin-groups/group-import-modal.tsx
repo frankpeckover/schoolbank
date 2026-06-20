@@ -1,17 +1,14 @@
 "use client";
 
 import { useState, type ChangeEvent } from "react";
-import { importUsers } from "@/lib/actions";
+import { importGroups } from "@/lib/actions";
 import { parseCsvObjects } from "@/lib/csv";
-import type { Role, SessionUser } from "@/lib/session";
 import type {
-  ImportedUserCredential,
-  ImportUserInput,
-  ImportUserError,
-} from "@/services/user-service";
+  ImportGroupError,
+  ImportGroupMembershipInput,
+} from "@/services/group-import-service";
 
-type UserImportModalProps = {
-  currentUser: SessionUser;
+type GroupImportModalProps = {
   onClose: () => void;
   onImportCompleted: () => void;
   onImported: (message: string, shouldClose?: boolean) => void;
@@ -19,29 +16,26 @@ type UserImportModalProps = {
 
 type ParseResult =
   | {
+      memberships: ImportGroupMembershipInput[];
       ok: true;
-      users: ImportUserInput[];
     }
   | {
-      ok: false;
       message: string;
+      ok: false;
     };
 
-const csvHeaders = "username,first_name,last_name,email,role";
-const validRoles: Role[] = ["admin", "teacher", "student"];
+const csvHeaders = "group_name,username";
 
-export function UserImportModal({
-  currentUser,
+export function GroupImportModal({
   onClose,
   onImportCompleted,
   onImported,
-}: UserImportModalProps) {
+}: GroupImportModalProps) {
   const [fileName, setFileName] = useState("");
-  const [users, setUsers] = useState<ImportUserInput[]>([]);
-  const [createdUsers, setCreatedUsers] = useState<ImportedUserCredential[]>(
+  const [memberships, setMemberships] = useState<ImportGroupMembershipInput[]>(
     [],
   );
-  const [errors, setErrors] = useState<ImportUserError[]>([]);
+  const [errors, setErrors] = useState<ImportGroupError[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -49,8 +43,7 @@ export function UserImportModal({
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
-    setUsers([]);
-    setCreatedUsers([]);
+    setMemberships([]);
     setErrors([]);
     setMessage(null);
     setError(null);
@@ -63,20 +56,20 @@ export function UserImportModal({
     setFileName(file.name);
 
     const text = await file.text();
-    const result = parseUsersCsv(text);
+    const result = parseGroupsCsv(text);
 
     if (!result.ok) {
       setError(result.message);
       return;
     }
 
-    setUsers(result.users);
-    setMessage(`${result.users.length} users ready to import.`);
+    setMemberships(result.memberships);
+    setMessage(`${result.memberships.length} memberships ready to import.`);
   }
 
   async function handleImport() {
-    if (users.length === 0) {
-      setError("Choose a CSV file with at least one user.");
+    if (memberships.length === 0) {
+      setError("Choose a CSV file with at least one group membership.");
       return;
     }
 
@@ -84,24 +77,19 @@ export function UserImportModal({
     setError(null);
     setMessage(null);
     setErrors([]);
-    setCreatedUsers([]);
 
-    const result = await importUsers(currentUser, { users });
+    const result = await importGroups({ memberships });
+    const importedText = [
+      `${result.createdMembershipCount} membership${result.createdMembershipCount === 1 ? "" : "s"}`,
+      `${result.createdGroupCount} group${result.createdGroupCount === 1 ? "" : "s"}`,
+    ].join(", ");
+    const successMessage = `Imported ${importedText}.`;
 
     setIsImporting(false);
     setErrors(result.errors);
-    setCreatedUsers(result.createdUsers);
-
-    if (result.createdCount > 0) {
-      const successMessage = `Imported ${result.createdCount} user${result.createdCount === 1 ? "" : "s"}.`;
-
-      setMessage(successMessage);
-      onImportCompleted();
-      onImported(successMessage, false);
-      return;
-    }
-
-    setMessage("No users were imported.");
+    setMessage(successMessage);
+    onImportCompleted();
+    onImported(successMessage, false);
   }
 
   return (
@@ -109,7 +97,7 @@ export function UserImportModal({
       <div className="motion-pop w-full max-w-2xl rounded-md border border-border bg-surface p-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-xl font-semibold">Import Users</h3>
+            <h3 className="text-xl font-semibold">Import Groups</h3>
             <p className="mt-1 text-sm text-text-muted">
               Upload a CSV with headers: {csvHeaders}
             </p>
@@ -126,14 +114,14 @@ export function UserImportModal({
         <div className="mt-5 rounded-md border border-border-subtle bg-panel-soft p-4">
           <label
             className="text-sm font-semibold text-text-control"
-            htmlFor="csvFile"
+            htmlFor="groupCsvFile"
           >
             CSV file
           </label>
           <input
             accept=".csv,text/csv"
             className="mt-2 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none ring-brand transition file:mr-3 file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white focus:ring-2"
-            id="csvFile"
+            id="groupCsvFile"
             onChange={handleFileChange}
             type="file"
           />
@@ -157,10 +145,6 @@ export function UserImportModal({
           <ImportErrors errors={errors} />
         )}
 
-        {createdUsers.length > 0 && (
-          <GeneratedPasswords users={createdUsers} />
-        )}
-
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button
             className="rounded-md border border-button-border px-4 py-2 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
@@ -171,11 +155,11 @@ export function UserImportModal({
           </button>
           <button
             className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70"
-            disabled={isImporting || users.length === 0}
+            disabled={isImporting || memberships.length === 0}
             onClick={handleImport}
             type="button"
           >
-            {isImporting ? "Importing..." : "Import Users"}
+            {isImporting ? "Importing..." : "Import Groups"}
           </button>
         </div>
       </div>
@@ -183,7 +167,7 @@ export function UserImportModal({
   );
 }
 
-function ImportErrors({ errors }: { errors: ImportUserError[] }) {
+function ImportErrors({ errors }: { errors: ImportGroupError[] }) {
   return (
     <div className="mt-4 rounded-md border border-danger-border bg-danger-soft p-3">
       <p className="text-sm font-semibold text-danger-strong">
@@ -191,9 +175,10 @@ function ImportErrors({ errors }: { errors: ImportUserError[] }) {
       </p>
       <ul className="mt-2 max-h-40 overflow-y-auto text-sm text-danger-strong">
         {errors.map((error) => (
-          <li key={`${error.rowNumber}-${error.username}`}>
+          <li key={`${error.rowNumber}-${error.groupName}-${error.username}`}>
             Row {error.rowNumber}
-            {error.username ? ` (${error.username})` : ""}: {error.message}
+            {error.groupName ? ` (${error.groupName})` : ""}
+            {error.username ? ` / ${error.username}` : ""}: {error.message}
           </li>
         ))}
       </ul>
@@ -201,112 +186,44 @@ function ImportErrors({ errors }: { errors: ImportUserError[] }) {
   );
 }
 
-function GeneratedPasswords({ users }: { users: ImportedUserCredential[] }) {
-  return (
-    <div className="mt-4 rounded-md border border-border-subtle bg-panel-soft p-3">
-      <p className="text-sm font-semibold text-text-control">
-        Temporary passwords
-      </p>
-      <div className="mt-2 max-h-44 overflow-y-auto pr-1">
-        <div className="grid gap-2 md:hidden">
-          {users.map((user) => (
-            <GeneratedPasswordCard key={user.username} user={user} />
-          ))}
-        </div>
-
-        <table className="hidden w-full text-left text-sm md:table">
-          <thead className="text-text-muted">
-            <tr>
-              <th className="py-2 pr-4 font-semibold">Username</th>
-              <th className="py-2 font-semibold">Password</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr className="border-t border-border-subtle" key={user.username}>
-                <td className="py-2 pr-4 font-semibold">{user.username}</td>
-                <td className="py-2 font-mono text-text-control">
-                  {user.temporaryPassword}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function GeneratedPasswordCard({
-  user,
-}: {
-  user: ImportedUserCredential;
-}) {
-  return (
-    <article className="rounded-md border border-border-subtle bg-surface p-3">
-      <p className="truncate text-sm font-semibold">{user.username}</p>
-      <p className="mt-1 break-all font-mono text-sm text-text-control">
-        {user.temporaryPassword}
-      </p>
-    </article>
-  );
-}
-
-function parseUsersCsv(text: string): ParseResult {
+function parseGroupsCsv(text: string): ParseResult {
   const { objects, rows } = parseCsvObjects(text);
 
   if (rows.length < 2) {
     return {
       ok: false,
-      message: "CSV must include a header row and at least one user row.",
+      message: "CSV must include a header row and at least one membership row.",
     };
   }
 
-  const users: ImportUserInput[] = [];
+  const memberships: ImportGroupMembershipInput[] = [];
 
   for (const { row, rowNumber, values } of objects) {
     if (row.every((value) => !value.trim())) {
       continue;
     }
 
-    const role = values.role?.trim().toLowerCase() as Role;
-
-    if (!validRoles.includes(role)) {
-      return {
-        ok: false,
-        message: `Row ${rowNumber} has an invalid role.`,
-      };
-    }
-
-    const user = {
-      email: values.email?.trim() ?? "",
-      firstName: values.firstname?.trim() ?? "",
-      lastName: values.lastname?.trim() ?? "",
-      role,
+    const membership = {
+      groupName: values.groupname?.trim() ?? "",
       username: values.username?.trim() ?? "",
     };
 
-    if (
-      !user.username ||
-      !user.firstName ||
-      !user.lastName ||
-      !user.email
-    ) {
+    if (!membership.groupName || !membership.username) {
       return {
         ok: false,
-        message: `Row ${rowNumber} is missing a required value.`,
+        message: `Row ${rowNumber} is missing a group name or username.`,
       };
     }
 
-    users.push(user);
+    memberships.push(membership);
   }
 
-  if (users.length === 0) {
+  if (memberships.length === 0) {
     return {
       ok: false,
-      message: "CSV does not contain any users.",
+      message: "CSV does not contain any group memberships.",
     };
   }
 
-  return { ok: true, users };
+  return { memberships, ok: true };
 }

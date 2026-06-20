@@ -57,12 +57,22 @@ create table if not exists school_info (
   id integer primary key default 1 check (id = 1),
   name text not null default 'SchoolBank School',
   address text not null default '',
+  contact_email text not null default '',
+  phone text not null default '',
+  website text not null default '',
+  timezone text not null default '',
   plan_type text not null default 'trial',
   currency_name text not null default 'credits',
   logo_url text not null default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table school_info
+  add column if not exists contact_email text not null default '',
+  add column if not exists phone text not null default '',
+  add column if not exists website text not null default '',
+  add column if not exists timezone text not null default '';
 
 create table if not exists users (
   id uuid primary key default gen_random_uuid(),
@@ -83,6 +93,7 @@ create table if not exists shop_items (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   description text not null default '',
+  image_url text not null default '',
   price integer not null,
   quantity integer not null default 0,
   is_active boolean not null default true,
@@ -92,6 +103,9 @@ create table if not exists shop_items (
   constraint shop_items_price_not_negative check (price >= 0),
   constraint shop_items_quantity_not_negative check (quantity >= 0)
 );
+
+alter table shop_items
+  add column if not exists image_url text not null default '';
 
 create table if not exists shop_purchases (
   id uuid primary key default gen_random_uuid(),
@@ -117,6 +131,24 @@ create table if not exists accounts (
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
+);
+
+create table if not exists student_groups (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  description text not null default '',
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (name)
+);
+
+create table if not exists student_group_memberships (
+  id uuid primary key default gen_random_uuid(),
+  group_id uuid not null references student_groups(id) on delete cascade,
+  user_id uuid not null references users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (group_id, user_id)
 );
 
 create table if not exists ledger_entries (
@@ -152,6 +184,16 @@ create table if not exists ledger_entries (
   )
 );
 
+create table if not exists audit_log (
+  id uuid primary key default gen_random_uuid(),
+  actor_user_id uuid references users(id) on delete set null,
+  action text not null,
+  entity_type text not null,
+  entity_id uuid,
+  details jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists users_role_idx on users(role);
 create index if not exists shop_items_active_idx on shop_items(is_active);
 create index if not exists shop_purchases_user_idx
@@ -159,12 +201,20 @@ create index if not exists shop_purchases_user_idx
 create index if not exists shop_purchases_status_idx on shop_purchases(status);
 create index if not exists shop_purchases_voided_idx on shop_purchases(is_voided);
 create index if not exists accounts_user_idx on accounts(user_id);
+create index if not exists student_groups_active_idx on student_groups(is_active);
+create index if not exists student_group_memberships_group_idx
+  on student_group_memberships(group_id);
+create index if not exists student_group_memberships_user_idx
+  on student_group_memberships(user_id);
 create index if not exists ledger_entries_account_idx on ledger_entries(account_id);
 create index if not exists ledger_entries_created_at_idx on ledger_entries(created_at);
 create index if not exists ledger_entries_status_idx on ledger_entries(status);
 create index if not exists ledger_entries_type_idx on ledger_entries(entry_type);
 create index if not exists ledger_entries_related_entity_idx
   on ledger_entries(related_entity_type, related_entity_id);
+create index if not exists audit_log_created_at_idx on audit_log(created_at);
+create index if not exists audit_log_actor_idx on audit_log(actor_user_id);
+create index if not exists audit_log_entity_idx on audit_log(entity_type, entity_id);
 
 create unique index if not exists ledger_entries_source_unique_idx
   on ledger_entries(related_entity_type, related_entity_id, entry_type)

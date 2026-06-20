@@ -6,35 +6,56 @@ import {
   type LedgerEntryStatus,
   type LedgerEntryType,
 } from "@/services/ledger-service";
+import { AuditService } from "@/services/audit-service";
 import type { ShopPurchaseStatus } from "@/services/shop-service";
 
 export type TransactionLogItem = {
+  accountName: string;
   id: string;
   amount: number;
+  createdByName: string | null;
+  createdByUsername: string | null;
   createdAt: string;
   description: string;
   entryStatus: LedgerEntryStatus;
   isVoided: boolean;
+  relatedEntityId: string | null;
+  relatedEntityType: string | null;
   reason: string;
+  reference: string;
+  reversalOfLedgerEntryId: string | null;
+  source: string;
   studentName: string;
   studentUsername: string;
   type: LedgerEntryType;
   voidedAt: string | null;
+  voidedByName: string | null;
+  voidReason: string;
   purchaseStatus: ShopPurchaseStatus | null;
 };
 
 type TransactionLogRow = {
+  account_name: string;
   id: string;
   amount: number;
+  created_by_name: string | null;
+  created_by_username: string | null;
   created_at: Date;
   description: string;
   entry_status: LedgerEntryStatus;
   is_voided: boolean;
+  related_entity_id: string | null;
+  related_entity_type: string | null;
   reason: string;
+  reversal_of_ledger_entry_id: string | null;
+  shop_item_name: string | null;
+  student_group_name: string | null;
   student_name: string;
   student_username: string;
   type: LedgerEntryType;
   voided_at: Date | null;
+  voided_by_name: string | null;
+  void_reason: string;
   purchase_status: ShopPurchaseStatus | null;
 };
 
@@ -50,7 +71,22 @@ export type CreateLedgerAdjustmentInput = {
   studentUserId: string;
 };
 
+export type CreateGroupLedgerAdjustmentInput = {
+  amount: number;
+  groupId: string;
+  reason: string;
+};
+
+type GroupAdjustmentMemberRow = {
+  first_name: string;
+  group_name: string;
+  last_name: string;
+  username: string;
+  user_id: string;
+};
+
 const ledgerService = new LedgerService();
+const auditService = new AuditService();
 
 export class TransactionService {
   async getStudentBalance(userId: string): Promise<number> {
@@ -69,24 +105,40 @@ export class TransactionService {
     const result = await db.query<TransactionLogRow>(
       `
         select
+          accounts.account_name,
           ledger_entries.id,
           ledger_entries.amount,
           ledger_entries.created_at,
           ledger_entries.description,
           ledger_entries.status as entry_status,
           ledger_entries.is_voided,
+          ledger_entries.related_entity_id,
+          ledger_entries.related_entity_type,
           ledger_entries.description as reason,
+          ledger_entries.reversal_of_ledger_entry_id,
           trim(users.first_name || ' ' || users.last_name) as student_name,
           users.username as student_username,
+          trim(created_by.first_name || ' ' || created_by.last_name) as created_by_name,
+          created_by.username as created_by_username,
           ledger_entries.entry_type as type,
           ledger_entries.voided_at,
+          trim(voided_by.first_name || ' ' || voided_by.last_name) as voided_by_name,
+          ledger_entries.void_reason,
+          shop_items.name as shop_item_name,
+          student_groups.name as student_group_name,
           shop_purchases.status as purchase_status
         from ledger_entries
         join accounts on accounts.id = ledger_entries.account_id
         join users on users.id = accounts.user_id
+        left join users created_by on created_by.id = ledger_entries.created_by_user_id
+        left join users voided_by on voided_by.id = ledger_entries.voided_by_user_id
         left join shop_purchases
           on ledger_entries.related_entity_type = 'shop_purchase'
           and shop_purchases.id = ledger_entries.related_entity_id
+        left join shop_items on shop_items.id = shop_purchases.shop_item_id
+        left join student_groups
+          on ledger_entries.related_entity_type = 'student_group'
+          and student_groups.id = ledger_entries.related_entity_id
         where $1::boolean = true
           or accounts.user_id = $2
         order by ledger_entries.created_at desc
@@ -172,6 +224,19 @@ export class TransactionService {
         };
       }
 
+      await auditService.logWithClient(client, {
+        action: "ledger_entry.voided",
+        actorUserId: currentUser.id,
+        details: {
+          reason,
+          relatedEntityId: entry.related_entity_id,
+          relatedEntityType: entry.related_entity_type,
+          type: entry.entry_type,
+        },
+        entityId: transactionId,
+        entityType: "ledger_entry",
+      });
+
       await client.query("commit");
       return { ok: true };
     } catch (error) {
@@ -219,13 +284,40 @@ export class TransactionService {
     try {
       await client.query("begin");
 
-      await ledgerService.createEntry(client, {
+      if (input.amount < 0) {
+        const balance = await ledgerService.getAvailableBalance(
+          client,
+          input.studentUserId,
+        );
+
+        if (balance + input.amount < 0) {
+          await client.query("rollback");
+          return {
+            ok: false,
+            message: "This transaction would make the student balance negative.",
+          };
+        }
+      }
+
+      const ledgerEntryId = await ledgerService.createEntry(client, {
         amount: input.amount,
         createdByUserId: currentUser.id,
         description: reason,
         entryType: input.amount > 0 ? "reward" : "penalty",
         status: "posted",
         userId: input.studentUserId,
+      });
+
+      await auditService.logWithClient(client, {
+        action: "ledger_entry.created",
+        actorUserId: currentUser.id,
+        details: {
+          amount: input.amount,
+          reason,
+          studentUserId: input.studentUserId,
+        },
+        entityId: ledgerEntryId,
+        entityType: "ledger_entry",
       });
 
       await client.query("commit");
@@ -243,19 +335,157 @@ export class TransactionService {
     }
   }
 
+  async createGroupLedgerAdjustment(
+    currentUser: SessionUser,
+    input: CreateGroupLedgerAdjustmentInput,
+  ): Promise<ActionResult> {
+    const reason = input.reason.trim();
+
+    if (currentUser.role !== "teacher") {
+      return {
+        ok: false,
+        message: "Only teachers can create ledger adjustments.",
+      };
+    }
+
+    if (!input.groupId || !reason) {
+      return {
+        ok: false,
+        message: "Select a group and enter a reason.",
+      };
+    }
+
+    if (!Number.isInteger(input.amount) || input.amount === 0) {
+      return {
+        ok: false,
+        message: "Enter a whole number amount that is not zero.",
+      };
+    }
+
+    const client = await db.connect();
+
+    try {
+      await client.query("begin");
+
+      const membersResult = await client.query<GroupAdjustmentMemberRow>(
+        `
+          select
+            users.first_name,
+            student_groups.name as group_name,
+            users.last_name,
+            users.username,
+            users.id as user_id
+          from student_groups
+          join student_group_memberships
+            on student_group_memberships.group_id = student_groups.id
+          join users on users.id = student_group_memberships.user_id
+          where student_groups.id = $1
+            and student_groups.is_active = true
+            and users.role = 'student'
+            and users.is_active = true
+          order by users.last_name, users.first_name
+        `,
+        [input.groupId],
+      );
+
+      if (membersResult.rows.length === 0) {
+        await client.query("rollback");
+        return {
+          ok: false,
+          message: "Select an active group with at least one active student.",
+        };
+      }
+
+      const groupName = membersResult.rows[0].group_name;
+      const description = `${reason} (Group: ${groupName})`;
+
+      if (input.amount < 0) {
+        for (const member of membersResult.rows) {
+          const balance = await ledgerService.getAvailableBalance(
+            client,
+            member.user_id,
+          );
+
+          if (balance + input.amount < 0) {
+            await client.query("rollback");
+            return {
+              ok: false,
+              message: `${formatDisplayName(member.first_name, member.last_name)} (${member.username}) does not have enough balance for this group transaction.`,
+            };
+          }
+        }
+      }
+
+      const createdLedgerEntryIds: string[] = [];
+
+      for (const member of membersResult.rows) {
+        const ledgerEntryId = await ledgerService.createEntry(client, {
+          amount: input.amount,
+          createdByUserId: currentUser.id,
+          description,
+          entryType: input.amount > 0 ? "reward" : "penalty",
+          relatedEntityId: input.groupId,
+          relatedEntityType: "student_group",
+          status: "posted",
+          userId: member.user_id,
+        });
+
+        createdLedgerEntryIds.push(ledgerEntryId);
+      }
+
+      await auditService.logWithClient(client, {
+        action: "ledger_entry.group_created",
+        actorUserId: currentUser.id,
+        details: {
+          amount: input.amount,
+          groupId: input.groupId,
+          groupName,
+          ledgerEntryIds: createdLedgerEntryIds,
+          memberCount: membersResult.rows.length,
+          reason,
+        },
+        entityId: input.groupId,
+        entityType: "student_group",
+      });
+
+      await client.query("commit");
+      return { ok: true };
+    } catch (error) {
+      await client.query("rollback");
+      console.error("Create group ledger adjustment failed", error);
+
+      return {
+        ok: false,
+        message: "Could not create group transaction.",
+      };
+    } finally {
+      client.release();
+    }
+  }
+
   private mapTransactionRow(row: TransactionLogRow): TransactionLogItem {
     return {
+      accountName: row.account_name,
       id: row.id,
       amount: row.amount,
+      createdByName: row.created_by_name,
+      createdByUsername: row.created_by_username,
       createdAt: row.created_at.toISOString(),
       description: formatLedgerType(row.type),
       entryStatus: row.entry_status,
       isVoided: row.is_voided || row.entry_status === "voided",
+      relatedEntityId: row.related_entity_id,
+      relatedEntityType: row.related_entity_type,
       reason: row.reason,
+      reference: formatReference(row),
+      reversalOfLedgerEntryId: row.reversal_of_ledger_entry_id,
+      source: formatSource(row),
       studentName: row.student_name,
       studentUsername: row.student_username,
       type: row.type,
       voidedAt: row.voided_at ? row.voided_at.toISOString() : null,
+      voidedByName: row.voided_by_name,
+      voidReason: row.void_reason,
       purchaseStatus: row.purchase_status,
     };
   }
@@ -307,4 +537,43 @@ function formatLedgerType(type: LedgerEntryType) {
   };
 
   return labels[type];
+}
+
+function formatDisplayName(firstName: string, lastName: string) {
+  return `${firstName} ${lastName}`.trim();
+}
+
+function formatReference(row: TransactionLogRow) {
+  if (row.reversal_of_ledger_entry_id) {
+    return `Reversal of ${row.reversal_of_ledger_entry_id}`;
+  }
+
+  if (row.related_entity_type && row.related_entity_id) {
+    return `${formatRelatedEntityType(row.related_entity_type)} ${row.related_entity_id}`;
+  }
+
+  return row.id;
+}
+
+function formatSource(row: TransactionLogRow) {
+  if (row.shop_item_name) {
+    return `Shop: ${row.shop_item_name}`;
+  }
+
+  if (row.student_group_name) {
+    return `Group: ${row.student_group_name}`;
+  }
+
+  if (row.created_by_name) {
+    return `Entered by ${row.created_by_name}`;
+  }
+
+  return "System";
+}
+
+function formatRelatedEntityType(entityType: string) {
+  return entityType
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }

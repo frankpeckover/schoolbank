@@ -5,33 +5,21 @@ import { listTransactionLog, voidTransaction } from "@/lib/actions";
 import type { SessionUser } from "@/lib/session";
 import type { TransactionLogItem } from "@/services/transaction-service";
 import { formatCurrencyAmount, formatDateTime } from "@/lib/formatters";
+import { matchesTransactionFilters } from "@/components/transactions/transaction-filter-utils";
+import { TransactionDetailsModal } from "@/components/transactions/transaction-details-modal";
 import {
-  StatusBadge,
-  type StatusTone,
-} from "@/components/ui/status-badge";
+  emptyTransactionFilters,
+  type TransactionFilters,
+} from "@/components/transactions/transaction-log-types";
+import { TransactionStatusBadge } from "@/components/transactions/transaction-status-badge";
+import { IconButton } from "@/components/ui/icon-button";
+import { EyeIcon, FilterIcon, XIcon } from "@/components/ui/icons";
+import { PageHeader } from "@/components/ui/page-header";
 import { TextReasonModal } from "@/components/ui/text-reason-modal";
 
 type TransactionLogPanelProps = {
   currencyName: string;
   currentUser: SessionUser;
-};
-
-type TransactionFilters = {
-  amountDirection: "" | "positive" | "negative";
-  purchaseStatus: "" | "pending" | "approved" | "denied";
-  reason: string;
-  student: string;
-  type: "" | TransactionLogItem["type"];
-  voidedStatus: "" | "active" | "voided";
-};
-
-const emptyTransactionFilters: TransactionFilters = {
-  amountDirection: "",
-  purchaseStatus: "",
-  reason: "",
-  student: "",
-  type: "",
-  voidedStatus: "active",
 };
 
 export function TransactionLogPanel({
@@ -45,6 +33,7 @@ export function TransactionLogPanel({
   const [filters, setFilters] = useState<TransactionFilters>(
     emptyTransactionFilters,
   );
+  const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -124,25 +113,37 @@ export function TransactionLogPanel({
   );
 
   return (
-    <section className="mt-5 rounded-md border border-border bg-surface p-4 shadow-sm">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold">Transaction Log</h2>
-          <p className="mt-1 text-sm text-text-muted">
-            {canViewAllTransactions
-              ? "Showing all recorded transactions."
-              : "Showing your recorded transactions."}
-          </p>
-        </div>
-      </div>
-
-      <TransactionFilters
-        canViewAllTransactions={canViewAllTransactions}
-        filters={filters}
-        onFiltersChange={setFilters}
+    <section className="motion-panel mt-5 rounded-md border border-border bg-surface p-4 shadow-sm">
+      <PageHeader
+        actions={
+          <IconButton
+            ariaExpanded={areFiltersOpen}
+            label={areFiltersOpen ? "Hide filters" : "Show filters"}
+            onClick={() => setAreFiltersOpen((isOpen) => !isOpen)}
+          >
+            <FilterIcon />
+          </IconButton>
+        }
+        description={
+          canViewAllTransactions
+            ? "Showing all recorded transactions."
+            : "Showing your recorded transactions."
+        }
+        title="Transaction Log"
+        titleSize="base"
       />
 
-      <div className="mt-5 overflow-x-auto">
+      <div>
+        {areFiltersOpen && (
+          <TransactionFilters
+            canViewAllTransactions={canViewAllTransactions}
+            filters={filters}
+            onFiltersChange={setFilters}
+          />
+        )}
+      </div>
+
+      <div className="mt-5">
         {isLoading && (
           <p className="text-sm text-text-muted">Loading transactions...</p>
         )}
@@ -165,84 +166,14 @@ export function TransactionLogPanel({
           </p>
         )}
         {!isLoading && !error && filteredTransactions.length > 0 && (
-          <table className="w-full min-w-[820px] border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b border-border-subtle text-text-muted">
-                <th className="py-2 pr-4 font-semibold">Date</th>
-                <th className="py-2 pr-4 font-semibold">Description</th>
-                {canViewAllTransactions && (
-                  <th className="py-2 pr-4 font-semibold">Account</th>
-                )}
-                <th className="py-2 pr-4 font-semibold">Status</th>
-                <th className="py-2 pr-4 text-right font-semibold">Money In</th>
-                <th className="py-2 pr-4 text-right font-semibold">Money Out</th>
-                <th className="py-2 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTransactions.map((transaction) => (
-                <tr
-                  className="border-b border-border-subtle"
-                  key={transaction.id}
-                >
-                  <td className="py-2 pr-4 text-text-muted">
-                    {formatDateTime(transaction.createdAt)}
-                  </td>
-                  <td className="py-2 pr-4">
-                    <span className="font-semibold">{transaction.reason}</span>
-                    <span className="block text-xs text-text-muted">
-                      {transaction.description}
-                    </span>
-                  </td>
-                  {canViewAllTransactions && (
-                    <td className="py-2 pr-4 text-text-muted">
-                      {transaction.studentName}
-                      <span className="block text-xs">
-                        {transaction.studentUsername}
-                      </span>
-                    </td>
-                  )}
-                  <td className="py-2 pr-4">
-                    <TransactionStatusBadge transaction={transaction} />
-                  </td>
-                  <td className="py-2 pr-4 text-right font-semibold text-success">
-                    {transaction.amount > 0
-                      ? formatCurrencyAmount(transaction.amount, currencyName)
-                      : ""}
-                  </td>
-                  <td className="py-2 pr-4 text-right font-semibold text-danger-strong">
-                    {transaction.amount < 0
-                      ? formatCurrencyAmount(transaction.amount, currencyName)
-                      : ""}
-                  </td>
-                  <td className="py-2">
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      <button
-                        className="rounded-md border border-button-border px-3 py-2 text-sm font-semibold text-text-control transition hover:bg-surface"
-                        onClick={() => setViewingTransaction(transaction)}
-                        type="button"
-                      >
-                        Details
-                      </button>
-                      {canVoidTransactions && (
-                        <button
-                          className="rounded-md border border-button-border px-3 py-2 text-sm font-semibold text-text-control transition hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60"
-                          disabled={
-                            transaction.isVoided ||
-                            transaction.type === "void_reversal"
-                          }
-                          onClick={() => setVoidingTransaction(transaction)}
-                          type="button"
-                        >
-                          Void
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <TransactionList
+            canViewAllTransactions={canViewAllTransactions}
+            canVoidTransactions={canVoidTransactions}
+            currencyName={currencyName}
+            onDetailsClick={setViewingTransaction}
+            onVoidClick={setVoidingTransaction}
+            transactions={filteredTransactions}
+          />
         )}
       </div>
 
@@ -265,6 +196,180 @@ export function TransactionLogPanel({
         />
       )}
     </section>
+  );
+}
+
+function TransactionList({
+  canViewAllTransactions,
+  canVoidTransactions,
+  currencyName,
+  onDetailsClick,
+  onVoidClick,
+  transactions,
+}: {
+  canViewAllTransactions: boolean;
+  canVoidTransactions: boolean;
+  currencyName: string;
+  onDetailsClick: (transaction: TransactionLogItem) => void;
+  onVoidClick: (transaction: TransactionLogItem) => void;
+  transactions: TransactionLogItem[];
+}) {
+  return (
+    <>
+      <div className="grid gap-3 md:hidden">
+        {transactions.map((transaction) => (
+          <TransactionCard
+            canViewAllTransactions={canViewAllTransactions}
+            canVoidTransactions={canVoidTransactions}
+            currencyName={currencyName}
+            key={transaction.id}
+            onDetailsClick={onDetailsClick}
+            onVoidClick={onVoidClick}
+            transaction={transaction}
+          />
+        ))}
+      </div>
+
+      <table className="hidden w-full border-collapse text-left text-sm md:table">
+        <thead>
+          <tr className="border-b border-border-subtle text-text-muted">
+            <th className="py-2 pr-4 font-semibold">Date</th>
+            <th className="py-2 pr-4 font-semibold">Description</th>
+            {canViewAllTransactions && (
+              <th className="py-2 pr-4 font-semibold">Account</th>
+            )}
+            <th className="py-2 pr-4 font-semibold">Status</th>
+            <th className="py-2 pr-4 text-right font-semibold">In</th>
+            <th className="py-2 pr-4 text-right font-semibold">Out</th>
+            <th className="py-2 font-semibold">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {transactions.map((transaction) => (
+            <tr className="border-b border-border-subtle" key={transaction.id}>
+              <td className="py-2 pr-4 text-text-muted">
+                {formatDateTime(transaction.createdAt)}
+              </td>
+              <td className="py-2 pr-4">
+                <span className="font-semibold">{transaction.reason}</span>
+                <span className="block text-xs text-text-muted">
+                  {transaction.description}
+                </span>
+              </td>
+              {canViewAllTransactions && (
+                <td className="py-2 pr-4 text-text-muted">
+                  {transaction.studentName}
+                  <span className="block text-xs">
+                    {transaction.studentUsername}
+                  </span>
+                </td>
+              )}
+              <td className="py-2 pr-4">
+                <TransactionStatusBadge transaction={transaction} />
+              </td>
+              <td className="py-2 pr-4 text-right font-semibold text-success">
+                {transaction.amount > 0
+                  ? formatCurrencyAmount(transaction.amount, currencyName)
+                  : ""}
+              </td>
+              <td className="py-2 pr-4 text-right font-semibold text-danger-strong">
+                {transaction.amount < 0
+                  ? formatCurrencyAmount(transaction.amount, currencyName)
+                  : ""}
+              </td>
+              <td className="py-2">
+                <TransactionActions
+                  canVoidTransactions={canVoidTransactions}
+                  onDetailsClick={onDetailsClick}
+                  onVoidClick={onVoidClick}
+                  transaction={transaction}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+function TransactionCard({
+  canViewAllTransactions,
+  canVoidTransactions,
+  currencyName,
+  onDetailsClick,
+  onVoidClick,
+  transaction,
+}: {
+  canViewAllTransactions: boolean;
+  canVoidTransactions: boolean;
+  currencyName: string;
+  onDetailsClick: (transaction: TransactionLogItem) => void;
+  onVoidClick: (transaction: TransactionLogItem) => void;
+  transaction: TransactionLogItem;
+}) {
+  const amountClassName =
+    transaction.amount >= 0 ? "text-success" : "text-danger-strong";
+
+  return (
+    <article className="rounded-md border border-border-subtle bg-panel-soft p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="truncate text-sm font-semibold">{transaction.reason}</h3>
+          <p className="text-xs text-text-muted">
+            {formatDateTime(transaction.createdAt)}
+          </p>
+        </div>
+        <TransactionActions
+          canVoidTransactions={canVoidTransactions}
+          onDetailsClick={onDetailsClick}
+          onVoidClick={onVoidClick}
+          transaction={transaction}
+        />
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <TransactionStatusBadge transaction={transaction} />
+        <span className={`text-sm font-semibold ${amountClassName}`}>
+          {transaction.amount >= 0 ? "" : "-"}
+          {formatCurrencyAmount(transaction.amount, currencyName)}
+        </span>
+      </div>
+      <p className="mt-2 text-sm text-text-muted">{transaction.description}</p>
+      {canViewAllTransactions && (
+        <p className="mt-2 truncate text-sm text-text-muted">
+          {transaction.studentName} ({transaction.studentUsername})
+        </p>
+      )}
+    </article>
+  );
+}
+
+function TransactionActions({
+  canVoidTransactions,
+  onDetailsClick,
+  onVoidClick,
+  transaction,
+}: {
+  canVoidTransactions: boolean;
+  onDetailsClick: (transaction: TransactionLogItem) => void;
+  onVoidClick: (transaction: TransactionLogItem) => void;
+  transaction: TransactionLogItem;
+}) {
+  return (
+    <div className="flex gap-2">
+      <IconButton label="Transaction details" onClick={() => onDetailsClick(transaction)}>
+        <EyeIcon />
+      </IconButton>
+      {canVoidTransactions && (
+        <IconButton
+          disabled={transaction.isVoided || transaction.type === "void_reversal"}
+          label="Void transaction"
+          onClick={() => onVoidClick(transaction)}
+        >
+          <XIcon />
+        </IconButton>
+      )}
+    </div>
   );
 }
 
@@ -397,136 +502,6 @@ function TransactionFilters({
   );
 }
 
-function TransactionStatusBadge({
-  transaction,
-}: {
-  transaction: TransactionLogItem;
-}) {
-  const label = getTransactionStatusLabel(transaction);
-  return (
-    <StatusBadge label={label} tone={getTransactionStatusTone(transaction)} />
-  );
-}
-
-function TransactionDetailsModal({
-  currencyName,
-  onClose,
-  transaction,
-}: {
-  currencyName: string;
-  onClose: () => void;
-  transaction: TransactionLogItem;
-}) {
-  const amountLabel =
-    transaction.amount >= 0
-      ? formatCurrencyAmount(transaction.amount, currencyName)
-      : `-${formatCurrencyAmount(transaction.amount, currencyName)}`;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4">
-      <div className="w-full max-w-lg rounded-md border border-border bg-surface p-5 shadow-lg">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h3 className="text-xl font-semibold">Transaction Details</h3>
-            <p className="mt-1 text-sm text-text-muted">
-              {formatDateTime(transaction.createdAt)}
-            </p>
-          </div>
-          <TransactionStatusBadge transaction={transaction} />
-        </div>
-
-        <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
-          <TransactionDetail label="Description" value={transaction.reason} />
-          <TransactionDetail label="Type" value={transaction.description} />
-          <TransactionDetail label="Amount" value={amountLabel} />
-          <TransactionDetail label="Account" value={transaction.studentName} />
-          <TransactionDetail
-            label="Username"
-            value={transaction.studentUsername}
-          />
-          <TransactionDetail
-            label="Purchase status"
-            value={transaction.purchaseStatus ?? "-"}
-          />
-          <TransactionDetail
-            label="Voided at"
-            value={
-              transaction.voidedAt ? formatDateTime(transaction.voidedAt) : "-"
-            }
-          />
-        </dl>
-
-        <div className="mt-5 flex justify-end">
-          <button
-            className="rounded-md border border-button-border px-4 py-2 text-sm font-semibold text-text-control transition hover:bg-surface-hover"
-            onClick={onClose}
-            type="button"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TransactionDetail({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div>
-      <dt className="text-xs font-semibold uppercase text-text-muted">
-        {label}
-      </dt>
-      <dd className="mt-1 font-semibold text-text-control">{value}</dd>
-    </div>
-  );
-}
-
-function getTransactionStatusLabel(transaction: TransactionLogItem) {
-  if (transaction.isVoided) {
-    return "Voided";
-  }
-
-  if (transaction.entryStatus === "pending") {
-    return "Pending";
-  }
-
-  if (transaction.purchaseStatus === "pending") {
-    return "Pending";
-  }
-
-  if (transaction.purchaseStatus === "approved") {
-    return "Approved";
-  }
-
-  if (transaction.purchaseStatus === "denied") {
-    return "Denied";
-  }
-
-  return "Active";
-}
-
-function getTransactionStatusTone(transaction: TransactionLogItem): StatusTone {
-  if (transaction.isVoided || transaction.purchaseStatus === "denied") {
-    return "danger";
-  }
-
-  if (transaction.entryStatus === "pending") {
-    return "warning";
-  }
-
-  if (transaction.type === "void_reversal") {
-    return "neutral";
-  }
-
-  return "success";
-}
-
 function FilterInput({
   id,
   label,
@@ -551,66 +526,4 @@ function FilterInput({
       />
     </div>
   );
-}
-
-function matchesTransactionFilters(
-  transaction: TransactionLogItem,
-  filters: TransactionFilters,
-) {
-  return (
-    (!filters.type || transaction.type === filters.type) &&
-    matchesVoidedStatus(transaction.isVoided, filters.voidedStatus) &&
-    matchesPurchaseStatus(transaction.purchaseStatus, filters.purchaseStatus) &&
-    matchesAmountDirection(transaction.amount, filters.amountDirection) &&
-    includesFilter(transaction.reason, filters.reason) &&
-    includesFilter(
-      `${transaction.studentName} ${transaction.studentUsername}`,
-      filters.student,
-    )
-  );
-}
-
-function matchesPurchaseStatus(
-  purchaseStatus: TransactionLogItem["purchaseStatus"],
-  filter: TransactionFilters["purchaseStatus"],
-) {
-  if (!filter) {
-    return true;
-  }
-
-  return purchaseStatus === filter;
-}
-
-function matchesVoidedStatus(
-  isVoided: boolean,
-  status: TransactionFilters["voidedStatus"],
-) {
-  if (status === "active") {
-    return !isVoided;
-  }
-
-  if (status === "voided") {
-    return isVoided;
-  }
-
-  return true;
-}
-
-function matchesAmountDirection(
-  amount: number,
-  direction: TransactionFilters["amountDirection"],
-) {
-  if (direction === "positive") {
-    return amount > 0;
-  }
-
-  if (direction === "negative") {
-    return amount < 0;
-  }
-
-  return true;
-}
-
-function includesFilter(value: string, filter: string) {
-  return value.toLowerCase().includes(filter.trim().toLowerCase());
 }

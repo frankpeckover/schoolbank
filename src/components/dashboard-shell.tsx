@@ -1,15 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdminAuditLogPanel } from "@/components/admin-audit-log-panel";
 import { AdminDashboardPanel } from "@/components/admin-dashboard-panel";
+import { AdminGroupsPanel } from "@/components/admin-groups-panel";
 import { AdminSettingsPanel } from "@/components/admin-settings-panel";
 import { AdminUsersPanel } from "@/components/admin-users-panel";
-import { AppNav, type NavigationItem } from "@/components/app-nav";
+import {
+  HeaderNavMenu,
+  type NavigationItem,
+} from "@/components/app-nav";
+import { ChangePasswordModal } from "@/components/change-password-modal";
 import { ShopPanel } from "@/components/shop/shop-panel";
 import { StudentDashboardPanel } from "@/components/student-dashboard-panel";
 import { TeacherDashboardPanel } from "@/components/teacher-dashboard-panel";
 import { TransactionLogPanel } from "@/components/transactions/transaction-log-panel";
+import { SchoolLogo } from "@/components/ui/school-logo";
 import { getSchoolInfo } from "@/lib/actions";
+import { appConfig } from "@/lib/app-config";
+import { defaultCurrencyName } from "@/lib/school-defaults";
 import { type SessionUser } from "@/lib/session";
 import type { SchoolInfo } from "@/services/school-service";
 
@@ -24,12 +33,17 @@ export function DashboardShell({
 }: DashboardShellProps) {
   const [activeNavItem, setActiveNavItem] =
     useState<NavigationItem>("Dashboard");
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [schoolInfo, setSchoolInfo] = useState<SchoolInfo>({
-    name: "SchoolBank School",
+    name: appConfig.defaultSchoolName,
     address: "",
+    contactEmail: "",
     planType: "trial",
-    currencyName: "credits",
+    currencyName: defaultCurrencyName,
     logoUrl: "",
+    phone: "",
+    website: "",
+    timezone: "",
   });
 
   useEffect(() => {
@@ -57,41 +71,37 @@ export function DashboardShell({
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
-        <header className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <LogoMark logoUrl={schoolInfo.logoUrl} name={schoolInfo.name} />
-            <div>
+        <header className="flex items-start justify-between gap-3 border-b border-border pb-3 sm:items-center sm:pb-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <SchoolLogo logoUrl={schoolInfo.logoUrl} name={schoolInfo.name} />
+            <div className="min-w-0">
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-text-kicker">
-                SchoolBank
+                {appConfig.name}
               </p>
-              <h1 className="mt-1 text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
-                {user.displayName}
+              <h1 className="mt-1 truncate text-2xl font-semibold tracking-normal text-foreground sm:text-4xl">
+                Hello, {user.displayName}
               </h1>
             </div>
           </div>
-          <div className="flex flex-col gap-2 sm:items-end">
-            <button
-              className="rounded-md border border-button-border px-4 py-2 text-sm font-semibold text-text-control transition hover:bg-surface"
-              onClick={onLogout}
-              type="button"
-            >
-              Sign out
-            </button>
-          </div>
+          <HeaderNavMenu
+            activeItem={activeNavItem}
+            onItemChange={setActiveNavItem}
+            onLogout={onLogout}
+            onPasswordChange={() => setIsPasswordModalOpen(true)}
+            role={user.role}
+          />
         </header>
-
-        <AppNav
-          activeItem={activeNavItem}
-          onItemChange={setActiveNavItem}
-          role={user.role}
-        />
 
         {user.role === "admin" && activeNavItem === "Dashboard" && (
           <AdminDashboardPanel currencyName={schoolInfo.currencyName} />
         )}
 
         {user.role === "admin" && activeNavItem === "Users" && (
-          <AdminUsersPanel />
+          <AdminUsersPanel currentUser={user} />
+        )}
+
+        {user.role === "admin" && activeNavItem === "Groups" && (
+          <AdminGroupsPanel />
         )}
 
         {user.role === "teacher" && activeNavItem === "Dashboard" && (
@@ -122,29 +132,24 @@ export function DashboardShell({
           />
         )}
 
+        {user.role === "admin" && activeNavItem === "Audit Log" && (
+          <AdminAuditLogPanel currentUser={user} />
+        )}
+
         {user.role === "admin" && activeNavItem === "Settings" && (
-          <AdminSettingsPanel onSchoolInfoUpdated={setSchoolInfo} />
+          <AdminSettingsPanel
+            currentUser={user}
+            onSchoolInfoUpdated={setSchoolInfo}
+          />
+        )}
+
+        {isPasswordModalOpen && (
+          <ChangePasswordModal
+            currentUser={user}
+            onClose={() => setIsPasswordModalOpen(false)}
+          />
         )}
       </div>
     </main>
-  );
-}
-
-function LogoMark({ logoUrl, name }: { logoUrl: string; name: string }) {
-  if (logoUrl) {
-    return (
-      <div
-        aria-label={`${name} logo`}
-        className="h-12 w-12 rounded-md border border-border-subtle bg-surface bg-contain bg-center bg-no-repeat p-1"
-        role="img"
-        style={{ backgroundImage: `url("${logoUrl}")` }}
-      />
-    );
-  }
-
-  return (
-    <div className="flex h-12 w-12 items-center justify-center rounded-md border border-border-subtle bg-panel-soft text-sm font-bold text-text-control">
-      SB
-    </div>
   );
 }

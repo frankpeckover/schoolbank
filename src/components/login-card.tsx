@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { loginUser } from "@/lib/actions";
+import { appConfig } from "@/lib/app-config";
 import { type SessionUser } from "@/lib/session";
 
 type LoginCardProps = {
@@ -32,16 +33,16 @@ export function LoginCard({ onLogin }: LoginCardProps) {
   }
 
   return (
-    <main className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-3rem)] w-full max-w-6xl items-center gap-8 lg:grid-cols-[1fr_420px]">
+    <main className="min-h-screen bg-background px-4 py-5 text-foreground sm:px-6 lg:px-8">
+      <div className="mx-auto grid min-h-[calc(100vh-2.5rem)] w-full max-w-6xl content-center gap-5 sm:gap-8 lg:grid-cols-[1fr_420px] lg:items-center">
         <div className="max-w-2xl">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-text-kicker">
-            SchoolBank
+            {appConfig.name}
           </p>
-          <h1 className="mt-2 text-4xl font-semibold tracking-normal sm:text-5xl">
+          <h1 className="mt-2 text-3xl font-semibold tracking-normal sm:text-5xl">
             Sign in to your school economy
           </h1>
-          <p className="mt-4 text-lg leading-8 text-text-label">
+          <p className="mt-3 text-base leading-7 text-text-label sm:mt-4 sm:text-lg sm:leading-8">
             Earn wisely. Spend purposefully. Grow together.
           </p>
         </div>
@@ -99,6 +100,15 @@ export function LoginCard({ onLogin }: LoginCardProps) {
               type="submit"
             >
               {isSubmitting ? "Signing in..." : "Sign in"}
+            </button>
+
+            <button
+              className="w-full rounded-md border border-button-border px-4 py-3 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
+              disabled
+              title="Password recovery is not available yet."
+              type="button"
+            >
+              Forgot password?
             </button>
           </form>
 

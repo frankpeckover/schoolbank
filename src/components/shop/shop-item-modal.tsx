@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { saveShopItem } from "@/lib/actions";
+import { saveShopItem, uploadShopItemImage } from "@/lib/actions";
+import { PackageIcon, PlusIcon } from "@/components/ui/icons";
+import type { SessionUser } from "@/lib/session";
 import type { SaveShopItemInput, ShopItem } from "@/services/shop-service";
 
 type ShopItemModalProps = {
+  currentUser: SessionUser;
   item: ShopItem | null;
   onClose: () => void;
   onSaved: () => void;
@@ -18,9 +21,12 @@ type ShopItemFormState = Omit<SaveShopItemInput, "price" | "quantity"> & {
 const emptyShopItemForm: ShopItemFormState = {
   name: "",
   description: "",
+  imageUrl: "",
   price: "",
   quantity: "",
 };
+
+const imageHelpText = "PNG, JPG, WebP, or GIF. Max 2 MB.";
 
 const modalCopy = {
   close: "Close",
@@ -42,10 +48,16 @@ const fieldClassNames = {
     "mt-2 min-h-24 w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition focus:ring-2",
 } as const;
 
-export function ShopItemModal({ item, onClose, onSaved }: ShopItemModalProps) {
+export function ShopItemModal({
+  currentUser,
+  item,
+  onClose,
+  onSaved,
+}: ShopItemModalProps) {
   const [form, setForm] = useState<ShopItemFormState>(() =>
     getInitialFormState(item),
   );
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -59,9 +71,28 @@ export function ShopItemModal({ item, onClose, onSaved }: ShopItemModalProps) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSaving(true);
+    setError(null);
 
-    const result = await saveShopItem({
+    let imageUrl = form.imageUrl;
+
+    if (imageFile) {
+      const imageFormData = new FormData();
+      imageFormData.append("image", imageFile);
+
+      const uploadResult = await uploadShopItemImage(imageFormData);
+
+      if (!uploadResult.ok) {
+        setError(uploadResult.message);
+        setIsSaving(false);
+        return;
+      }
+
+      imageUrl = uploadResult.imageUrl;
+    }
+
+    const result = await saveShopItem(currentUser, {
       ...form,
+      imageUrl,
       price: Number(form.price),
       quantity: Number(form.quantity),
     });
@@ -79,7 +110,7 @@ export function ShopItemModal({ item, onClose, onSaved }: ShopItemModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="w-full max-w-lg rounded-md border border-border bg-surface p-5 shadow-lg">
+      <div className="motion-pop w-full max-w-lg rounded-md border border-border bg-surface p-5 shadow-lg">
         <ModalHeader item={item} onClose={onClose} />
 
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
@@ -95,6 +126,13 @@ export function ShopItemModal({ item, onClose, onSaved }: ShopItemModalProps) {
             label="Description"
             onChange={(value) => updateFormField("description", value)}
             value={form.description}
+          />
+
+          <ImageUploadField
+            currentImageUrl={form.imageUrl}
+            fileName={imageFile?.name ?? ""}
+            itemName={form.name}
+            onChange={setImageFile}
           />
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -227,6 +265,71 @@ function NumberField({
   );
 }
 
+function ImageUploadField({
+  currentImageUrl,
+  fileName,
+  itemName,
+  onChange,
+}: {
+  currentImageUrl: string;
+  fileName: string;
+  itemName: string;
+  onChange: (file: File | null) => void;
+}) {
+  return (
+    <div>
+      <span className={fieldClassNames.label}>Item Image</span>
+      <div className="mt-2 flex items-center gap-3 rounded-md border border-border-subtle bg-panel-soft p-3">
+        <ItemImagePreview imageUrl={currentImageUrl} itemName={itemName} />
+        <div className="min-w-0 flex-1">
+          <input
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="hidden"
+            id="itemImage"
+            onChange={(event) => onChange(event.target.files?.[0] ?? null)}
+            type="file"
+          />
+          <label
+            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-button-border bg-surface text-text-control transition hover:bg-panel-soft"
+            htmlFor="itemImage"
+            title="Upload item image"
+          >
+            <PlusIcon />
+          </label>
+          <p className="mt-2 truncate text-sm text-text-muted">
+            {fileName || imageHelpText}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ItemImagePreview({
+  imageUrl,
+  itemName,
+}: {
+  imageUrl: string;
+  itemName: string;
+}) {
+  if (imageUrl) {
+    return (
+      <div
+        aria-label={`${itemName || "Shop item"} image`}
+        className="h-20 w-20 shrink-0 rounded-md border border-border-subtle bg-cover bg-center"
+        role="img"
+        style={{ backgroundImage: `url("${imageUrl}")` }}
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-surface text-text-muted">
+      <PackageIcon className="h-8 w-8" />
+    </div>
+  );
+}
+
 function ModalActions({
   isSaving,
   onCancel,
@@ -259,6 +362,7 @@ function getInitialFormState(item: ShopItem | null): ShopItemFormState {
     id: item?.id,
     name: item?.name ?? emptyShopItemForm.name,
     description: item?.description ?? emptyShopItemForm.description,
+    imageUrl: item?.imageUrl ?? emptyShopItemForm.imageUrl,
     price: item ? String(item.price) : emptyShopItemForm.price,
     quantity: item ? String(item.quantity) : emptyShopItemForm.quantity,
   };

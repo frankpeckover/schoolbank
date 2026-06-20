@@ -6,6 +6,7 @@ import type { SessionUser } from "@/lib/session";
 import type { StudentShopRequest } from "@/services/shop-service";
 import { formatCurrencyAmount, formatDateTime } from "@/lib/formatters";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
+import { PackageIcon } from "@/components/ui/icons";
 
 type StudentShopRequestsPanelProps = {
   currencyName: string;
@@ -52,13 +53,13 @@ export function StudentShopRequestsPanel({
   return (
     <section className="mt-5 rounded-md border border-border bg-surface p-4 shadow-sm">
       <div>
-        <h2 className="text-xl font-semibold">Shop Requests</h2>
+        <h2 className="text-xl font-semibold">My Orders</h2>
         <p className="mt-1 text-sm text-text-muted">
-          Your pending and previous reward requests.
+          Your pending and previous reward orders.
         </p>
       </div>
 
-      <div className="mt-4 overflow-x-auto">
+      <div className="mt-4">
         {isLoading && (
           <p className="text-sm text-text-muted">Loading requests...</p>
         )}
@@ -68,44 +69,101 @@ export function StudentShopRequestsPanel({
           </p>
         )}
         {!isLoading && !error && requests.length === 0 && (
-          <p className="text-sm text-text-muted">No shop requests yet.</p>
+          <p className="text-sm text-text-muted">No orders yet.</p>
         )}
         {!isLoading && !error && requests.length > 0 && (
-          <table className="w-full min-w-[640px] border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b border-border-subtle text-text-muted">
-                <th className="py-2 pr-4 font-semibold">Requested</th>
-                <th className="py-2 pr-4 font-semibold">Item</th>
-                <th className="py-2 pr-4 text-right font-semibold">Cost</th>
-                <th className="py-2 pr-4 font-semibold">Status</th>
-                <th className="py-2 font-semibold">Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              {requests.map((request) => (
-                <tr className="border-b border-border-subtle" key={request.id}>
-                  <td className="py-2 pr-4 text-text-muted">
-                    {formatDateTime(request.purchasedAt)}
-                  </td>
-                  <td className="py-2 pr-4 font-semibold">
-                    {request.itemName}
-                  </td>
-                  <td className="py-2 pr-4 text-right text-text-muted">
-                    {formatCurrencyAmount(request.price, currencyName)}
-                  </td>
-                  <td className="py-2 pr-4">
-                    <StudentRequestStatusBadge request={request} />
-                  </td>
-                  <td className="py-2 text-text-muted">
-                    {request.decisionNote || "-"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <StudentRequestList currencyName={currencyName} requests={requests} />
         )}
       </div>
     </section>
+  );
+}
+
+function StudentRequestList({
+  currencyName,
+  requests,
+}: {
+  currencyName: string;
+  requests: StudentShopRequest[];
+}) {
+  return (
+    <>
+      <div className="grid gap-3 md:hidden">
+        {requests.map((request) => (
+          <StudentRequestCard
+            currencyName={currencyName}
+            key={request.id}
+            request={request}
+          />
+        ))}
+      </div>
+
+      <table className="hidden w-full border-collapse text-left text-sm md:table">
+        <thead>
+          <tr className="border-b border-border-subtle text-text-muted">
+            <th className="py-2 pr-4 font-semibold">Ordered</th>
+            <th className="py-2 pr-4 font-semibold">Item</th>
+            <th className="py-2 pr-4 text-right font-semibold">Cost</th>
+            <th className="py-2 pr-4 font-semibold">Status</th>
+            <th className="py-2 font-semibold">Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          {requests.map((request) => (
+            <tr className="border-b border-border-subtle" key={request.id}>
+              <td className="py-2 pr-4 text-text-muted">
+                {formatDateTime(request.purchasedAt)}
+              </td>
+              <td className="py-2 pr-4 font-semibold">{request.itemName}</td>
+              <td className="py-2 pr-4 text-right text-text-muted">
+                {formatCurrencyAmount(request.price, currencyName)}
+              </td>
+              <td className="py-2 pr-4">
+                <StudentRequestStatusBadge request={request} />
+              </td>
+              <td className="py-2 text-text-muted">
+                {request.decisionNote || "-"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+function StudentRequestCard({
+  currencyName,
+  request,
+}: {
+  currencyName: string;
+  request: StudentShopRequest;
+}) {
+  return (
+    <article className="rounded-md border border-border-subtle bg-panel-soft p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-surface text-text-muted">
+            <PackageIcon />
+          </div>
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-semibold">{request.itemName}</h3>
+            <p className="text-xs text-text-muted">
+              {formatDateTime(request.purchasedAt)}
+            </p>
+          </div>
+        </div>
+        <span className="text-sm font-semibold text-text-muted">
+          {formatCurrencyAmount(request.price, currencyName)}
+        </span>
+      </div>
+      <div className="mt-3">
+        <StudentRequestStatusBadge request={request} />
+      </div>
+      {request.decisionNote && (
+        <p className="mt-2 text-sm text-text-muted">{request.decisionNote}</p>
+      )}
+    </article>
   );
 }
 
