@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { canViewAuditLog } from "@/lib/permissions";
 import type { SessionUser } from "@/lib/session";
 import type { PoolClient } from "pg";
 
@@ -32,9 +33,16 @@ type AuditLogRow = {
   id: string;
 };
 
+const adminAuditActionPrefixes = [
+  "school_info.",
+  "shop_item.",
+  "student_group.",
+  "user.",
+];
+
 export class AuditService {
   async listRecent(currentUser: SessionUser): Promise<AuditLogItem[]> {
-    if (currentUser.role !== "admin") {
+    if (!canViewAuditLog(currentUser)) {
       return [];
     }
 
@@ -52,9 +60,12 @@ export class AuditService {
         users.username as actor_username
       from audit_log
       left join users on users.id = audit_log.actor_user_id
+      where ${buildAdminAuditActionFilter()}
       order by audit_log.created_at desc
       limit 100
-    `);
+    `,
+      adminAuditActionPrefixes,
+    );
 
     return result.rows.map(mapAuditLogRow);
   }
@@ -93,6 +104,12 @@ export class AuditService {
       ],
     );
   }
+}
+
+function buildAdminAuditActionFilter() {
+  return adminAuditActionPrefixes
+    .map((_, index) => `audit_log.action like $${index + 1} || '%'`)
+    .join(" or ");
 }
 
 function mapAuditLogRow(row: AuditLogRow): AuditLogItem {

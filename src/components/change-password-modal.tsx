@@ -2,15 +2,12 @@
 
 import { useState, type FormEvent } from "react";
 import { changeOwnPassword } from "@/lib/actions";
-import type { SessionUser } from "@/lib/session";
 
 type ChangePasswordModalProps = {
-  currentUser: SessionUser;
   onClose: () => void;
 };
 
 export function ChangePasswordModal({
-  currentUser,
   onClose,
 }: ChangePasswordModalProps) {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -32,7 +29,7 @@ export function ChangePasswordModal({
 
     setIsSaving(true);
 
-    const result = await changeOwnPassword(currentUser, {
+    const result = await changeOwnPassword({
       currentPassword,
       newPassword,
     });
@@ -52,7 +49,7 @@ export function ChangePasswordModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="motion-pop w-full max-w-md rounded-md border border-border bg-surface p-5 shadow-lg">
+      <div className="theme-panel motion-pop w-full max-w-md p-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-xl font-semibold">Change Password</h3>

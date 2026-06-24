@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import type { ActionResult } from "@/lib/action-results";
 import { db } from "@/lib/db";
+import { canManageShopItems } from "@/lib/permissions";
 import type { SessionUser } from "@/lib/session";
 import { AuditService } from "@/services/audit-service";
 import type {
@@ -62,6 +63,13 @@ export class ShopItemService {
     currentUser: SessionUser,
     input: SaveShopItemInput,
   ): Promise<ActionResult> {
+    if (!canManageShopItems(currentUser)) {
+      return {
+        ok: false,
+        message: "Only staff can manage shop items.",
+      };
+    }
+
     const name = input.name.trim();
     const description = input.description.trim();
     const imageUrl = input.imageUrl.trim();
@@ -138,6 +146,13 @@ export class ShopItemService {
   }
 
   async removeItem(currentUser: SessionUser, itemId: string): Promise<ActionResult> {
+    if (!canManageShopItems(currentUser)) {
+      return {
+        ok: false,
+        message: "Only staff can manage shop items.",
+      };
+    }
+
     const client = await db.connect();
 
     try {

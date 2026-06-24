@@ -25,7 +25,7 @@ function getToneClasses(tone: StatusTone) {
   }
 
   if (tone === "warning") {
-    return "bg-selected-soft text-brand";
+    return "bg-brand-soft text-brand";
   }
 
   return "bg-chip-bg text-chip-text";

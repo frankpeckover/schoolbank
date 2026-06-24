@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { listUsers } from "@/lib/actions";
-import { appConfig } from "@/lib/app-config";
 import { UserFiltersPanel } from "@/components/admin-users/user-filters";
 import { matchesUserFilters } from "@/components/admin-users/user-filter-utils";
 import {
@@ -13,12 +12,15 @@ import { UserImportModal } from "@/components/admin-users/user-import-modal";
 import { UserModal } from "@/components/admin-users/user-modal";
 import { UsersTable } from "@/components/admin-users/users-table";
 import { IconButton } from "@/components/ui/icon-button";
-import { FileUpIcon, FilterIcon, PlusIcon } from "@/components/ui/icons";
+import { FileUpIcon, FilterIcon, PlusIcon, UsersIcon } from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/page-header";
-import type { SessionUser } from "@/lib/session";
 import type { UserListItem } from "@/services/user-service";
 
-export function AdminUsersPanel({ currentUser }: { currentUser: SessionUser }) {
+type AdminUsersPanelProps = {
+  schoolName: string;
+};
+
+export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [filters, setFilters] = useState<UserFilters>(emptyFilters);
   const [showInactiveUsers, setShowInactiveUsers] = useState(false);
@@ -94,7 +96,7 @@ export function AdminUsersPanel({ currentUser }: { currentUser: SessionUser }) {
   );
 
   return (
-    <section className="motion-panel mt-5 rounded-md border border-border bg-surface p-5 shadow-sm">
+    <section className="theme-panel motion-panel mt-5 p-5">
       <PageHeader
         actions={
           <>
@@ -107,7 +109,7 @@ export function AdminUsersPanel({ currentUser }: { currentUser: SessionUser }) {
           </IconButton>
           <button
             aria-label="Import users from CSV"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-button-border text-text-control transition hover:bg-panel-soft sm:w-auto sm:px-4 sm:text-sm sm:font-semibold"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border-subtle bg-panel-soft text-text-control transition hover:bg-surface-hover sm:w-auto sm:px-4 sm:text-sm sm:font-semibold"
             onClick={() => setIsImportModalOpen(true)}
             title="Import users from CSV"
             type="button"
@@ -127,7 +129,8 @@ export function AdminUsersPanel({ currentUser }: { currentUser: SessionUser }) {
           </button>
           </>
         }
-        description={`Manage who can access ${appConfig.name}.`}
+        description={`${schoolName} access.`}
+        icon={<UsersIcon />}
         title="Users"
       />
 
@@ -167,7 +170,6 @@ export function AdminUsersPanel({ currentUser }: { currentUser: SessionUser }) {
 
       {isCreateModalOpen && (
         <UserModal
-          currentUser={currentUser}
           mode="create"
           onClose={() => setIsCreateModalOpen(false)}
           onSaved={() => handleUserSaved("User created.")}
@@ -176,7 +178,6 @@ export function AdminUsersPanel({ currentUser }: { currentUser: SessionUser }) {
 
       {isImportModalOpen && (
         <UserImportModal
-          currentUser={currentUser}
           onClose={() => setIsImportModalOpen(false)}
           onImportCompleted={refreshUsers}
           onImported={handleUsersImported}
@@ -185,7 +186,6 @@ export function AdminUsersPanel({ currentUser }: { currentUser: SessionUser }) {
 
       {editingUser && (
         <UserModal
-          currentUser={currentUser}
           mode="edit"
           onClose={() => setEditingUser(null)}
           onSaved={() => handleUserSaved("User updated.")}

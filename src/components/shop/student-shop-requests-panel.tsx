@@ -2,20 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { listStudentShopRequests } from "@/lib/actions";
-import type { SessionUser } from "@/lib/session";
 import type { StudentShopRequest } from "@/services/shop-service";
 import { formatCurrencyAmount, formatDateTime } from "@/lib/formatters";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
-import { PackageIcon } from "@/components/ui/icons";
+import { ClockIcon, PackageIcon, ShoppingBagIcon } from "@/components/ui/icons";
 
 type StudentShopRequestsPanelProps = {
   currencyName: string;
-  currentUser: SessionUser;
 };
 
 export function StudentShopRequestsPanel({
   currencyName,
-  currentUser,
 }: StudentShopRequestsPanelProps) {
   const [requests, setRequests] = useState<StudentShopRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,7 +23,7 @@ export function StudentShopRequestsPanel({
 
     async function loadRequests() {
       try {
-        const loadedRequests = await listStudentShopRequests(currentUser);
+        const loadedRequests = await listStudentShopRequests();
 
         if (isMounted) {
           setRequests(loadedRequests);
@@ -48,15 +45,20 @@ export function StudentShopRequestsPanel({
     return () => {
       isMounted = false;
     };
-  }, [currentUser]);
+  }, []);
 
   return (
-    <section className="mt-5 rounded-md border border-border bg-surface p-4 shadow-sm">
-      <div>
-        <h2 className="text-xl font-semibold">My Orders</h2>
-        <p className="mt-1 text-sm text-text-muted">
-          Your pending and previous reward orders.
-        </p>
+    <section className="theme-panel motion-panel mt-5 p-4 sm:p-5">
+      <div className="flex items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent">
+          <ShoppingBagIcon />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-xl font-semibold">My Orders</h2>
+          <p className="mt-1 text-sm text-text-muted">
+            Pending and previous reward requests.
+          </p>
+        </div>
       </div>
 
       <div className="mt-4">
@@ -69,7 +71,9 @@ export function StudentShopRequestsPanel({
           </p>
         )}
         {!isLoading && !error && requests.length === 0 && (
-          <p className="text-sm text-text-muted">No orders yet.</p>
+          <p className="theme-subpanel px-3 py-4 text-sm text-text-muted">
+            No orders yet.
+          </p>
         )}
         {!isLoading && !error && requests.length > 0 && (
           <StudentRequestList currencyName={currencyName} requests={requests} />
@@ -87,8 +91,7 @@ function StudentRequestList({
   requests: StudentShopRequest[];
 }) {
   return (
-    <>
-      <div className="grid gap-3 md:hidden">
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {requests.map((request) => (
           <StudentRequestCard
             currencyName={currencyName}
@@ -96,39 +99,7 @@ function StudentRequestList({
             request={request}
           />
         ))}
-      </div>
-
-      <table className="hidden w-full border-collapse text-left text-sm md:table">
-        <thead>
-          <tr className="border-b border-border-subtle text-text-muted">
-            <th className="py-2 pr-4 font-semibold">Ordered</th>
-            <th className="py-2 pr-4 font-semibold">Item</th>
-            <th className="py-2 pr-4 text-right font-semibold">Cost</th>
-            <th className="py-2 pr-4 font-semibold">Status</th>
-            <th className="py-2 font-semibold">Note</th>
-          </tr>
-        </thead>
-        <tbody>
-          {requests.map((request) => (
-            <tr className="border-b border-border-subtle" key={request.id}>
-              <td className="py-2 pr-4 text-text-muted">
-                {formatDateTime(request.purchasedAt)}
-              </td>
-              <td className="py-2 pr-4 font-semibold">{request.itemName}</td>
-              <td className="py-2 pr-4 text-right text-text-muted">
-                {formatCurrencyAmount(request.price, currencyName)}
-              </td>
-              <td className="py-2 pr-4">
-                <StudentRequestStatusBadge request={request} />
-              </td>
-              <td className="py-2 text-text-muted">
-                {request.decisionNote || "-"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
+    </div>
   );
 }
 
@@ -140,25 +111,27 @@ function StudentRequestCard({
   request: StudentShopRequest;
 }) {
   return (
-    <article className="rounded-md border border-border-subtle bg-panel-soft p-3">
+    <article className="reward-shine rounded-md border border-border-subtle p-3 shadow-sm transition hover:border-brand-soft-strong hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-surface text-text-muted">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-surface text-brand">
             <PackageIcon />
           </div>
           <div className="min-w-0">
             <h3 className="truncate text-sm font-semibold">{request.itemName}</h3>
-            <p className="text-xs text-text-muted">
-              {formatDateTime(request.purchasedAt)}
-            </p>
+            <p className="text-xs text-text-muted">Reward order</p>
           </div>
         </div>
         <span className="text-sm font-semibold text-text-muted">
           {formatCurrencyAmount(request.price, currencyName)}
         </span>
       </div>
-      <div className="mt-3">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <StudentRequestStatusBadge request={request} />
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-text-muted">
+          <ClockIcon className="h-3.5 w-3.5" />
+          {formatDateTime(request.purchasedAt)}
+        </span>
       </div>
       {request.decisionNote && (
         <p className="mt-2 text-sm text-text-muted">{request.decisionNote}</p>

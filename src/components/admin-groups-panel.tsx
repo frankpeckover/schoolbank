@@ -376,7 +376,7 @@ export function AdminGroupsPanel() {
   }
 
   return (
-    <section className="motion-panel mt-5 rounded-md border border-border bg-surface p-5 shadow-sm">
+    <section className="theme-panel motion-panel mt-5 p-5">
       <GroupsPageHeader
         areFiltersOpen={areFiltersOpen}
         onFilterToggle={() => setAreFiltersOpen((isOpen) => !isOpen)}

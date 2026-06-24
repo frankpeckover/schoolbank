@@ -42,8 +42,9 @@ export class LedgerService {
         select accounts.id
         from accounts
         join users on users.id = accounts.user_id
+        join roles on roles.id = users.role_id
         where users.id = $1
-          and users.role = 'student'
+          and roles.role_key = 'student'
         for update
       `,
       [userId],
@@ -56,10 +57,11 @@ export class LedgerService {
     const newAccount = await client.query<{ id: string }>(
       `
         insert into accounts (user_id)
-        select id
+        select users.id
         from users
-        where id = $1
-          and role = 'student'
+        join roles on roles.id = users.role_id
+        where users.id = $1
+          and roles.role_key = 'student'
         returning id
       `,
       [userId],

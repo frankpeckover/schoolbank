@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { listTransactionLog, voidTransaction } from "@/lib/actions";
+import {
+  canViewAllTransactions,
+  canVoidTransactions,
+} from "@/lib/permissions";
 import type { SessionUser } from "@/lib/session";
 import type { TransactionLogItem } from "@/services/transaction-service";
 import { formatCurrencyAmount, formatDateTime } from "@/lib/formatters";
@@ -13,22 +17,30 @@ import {
 } from "@/components/transactions/transaction-log-types";
 import { TransactionStatusBadge } from "@/components/transactions/transaction-status-badge";
 import { IconButton } from "@/components/ui/icon-button";
-import { EyeIcon, FilterIcon, XIcon } from "@/components/ui/icons";
+import {
+  EyeIcon,
+  FilterIcon,
+  ListIcon,
+  XIcon,
+} from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/page-header";
 import { TextReasonModal } from "@/components/ui/text-reason-modal";
 
 type TransactionLogPanelProps = {
   currencyName: string;
   currentUser: SessionUser;
+  description?: string;
+  title?: string;
 };
 
 export function TransactionLogPanel({
   currencyName,
   currentUser,
+  description,
+  title = "Transaction Log",
 }: TransactionLogPanelProps) {
-  const canViewAllTransactions =
-    currentUser.role === "admin" || currentUser.role === "teacher";
-  const canVoidTransactions = currentUser.role === "admin";
+  const canViewAllTransactionsForUser = canViewAllTransactions(currentUser);
+  const canVoidTransactionsForUser = canVoidTransactions(currentUser);
   const [transactions, setTransactions] = useState<TransactionLogItem[]>([]);
   const [filters, setFilters] = useState<TransactionFilters>(
     emptyTransactionFilters,
@@ -46,7 +58,7 @@ export function TransactionLogPanel({
     setIsLoading(true);
 
     try {
-      const loadedTransactions = await listTransactionLog(currentUser);
+      const loadedTransactions = await listTransactionLog();
       setTransactions(loadedTransactions);
       setError(null);
     } catch {
@@ -61,7 +73,7 @@ export function TransactionLogPanel({
 
     async function loadTransactions() {
       try {
-        const loadedTransactions = await listTransactionLog(currentUser);
+        const loadedTransactions = await listTransactionLog();
 
         if (isMounted) {
           setTransactions(loadedTransactions);
@@ -83,7 +95,7 @@ export function TransactionLogPanel({
     return () => {
       isMounted = false;
     };
-  }, [currentUser]);
+  }, []);
 
   async function handleVoidTransaction(reason: string) {
     if (!voidingTransaction) {
@@ -92,11 +104,7 @@ export function TransactionLogPanel({
     setError(null);
     setMessage(null);
 
-    const result = await voidTransaction(
-      currentUser,
-      voidingTransaction.id,
-      reason,
-    );
+    const result = await voidTransaction(voidingTransaction.id, reason);
 
     if (!result.ok) {
       setError(result.message);
@@ -113,7 +121,7 @@ export function TransactionLogPanel({
   );
 
   return (
-    <section className="motion-panel mt-5 rounded-md border border-border bg-surface p-4 shadow-sm">
+    <section className="theme-panel motion-panel mt-5 p-4">
       <PageHeader
         actions={
           <IconButton
@@ -125,18 +133,20 @@ export function TransactionLogPanel({
           </IconButton>
         }
         description={
-          canViewAllTransactions
-            ? "Showing all recorded transactions."
-            : "Showing your recorded transactions."
+          description ??
+          (canViewAllTransactionsForUser
+              ? "All recorded transactions."
+              : "Your recorded transactions.")
         }
-        title="Transaction Log"
+        icon={<ListIcon />}
+        title={title}
         titleSize="base"
       />
 
       <div>
         {areFiltersOpen && (
           <TransactionFilters
-            canViewAllTransactions={canViewAllTransactions}
+            canViewAllTransactions={canViewAllTransactionsForUser}
             filters={filters}
             onFiltersChange={setFilters}
           />
@@ -167,8 +177,8 @@ export function TransactionLogPanel({
         )}
         {!isLoading && !error && filteredTransactions.length > 0 && (
           <TransactionList
-            canViewAllTransactions={canViewAllTransactions}
-            canVoidTransactions={canVoidTransactions}
+            canViewAllTransactions={canViewAllTransactionsForUser}
+            canVoidTransactions={canVoidTransactionsForUser}
             currencyName={currencyName}
             onDetailsClick={setViewingTransaction}
             onVoidClick={setVoidingTransaction}
@@ -216,21 +226,19 @@ function TransactionList({
 }) {
   return (
     <>
-      <div className="grid gap-3 md:hidden">
+      <div className="grid gap-2 md:hidden">
         {transactions.map((transaction) => (
-          <TransactionCard
-            canViewAllTransactions={canViewAllTransactions}
-            canVoidTransactions={canVoidTransactions}
+          <TransactionMobileRow
             currencyName={currencyName}
             key={transaction.id}
             onDetailsClick={onDetailsClick}
-            onVoidClick={onVoidClick}
             transaction={transaction}
           />
         ))}
       </div>
 
-      <table className="hidden w-full border-collapse text-left text-sm md:table">
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full min-w-[720px] border-collapse text-left text-sm">
         <thead>
           <tr className="border-b border-border-subtle text-text-muted">
             <th className="py-2 pr-4 font-semibold">Date</th>
@@ -289,57 +297,46 @@ function TransactionList({
           ))}
         </tbody>
       </table>
+      </div>
     </>
   );
 }
 
-function TransactionCard({
-  canViewAllTransactions,
-  canVoidTransactions,
+function TransactionMobileRow({
   currencyName,
   onDetailsClick,
-  onVoidClick,
   transaction,
 }: {
-  canViewAllTransactions: boolean;
-  canVoidTransactions: boolean;
   currencyName: string;
   onDetailsClick: (transaction: TransactionLogItem) => void;
-  onVoidClick: (transaction: TransactionLogItem) => void;
   transaction: TransactionLogItem;
 }) {
-  const amountClassName =
-    transaction.amount >= 0 ? "text-success" : "text-danger-strong";
+  const amountLabel =
+    transaction.amount >= 0
+      ? formatCurrencyAmount(transaction.amount, currencyName)
+      : `-${formatCurrencyAmount(transaction.amount, currencyName)}`;
 
   return (
-    <article className="rounded-md border border-border-subtle bg-panel-soft p-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="truncate text-sm font-semibold">{transaction.reason}</h3>
-          <p className="text-xs text-text-muted">
-            {formatDateTime(transaction.createdAt)}
-          </p>
-        </div>
-        <TransactionActions
-          canVoidTransactions={canVoidTransactions}
-          onDetailsClick={onDetailsClick}
-          onVoidClick={onVoidClick}
-          transaction={transaction}
-        />
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <TransactionStatusBadge transaction={transaction} />
-        <span className={`text-sm font-semibold ${amountClassName}`}>
-          {transaction.amount >= 0 ? "" : "-"}
-          {formatCurrencyAmount(transaction.amount, currencyName)}
-        </span>
-      </div>
-      <p className="mt-2 text-sm text-text-muted">{transaction.description}</p>
-      {canViewAllTransactions && (
-        <p className="mt-2 truncate text-sm text-text-muted">
-          {transaction.studentName} ({transaction.studentUsername})
+    <article className="theme-card flex items-center justify-between gap-3 p-3">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold">{transaction.reason}</p>
+        <p className="mt-1 truncate text-xs text-text-muted">
+          {formatDateTime(transaction.createdAt)}
         </p>
-      )}
+        <p
+          className={`mt-1 text-sm font-semibold ${
+            transaction.amount >= 0 ? "text-success" : "text-danger-strong"
+          }`}
+        >
+          {amountLabel}
+        </p>
+      </div>
+      <IconButton
+        label="Transaction details"
+        onClick={() => onDetailsClick(transaction)}
+      >
+        <EyeIcon />
+      </IconButton>
     </article>
   );
 }
@@ -390,7 +387,7 @@ function TransactionFilters({
   }
 
   return (
-    <div className="mt-4 rounded-md border border-border-subtle bg-panel-soft p-3">
+    <div className="theme-subpanel mt-4 p-3">
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         <div>
           <label className="text-sm font-semibold text-text-control" htmlFor="transactionType">

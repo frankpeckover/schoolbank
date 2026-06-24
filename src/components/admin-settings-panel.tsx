@@ -10,13 +10,11 @@ import {
 import { getSchoolInfo, updateSchoolInfo, uploadSchoolLogo } from "@/lib/actions";
 import { appConfig } from "@/lib/app-config";
 import { defaultCurrencyName } from "@/lib/school-defaults";
-import { FileUpIcon } from "@/components/ui/icons";
+import { FileUpIcon, UsersIcon, WalletIcon } from "@/components/ui/icons";
 import { SchoolLogo } from "@/components/ui/school-logo";
-import type { SessionUser } from "@/lib/session";
 import type { SchoolInfo } from "@/services/school-service";
 
 type AdminSettingsPanelProps = {
-  currentUser: SessionUser;
   onSchoolInfoUpdated: (schoolInfo: SchoolInfo) => void;
 };
 
@@ -35,7 +33,6 @@ const fallbackSchoolInfo: SchoolInfo = {
 const logoHelpText = "PNG, JPG, WebP, or GIF. Max 2 MB.";
 
 export function AdminSettingsPanel({
-  currentUser,
   onSchoolInfoUpdated,
 }: AdminSettingsPanelProps) {
   const [form, setForm] = useState<SchoolInfo>(fallbackSchoolInfo);
@@ -92,7 +89,7 @@ export function AdminSettingsPanel({
       logoUrl = uploadResult.logoUrl;
     }
 
-    const result = await updateSchoolInfo(currentUser, {
+    const result = await updateSchoolInfo({
       ...form,
       logoUrl,
     });
@@ -124,11 +121,10 @@ export function AdminSettingsPanel({
 
   return (
     <section className="mt-5 space-y-5">
-      <SettingsHeader schoolInfo={form} />
-
       <form className="space-y-5" onSubmit={handleSubmit}>
         <SettingsPanel
-          description="These details appear across the app and help staff recognise the right school instance."
+          description="School identity and wallet naming."
+          icon={<WalletIcon />}
           title="Organisation Profile"
         >
           <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
@@ -166,7 +162,8 @@ export function AdminSettingsPanel({
         </SettingsPanel>
 
         <SettingsPanel
-          description="Optional contact details for the school or organisation."
+          description="Optional school contact details."
+          icon={<UsersIcon />}
           title="Contact Details"
         >
           <div className="grid gap-4 md:grid-cols-2">
@@ -217,42 +214,27 @@ export function AdminSettingsPanel({
   );
 }
 
-function SettingsHeader({ schoolInfo }: { schoolInfo: SchoolInfo }) {
-  return (
-    <div className="rounded-md border border-border bg-surface p-5 shadow-sm">
-      <div className="flex min-w-0 items-center gap-4">
-        <SchoolLogo
-          logoUrl={schoolInfo.logoUrl}
-          name={schoolInfo.name}
-          size="large"
-        />
-        <div className="min-w-0">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-text-kicker">
-            Settings
-          </p>
-          <h2 className="mt-1 truncate text-2xl font-semibold">
-            {schoolInfo.name}
-          </h2>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function SettingsPanel({
   children,
   description,
+  icon,
   title,
 }: {
   children: ReactNode;
   description: string;
+  icon: ReactNode;
   title: string;
 }) {
   return (
-    <section className="min-w-0 overflow-hidden rounded-md border border-border bg-surface p-4 shadow-sm sm:p-5">
-      <div className="min-w-0">
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="mt-1 text-sm text-text-muted">{description}</p>
+    <section className="theme-panel min-w-0 overflow-hidden p-4 sm:p-5">
+      <div className="flex min-w-0 items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand-soft text-brand">
+          {icon}
+        </span>
+        <div className="min-w-0">
+          <h3 className="text-lg font-semibold">{title}</h3>
+          <p className="mt-1 text-sm text-text-muted">{description}</p>
+        </div>
       </div>
       <div className="mt-5 min-w-0">{children}</div>
     </section>
@@ -306,7 +288,7 @@ function LogoUploadField({
   schoolName: string;
 }) {
   return (
-    <div className="min-w-0 overflow-hidden rounded-md border border-border-subtle bg-panel-soft p-3 sm:p-4">
+    <div className="theme-subpanel min-w-0 overflow-hidden p-3 sm:p-4">
       <label className="text-sm font-semibold text-text-control" htmlFor="logo">
         Logo
       </label>
@@ -349,7 +331,7 @@ function ReadOnlyField({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
       <p className="text-sm font-semibold text-text-control">{label}</p>
-      <p className="mt-2 truncate rounded-md border border-border-subtle bg-panel-soft px-3 py-3 text-sm text-text-muted">
+      <p className="theme-subpanel mt-2 truncate px-3 py-3 text-sm text-text-muted">
         {value}
       </p>
     </div>

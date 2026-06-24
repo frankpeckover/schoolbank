@@ -3,7 +3,7 @@
 import { useState, type ChangeEvent } from "react";
 import { importUsers } from "@/lib/actions";
 import { parseCsvObjects } from "@/lib/csv";
-import type { Role, SessionUser } from "@/lib/session";
+import type { Role } from "@/lib/session";
 import type {
   ImportedUserCredential,
   ImportUserInput,
@@ -11,7 +11,6 @@ import type {
 } from "@/services/user-service";
 
 type UserImportModalProps = {
-  currentUser: SessionUser;
   onClose: () => void;
   onImportCompleted: () => void;
   onImported: (message: string, shouldClose?: boolean) => void;
@@ -31,7 +30,6 @@ const csvHeaders = "username,first_name,last_name,email,role";
 const validRoles: Role[] = ["admin", "teacher", "student"];
 
 export function UserImportModal({
-  currentUser,
   onClose,
   onImportCompleted,
   onImported,
@@ -86,7 +84,7 @@ export function UserImportModal({
     setErrors([]);
     setCreatedUsers([]);
 
-    const result = await importUsers(currentUser, { users });
+    const result = await importUsers({ users });
 
     setIsImporting(false);
     setErrors(result.errors);
@@ -106,7 +104,7 @@ export function UserImportModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="motion-pop w-full max-w-2xl rounded-md border border-border bg-surface p-5 shadow-lg">
+      <div className="theme-panel motion-pop w-full max-w-2xl p-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-xl font-semibold">Import Users</h3>
@@ -123,7 +121,7 @@ export function UserImportModal({
           </button>
         </div>
 
-        <div className="mt-5 rounded-md border border-border-subtle bg-panel-soft p-4">
+        <div className="theme-subpanel mt-5 p-4">
           <label
             className="text-sm font-semibold text-text-control"
             htmlFor="csvFile"
@@ -203,7 +201,7 @@ function ImportErrors({ errors }: { errors: ImportUserError[] }) {
 
 function GeneratedPasswords({ users }: { users: ImportedUserCredential[] }) {
   return (
-    <div className="mt-4 rounded-md border border-border-subtle bg-panel-soft p-3">
+    <div className="theme-subpanel mt-4 p-3">
       <p className="text-sm font-semibold text-text-control">
         Temporary passwords
       </p>

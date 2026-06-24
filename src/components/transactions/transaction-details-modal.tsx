@@ -20,7 +20,7 @@ export function TransactionDetailsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-6">
-      <div className="motion-pop max-h-full w-full max-w-2xl overflow-y-auto rounded-md border border-border bg-surface p-5 shadow-lg">
+      <div className="theme-panel motion-pop max-h-full w-full max-w-2xl overflow-y-auto p-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-xl font-semibold">Transaction Details</h3>

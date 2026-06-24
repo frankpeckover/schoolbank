@@ -6,23 +6,20 @@ import {
   denyShopRequest,
   listStaffShopRequests,
 } from "@/lib/actions";
-import type { SessionUser } from "@/lib/session";
 import type { ShopPurchaseRequest } from "@/services/shop-service";
 import { formatCurrencyAmount, formatDateTime } from "@/lib/formatters";
 import { IconButton } from "@/components/ui/icon-button";
-import { CheckIcon, XIcon } from "@/components/ui/icons";
+import { CheckIcon, ShoppingBagIcon, XIcon } from "@/components/ui/icons";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
 import { TextReasonModal } from "@/components/ui/text-reason-modal";
 
 type ShopRequestsPanelProps = {
   currencyName: string;
-  currentUser: SessionUser;
   onRequestActioned?: () => void;
 };
 
 export function ShopRequestsPanel({
   currencyName,
-  currentUser,
   onRequestActioned,
 }: ShopRequestsPanelProps) {
   const [requests, setRequests] = useState<ShopPurchaseRequest[]>([]);
@@ -36,7 +33,7 @@ export function ShopRequestsPanel({
     setIsLoading(true);
 
     try {
-      const loadedRequests = await listStaffShopRequests(currentUser);
+      const loadedRequests = await listStaffShopRequests();
       setRequests(loadedRequests);
       setError(null);
     } catch {
@@ -51,7 +48,7 @@ export function ShopRequestsPanel({
 
     async function loadRequests() {
       try {
-        const loadedRequests = await listStaffShopRequests(currentUser);
+        const loadedRequests = await listStaffShopRequests();
 
         if (isMounted) {
           setRequests(loadedRequests);
@@ -73,13 +70,13 @@ export function ShopRequestsPanel({
     return () => {
       isMounted = false;
     };
-  }, [currentUser]);
+  }, []);
 
   async function handleApprove(purchaseId: string) {
     setError(null);
     setMessage(null);
 
-    const result = await approveShopRequest(currentUser, purchaseId);
+    const result = await approveShopRequest(purchaseId);
 
     if (!result.ok) {
       setError(result.message);
@@ -98,11 +95,7 @@ export function ShopRequestsPanel({
     setError(null);
     setMessage(null);
 
-    const result = await denyShopRequest(
-      currentUser,
-      denyingRequestId,
-      decisionNote,
-    );
+    const result = await denyShopRequest(denyingRequestId, decisionNote);
 
     if (!result.ok) {
       setError(result.message);
@@ -121,13 +114,18 @@ export function ShopRequestsPanel({
       : requests.filter((request) => request.status !== "pending");
 
   return (
-    <section className="mt-5 rounded-md border border-border-subtle bg-panel-soft p-4">
+    <section className="theme-panel mt-5 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Shop Requests</h3>
-          <p className="mt-1 text-sm text-text-muted">
-            Review reserved shop purchases before students receive rewards.
-          </p>
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand-soft text-brand">
+            <ShoppingBagIcon />
+          </span>
+          <div className="min-w-0">
+            <h3 className="text-lg font-semibold">Shop Requests</h3>
+            <p className="mt-1 text-sm text-text-muted">
+              Reserved reward orders.
+            </p>
+          </div>
         </div>
         <div className="flex rounded-md border border-border bg-surface p-1">
           {(["pending", "recent"] as const).map((view) => (
@@ -205,66 +203,17 @@ function ShopRequestList({
   requests: ShopPurchaseRequest[];
 }) {
   return (
-    <>
-      <div className="grid gap-3 md:hidden">
-        {requests.map((request) => (
-          <ShopRequestCard
-            currencyName={currencyName}
-            key={request.id}
-            onApprove={onApprove}
-            onDeny={onDeny}
-            request={request}
-          />
-        ))}
-      </div>
-
-      <table className="hidden w-full border-collapse text-left text-sm md:table">
-        <thead>
-          <tr className="border-b border-border-subtle text-text-muted">
-            <th className="py-2 pr-4 font-semibold">Requested</th>
-            <th className="py-2 pr-4 font-semibold">Student</th>
-            <th className="py-2 pr-4 font-semibold">Item</th>
-            <th className="py-2 pr-4 font-semibold">Status</th>
-            <th className="py-2 pr-4 text-right font-semibold">Cost</th>
-            <th className="py-2 font-semibold">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {requests.map((request) => (
-            <tr className="border-b border-border-subtle" key={request.id}>
-              <td className="py-2 pr-4 text-text-muted">
-                {formatDateTime(request.purchasedAt)}
-              </td>
-              <td className="py-2 pr-4 text-text-muted">
-                {request.studentName}
-                <span className="block text-xs">{request.studentUsername}</span>
-              </td>
-              <td className="py-2 pr-4 font-semibold">
-                {request.itemName}
-                {request.decisionNote && (
-                  <span className="block text-xs font-normal text-text-muted">
-                    {request.decisionNote}
-                  </span>
-                )}
-              </td>
-              <td className="py-2 pr-4">
-                <ShopRequestStatusBadge request={request} />
-              </td>
-              <td className="py-2 pr-4 text-right text-text-muted">
-                {formatCurrencyAmount(request.price, currencyName)}
-              </td>
-              <td className="py-2">
-                <ShopRequestActions
-                  onApprove={onApprove}
-                  onDeny={onDeny}
-                  request={request}
-                />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      {requests.map((request) => (
+        <ShopRequestCard
+          currencyName={currencyName}
+          key={request.id}
+          onApprove={onApprove}
+          onDeny={onDeny}
+          request={request}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -280,13 +229,18 @@ function ShopRequestCard({
   request: ShopPurchaseRequest;
 }) {
   return (
-    <article className="rounded-md border border-border-subtle bg-surface p-3">
+    <article className="theme-card p-3 transition hover:border-brand-soft-strong hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h4 className="truncate text-sm font-semibold">{request.itemName}</h4>
-          <p className="truncate text-sm text-text-muted">
-            {request.studentName} ({request.studentUsername})
-          </p>
+        <div className="flex min-w-0 gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand-soft text-brand">
+            <ShoppingBagIcon />
+          </span>
+          <div className="min-w-0">
+            <h4 className="truncate text-sm font-semibold">{request.itemName}</h4>
+            <p className="truncate text-sm text-text-muted">
+              {request.studentName} ({request.studentUsername})
+            </p>
+          </div>
         </div>
         <ShopRequestActions
           onApprove={onApprove}

@@ -22,7 +22,7 @@ export function GroupDetailsPanel({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="motion-pop max-h-full w-full max-w-4xl overflow-y-auto rounded-md border border-border bg-surface p-5 shadow-lg">
+      <div className="theme-panel motion-pop max-h-full w-full max-w-4xl overflow-y-auto p-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
           <GroupSummary memberCount={members.length} selectedGroup={selectedGroup} />
           <button
@@ -91,7 +91,7 @@ function GroupMembersList({
           <div className="grid gap-2 md:hidden">
             {members.map((member) => (
               <article
-                className="rounded-md border border-border-subtle bg-surface p-3"
+                className="theme-card p-3"
                 key={member.id}
               >
                 <p className="truncate font-semibold">{member.displayName}</p>

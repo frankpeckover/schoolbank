@@ -1,5 +1,4 @@
 import type { Role } from "@/lib/session";
-import type { SessionUser } from "@/lib/session";
 import type {
   CreateUserInput,
   UserListItem,
@@ -18,7 +17,6 @@ export type UserFormFieldChange = <Field extends keyof UserFormState>(
 ) => void;
 
 export type UserModalProps = {
-  currentUser: SessionUser;
   mode: UserModalMode;
   onClose: () => void;
   onSaved: () => void;

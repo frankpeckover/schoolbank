@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import type { Role } from "@/lib/session";
+import { isAdmin, isStudent } from "@/lib/permissions";
 import { LogOutIcon, MenuIcon } from "@/components/ui/icons";
 
 const defaultNavigationItems = [
   "Dashboard",
+  "Balances",
   "Shop",
   "Transaction Log",
 ] as const;
@@ -14,6 +16,7 @@ const adminNavigationItems = [
   "Dashboard",
   "Users",
   "Groups",
+  "Balances",
   "Shop",
   "Transaction Log",
   "Audit Log",
@@ -56,11 +59,11 @@ export function HeaderNavMenu({
   }
 
   return (
-    <div className="relative">
+    <div className="relative z-[100]">
       <button
         aria-expanded={isOpen}
         aria-label="Open menu"
-        className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-button-border bg-surface text-text-control transition hover:bg-surface-hover"
+        className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border-subtle bg-panel-soft text-text-control transition hover:bg-surface-hover"
         onClick={() => setIsOpen((currentValue) => !currentValue)}
         type="button"
       >
@@ -68,7 +71,7 @@ export function HeaderNavMenu({
       </button>
 
       {isOpen && (
-        <div className="motion-pop absolute right-0 top-12 z-30 w-64 rounded-md border border-border bg-surface p-2 shadow-lg">
+        <div className="motion-pop absolute right-0 top-12 z-[110] w-64 rounded-md border border-border bg-surface p-2 shadow-lg">
           {navigationItems.map((item) => (
             <button
               aria-current={activeItem === item ? "page" : undefined}
@@ -107,11 +110,13 @@ export function HeaderNavMenu({
 }
 
 function getNavigationItems(role: Role) {
-  if (role === "admin") {
+  const userRole = { role };
+
+  if (isAdmin(userRole)) {
     return adminNavigationItems;
   }
 
-  if (role === "student") {
+  if (isStudent(userRole)) {
     return studentNavigationItems;
   }
 

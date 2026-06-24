@@ -45,14 +45,6 @@ begin;
 
 create extension if not exists pgcrypto;
 
-do $$
-begin
-  if not exists (select 1 from pg_type where typname = 'user_role') then
-    create type user_role as enum ('admin', 'teacher', 'student');
-  end if;
-end
-$$;
-
 create table if not exists school_info (
   id integer primary key default 1 check (id = 1),
   name text not null default 'SchoolBank School',
@@ -74,9 +66,48 @@ alter table school_info
   add column if not exists website text not null default '',
   add column if not exists timezone text not null default '';
 
+create table if not exists permissions (
+  key text primary key,
+  name text not null,
+  description text not null default '',
+  category text not null default 'general',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists roles (
+  id uuid primary key default gen_random_uuid(),
+  role_key text not null unique,
+  name text not null,
+  description text not null default '',
+  is_system boolean not null default false,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint roles_role_key_format check (role_key ~ '^[a-z0-9_]+$')
+);
+
+insert into roles (role_key, name, description, is_system)
+values
+  ('student', 'Student', 'Default student role.', true),
+  ('teacher', 'Staff', 'Default staff role for teachers and school staff.', true),
+  ('admin', 'Admin', 'Default administrator role.', true)
+on conflict (role_key) do update
+set name = excluded.name,
+    description = excluded.description,
+    is_system = excluded.is_system,
+    updated_at = now();
+
+create table if not exists role_permissions (
+  role_id uuid not null references roles(id) on delete cascade,
+  permission_key text not null references permissions(key) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (role_id, permission_key)
+);
+
 create table if not exists users (
   id uuid primary key default gen_random_uuid(),
-  role user_role not null,
+  role_id uuid not null references roles(id) on delete restrict,
   username text not null,
   first_name text not null,
   last_name text not null,
@@ -88,6 +119,34 @@ create table if not exists users (
   unique (username),
   unique (email)
 );
+
+alter table users
+  add column if not exists role_id uuid references roles(id) on delete restrict;
+
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_name = 'users'
+      and column_name = 'role'
+  ) then
+    update users
+    set role_id = roles.id
+    from roles
+    where users.role::text = roles.role_key
+      and users.role_id is null;
+  end if;
+end
+$$;
+
+alter table users
+  alter column role_id set not null;
+
+alter table users
+  drop column if exists role;
+
+drop type if exists user_role;
 
 create table if not exists shop_items (
   id uuid primary key default gen_random_uuid(),
@@ -194,7 +253,29 @@ create table if not exists audit_log (
   created_at timestamptz not null default now()
 );
 
-create index if not exists users_role_idx on users(role);
+create table if not exists password_reset_tokens (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references users(id) on delete cascade,
+  token_hash text not null unique,
+  expires_at timestamptz not null,
+  used_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists user_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references users(id) on delete cascade,
+  token_hash text not null unique,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now()
+);
+
+create index if not exists users_role_id_idx on users(role_id);
+create index if not exists roles_active_idx on roles(is_active);
+create index if not exists permissions_category_idx on permissions(category);
+create index if not exists role_permissions_permission_idx
+  on role_permissions(permission_key);
 create index if not exists shop_items_active_idx on shop_items(is_active);
 create index if not exists shop_purchases_user_idx
   on shop_purchases(purchased_by_user_id);
@@ -215,6 +296,12 @@ create index if not exists ledger_entries_related_entity_idx
 create index if not exists audit_log_created_at_idx on audit_log(created_at);
 create index if not exists audit_log_actor_idx on audit_log(actor_user_id);
 create index if not exists audit_log_entity_idx on audit_log(entity_type, entity_id);
+create index if not exists password_reset_tokens_user_idx
+  on password_reset_tokens(user_id);
+create index if not exists password_reset_tokens_expires_idx
+  on password_reset_tokens(expires_at);
+create index if not exists user_sessions_user_idx on user_sessions(user_id);
+create index if not exists user_sessions_expires_idx on user_sessions(expires_at);
 
 create unique index if not exists ledger_entries_source_unique_idx
   on ledger_entries(related_entity_type, related_entity_id, entry_type)
@@ -226,8 +313,75 @@ insert into school_info (id, name, currency_name)
 values (1, :'school_name', :'currency_name')
 on conflict (id) do nothing;
 
+insert into permissions (key, name, description, category)
+values
+  ('users.manage', 'Manage users', 'Create, edit, disable, and import users.', 'users'),
+  ('passwords.reset_users', 'Reset user passwords', 'Reset passwords for other users.', 'users'),
+  ('groups.manage', 'Manage groups', 'Create, archive, and manage student groups.', 'groups'),
+  ('school_settings.manage', 'Manage school settings', 'Update organisation profile and app settings.', 'settings'),
+  ('audit.view', 'View audit log', 'View recent administrative and system changes.', 'audit'),
+  ('balances.view_own', 'View own balance', 'View personal account balance.', 'balances'),
+  ('balances.view_all', 'View all balances', 'View student balances across the school.', 'balances'),
+  ('transactions.view_own', 'View own transactions', 'View personal transaction history.', 'transactions'),
+  ('transactions.view_all', 'View all transactions', 'View transaction history across the school.', 'transactions'),
+  ('transactions.create_adjustment', 'Create adjustments', 'Add or remove currency for students and groups.', 'transactions'),
+  ('transactions.void', 'Void transactions', 'Void and reverse ledger transactions.', 'transactions'),
+  ('shop.items.manage', 'Manage shop items', 'Create, edit, archive, and restock shop items.', 'shop'),
+  ('shop.items.request', 'Request shop items', 'Request available shop rewards.', 'shop'),
+  ('shop.requests.approve', 'Approve shop requests', 'Approve or deny pending shop requests.', 'shop'),
+  ('password.change_own', 'Change own password', 'Change personal account password.', 'account')
+on conflict (key) do update
+set name = excluded.name,
+    description = excluded.description,
+    category = excluded.category,
+    updated_at = now();
+
+insert into role_permissions (role_id, permission_key)
+select roles.id, permissions.key
+from roles
+join permissions on permissions.key in (
+  'balances.view_own',
+  'password.change_own',
+  'shop.items.request',
+  'transactions.view_own'
+)
+where roles.role_key = 'student'
+on conflict do nothing;
+
+insert into role_permissions (role_id, permission_key)
+select roles.id, permissions.key
+from roles
+join permissions on permissions.key in (
+  'balances.view_all',
+  'password.change_own',
+  'shop.items.manage',
+  'shop.requests.approve',
+  'transactions.create_adjustment',
+  'transactions.view_all'
+)
+where roles.role_key = 'teacher'
+on conflict do nothing;
+
+insert into role_permissions (role_id, permission_key)
+select roles.id, permissions.key
+from roles
+join permissions on permissions.key in (
+  'audit.view',
+  'balances.view_all',
+  'groups.manage',
+  'password.change_own',
+  'passwords.reset_users',
+  'school_settings.manage',
+  'shop.items.manage',
+  'transactions.view_all',
+  'transactions.void',
+  'users.manage'
+)
+where roles.role_key = 'admin'
+on conflict do nothing;
+
 insert into users (
-  role,
+  role_id,
   username,
   first_name,
   last_name,
@@ -235,7 +389,7 @@ insert into users (
   password_hash
 )
 values (
-  'admin',
+  (select id from roles where role_key = 'admin'),
   'admin',
   'Admin',
   'User',

@@ -18,6 +18,7 @@ export type UserListItem = {
   email: string;
   role: Role;
   isActive: boolean;
+  lastActivityAt: string | null;
 };
 
 export type CreateUserInput = {
@@ -109,6 +110,7 @@ type UserListRow = {
   email: string;
   role: Role;
   is_active: boolean;
+  last_activity_at: Date | null;
 };
 
 type StudentListRow = {
@@ -125,8 +127,20 @@ const defaultStudentSearchLimit = 12;
 export class UserService {
   async listUsers(): Promise<UserListItem[]> {
     const result = await db.query<UserListRow>(`
-      select id, username, first_name, last_name, email, role, is_active
+      select
+        users.id,
+        users.username,
+        users.first_name,
+        users.last_name,
+        users.email,
+        roles.role_key as role,
+        users.is_active,
+        max(ledger_entries.created_at) as last_activity_at
       from users
+      join roles on roles.id = users.role_id
+      left join accounts on accounts.user_id = users.id
+      left join ledger_entries on ledger_entries.account_id = accounts.id
+      group by users.id, roles.role_key
       order by last_name, first_name
     `);
 
@@ -143,10 +157,16 @@ export class UserService {
   ): Promise<StudentListItem[]> {
     const normalizedSearchTerm = `%${searchTerm.trim().toLowerCase()}%`;
     const result = await db.query<StudentListRow>(`
-      select id, first_name, last_name, username
+      select
+        users.id,
+        users.first_name,
+        users.last_name,
+        users.username
       from users
-      where role = 'student'
-        and is_active = true
+      join roles on roles.id = users.role_id
+      where roles.role_key = 'student'
+        and users.is_active = true
+        and roles.is_active = true
         and (
           $1 = '%%'
           or lower(first_name) like $1
@@ -194,15 +214,30 @@ export class UserService {
       const result = await client.query<UserListRow>(
         `
           insert into users (
-            role,
+            role_id,
             username,
             first_name,
             last_name,
             email,
             password_hash
           )
-          values ($1, $2, $3, $4, $5, $6)
-          returning id, username, first_name, last_name, email, role, is_active
+          values (
+            (select id from roles where role_key = $1 and is_active = true),
+            $2,
+            $3,
+            $4,
+            $5,
+            $6
+          )
+          returning
+            id,
+            username,
+            first_name,
+            last_name,
+            email,
+            (select role_key from roles where roles.id = users.role_id) as role,
+            is_active,
+            null::timestamptz as last_activity_at
         `,
         [input.role, username, firstName, lastName, email, passwordHash],
       );
@@ -308,11 +343,24 @@ export class UserService {
               first_name = $2,
               last_name = $3,
               email = $4,
-              role = $5,
+              role_id = (select id from roles where role_key = $5 and is_active = true),
               is_active = $6,
               updated_at = now()
           where id = $7
-          returning id, username, first_name, last_name, email, role, is_active
+          returning
+            id,
+            username,
+            first_name,
+            last_name,
+            email,
+            (select role_key from roles where roles.id = users.role_id) as role,
+            is_active,
+            (
+              select max(ledger_entries.created_at)
+              from accounts
+              join ledger_entries on ledger_entries.account_id = accounts.id
+              where accounts.user_id = users.id
+            ) as last_activity_at
         `,
         [
           username,
@@ -571,6 +619,7 @@ export class UserService {
       email: user.email,
       role: user.role,
       isActive: user.is_active,
+      lastActivityAt: user.last_activity_at?.toISOString() ?? null,
     };
   }
 }

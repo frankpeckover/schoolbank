@@ -11,13 +11,17 @@ import type {
   AdminDashboardEntry,
   AdminDashboardSummary,
 } from "@/services/admin-dashboard-service";
+import { WalletIcon } from "@/components/ui/icons";
+import { PageHeader } from "@/components/ui/page-header";
 
 type AdminDashboardPanelProps = {
   currencyName: string;
+  schoolName: string;
 };
 
 export function AdminDashboardPanel({
   currencyName,
+  schoolName,
 }: AdminDashboardPanelProps) {
   const [summary, setSummary] = useState<AdminDashboardSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -53,13 +57,13 @@ export function AdminDashboardPanel({
   }, []);
 
   return (
-    <section className="mt-5 rounded-md border border-border bg-surface p-4 shadow-sm">
-      <div>
-        <h2 className="text-xl font-semibold">Admin Overview</h2>
-        <p className="mt-1 text-sm text-text-muted">
-          System health, account totals, and recent ledger movement.
-        </p>
-      </div>
+    <section className="theme-panel mt-5 p-4">
+      <PageHeader
+        description={`${schoolName} totals and recent movement.`}
+        icon={<WalletIcon />}
+        title="Admin Overview"
+        titleSize="base"
+      />
 
       {isLoading && (
         <p className="mt-4 text-sm text-text-muted">Loading overview...</p>
@@ -75,10 +79,7 @@ export function AdminDashboardPanel({
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               label="Ledger Balance"
-              value={formatSignedCurrencyAmount(
-                summary.ledgerBalance,
-                currencyName,
-              )}
+              value={formatBalanceAmount(summary.ledgerBalance, currencyName)}
             />
             <MetricCard
               label="Pending Holds"
@@ -88,12 +89,11 @@ export function AdminDashboardPanel({
               label="Pending Requests"
               value={String(summary.pendingShopRequests)}
             />
-            <MetricCard
-              label="Student Accounts"
-              value={String(summary.studentAccounts)}
+            <AccountSummaryCard
+              disabledAccounts={summary.totalUsers - summary.activeUsers}
+              studentAccounts={summary.studentAccounts}
+              totalAccounts={summary.totalUsers}
             />
-            <MetricCard label="Active Users" value={String(summary.activeUsers)} />
-            <MetricCard label="Total Users" value={String(summary.totalUsers)} />
           </div>
 
           <RecentLedgerActivity
@@ -106,12 +106,60 @@ export function AdminDashboardPanel({
   );
 }
 
+function formatBalanceAmount(amount: number, currencyName: string) {
+  return amount < 0
+    ? `-${formatCurrencyAmount(amount, currencyName)}`
+    : formatCurrencyAmount(amount, currencyName);
+}
+
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <article className="rounded-md border border-border-subtle bg-panel-soft p-3">
+    <article className="theme-card flex min-h-28 flex-col p-3">
       <p className="text-xs font-semibold uppercase text-text-muted">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
+      <div className="flex flex-1 items-center justify-center text-center">
+        <p className="break-words text-2xl font-semibold text-foreground">
+          {value}
+        </p>
+      </div>
     </article>
+  );
+}
+
+function AccountSummaryCard({
+  disabledAccounts,
+  studentAccounts,
+  totalAccounts,
+}: {
+  disabledAccounts: number;
+  studentAccounts: number;
+  totalAccounts: number;
+}) {
+  return (
+    <article className="theme-card flex min-h-28 flex-col p-3">
+      <p className="text-xs font-semibold uppercase text-text-muted">
+        Accounts
+      </p>
+      <div className="grid flex-1 grid-cols-3 items-center gap-2 text-center">
+        <AccountSummaryMetric label="Total" value={totalAccounts} />
+        <AccountSummaryMetric label="Students" value={studentAccounts} />
+        <AccountSummaryMetric label="Disabled" value={disabledAccounts} />
+      </div>
+    </article>
+  );
+}
+
+function AccountSummaryMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: number;
+}) {
+  return (
+    <div>
+      <p className="text-2xl font-semibold text-foreground">{value}</p>
+      <p className="mt-1 text-xs font-semibold text-text-muted">{label}</p>
+    </div>
   );
 }
 
@@ -209,7 +257,7 @@ function RecentLedgerCard({
     entry.amount >= 0 ? "text-success" : "text-danger-strong";
 
   return (
-    <article className="rounded-md border border-border-subtle bg-panel-soft p-3">
+    <article className="theme-card p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h4 className="truncate text-sm font-semibold">

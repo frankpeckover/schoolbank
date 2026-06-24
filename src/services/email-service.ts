@@ -1,0 +1,61 @@
+import type { ActionResult } from "@/lib/action-results";
+
+type SendEmailInput = {
+  html: string;
+  subject: string;
+  text: string;
+  to: string;
+};
+
+const resendApiUrl = "https://api.resend.com/emails";
+const defaultFromAddress = "SchoolBank <onboarding@resend.dev>";
+
+export class EmailService {
+  async sendEmail(input: SendEmailInput): Promise<ActionResult> {
+    const apiKey = process.env.RESEND_API_KEY;
+    const from = process.env.EMAIL_FROM ?? defaultFromAddress;
+
+    if (!apiKey) {
+      return {
+        ok: false,
+        message: "Email is not configured. Add RESEND_API_KEY to .env.local.",
+      };
+    }
+
+    try {
+      const response = await fetch(resendApiUrl, {
+        body: JSON.stringify({
+          from,
+          html: input.html,
+          subject: input.subject,
+          text: input.text,
+          to: input.to,
+        }),
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const responseText = await response.text();
+        console.error("Send email failed", response.status, responseText);
+
+        return {
+          ok: false,
+          message: "Could not send email.",
+        };
+      }
+
+      return { ok: true };
+    } catch (error) {
+      console.error("Send email failed", error);
+
+      return {
+        ok: false,
+        message: "Could not send email.",
+      };
+    }
+  }
+}

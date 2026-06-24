@@ -23,7 +23,6 @@ import type {
 import type { UserGroupItem } from "@/services/group-service";
 
 export function UserModal({
-  currentUser,
   mode,
   onClose,
   onSaved,
@@ -92,8 +91,8 @@ export function UserModal({
 
     const result =
       mode === "create"
-        ? await createUser(currentUser, form)
-        : await updateUser(currentUser, getUpdateUserInput(form));
+        ? await createUser(form)
+        : await updateUser(getUpdateUserInput(form));
 
     if (!result.ok) {
       setError(result.message);
@@ -110,7 +109,7 @@ export function UserModal({
     setError(null);
     setMessage(null);
 
-    const result = await resetUserPassword(currentUser, {
+    const result = await resetUserPassword({
       id: form.id,
       password: newPassword,
     });
@@ -135,7 +134,7 @@ export function UserModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="motion-pop w-full max-w-lg rounded-md border border-border bg-surface p-5 shadow-lg">
+      <div className="theme-panel motion-pop w-full max-w-lg p-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-2xl font-semibold">

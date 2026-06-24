@@ -36,7 +36,7 @@ export function GroupModal({ onClose, onSaved }: GroupModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="motion-pop w-full max-w-lg rounded-md border border-border bg-surface p-5 shadow-lg">
+      <div className="theme-panel motion-pop w-full max-w-lg p-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-2xl font-semibold">New Group</h3>

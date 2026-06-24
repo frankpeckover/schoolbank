@@ -3,28 +3,24 @@
 import { useEffect, useState } from "react";
 import { listAuditLog } from "@/lib/actions";
 import { formatDateTime } from "@/lib/formatters";
-import type { SessionUser } from "@/lib/session";
 import type { AuditLogItem } from "@/services/audit-service";
+import { IconButton } from "@/components/ui/icon-button";
+import { EyeIcon, ListIcon } from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
 
-type AdminAuditLogPanelProps = {
-  currentUser: SessionUser;
-};
-
-export function AdminAuditLogPanel({
-  currentUser,
-}: AdminAuditLogPanelProps) {
+export function AdminAuditLogPanel() {
   const [entries, setEntries] = useState<AuditLogItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [viewingEntry, setViewingEntry] = useState<AuditLogItem | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadAuditLog() {
       try {
-        const loadedEntries = await listAuditLog(currentUser);
+        const loadedEntries = await listAuditLog();
 
         if (isMounted) {
           setEntries(loadedEntries);
@@ -46,12 +42,13 @@ export function AdminAuditLogPanel({
     return () => {
       isMounted = false;
     };
-  }, [currentUser]);
+  }, []);
 
   return (
-    <section className="motion-panel mt-5 rounded-md border border-border bg-surface p-5 shadow-sm">
+    <section className="theme-panel motion-panel mt-5 p-5">
       <PageHeader
-        description="Recent administrative and system changes."
+        description="Administrative changes."
+        icon={<ListIcon />}
         title="Audit Log"
       />
 
@@ -68,86 +65,180 @@ export function AdminAuditLogPanel({
           <p className="text-sm text-text-muted">No audit events recorded yet.</p>
         )}
         {!isLoading && !error && entries.length > 0 && (
-          <AuditLogList entries={entries} />
+          <AuditLogList
+            entries={entries}
+            onDetailsClick={setViewingEntry}
+          />
         )}
       </div>
+
+      {viewingEntry && (
+        <AuditLogDetailsModal
+          entry={viewingEntry}
+          onClose={() => setViewingEntry(null)}
+        />
+      )}
     </section>
   );
 }
 
-function AuditLogList({ entries }: { entries: AuditLogItem[] }) {
+function AuditLogList({
+  entries,
+  onDetailsClick,
+}: {
+  entries: AuditLogItem[];
+  onDetailsClick: (entry: AuditLogItem) => void;
+}) {
   return (
     <>
-      <div className="grid gap-3 md:hidden">
+      <div className="grid gap-2 md:hidden">
         {entries.map((entry) => (
-          <AuditLogCard entry={entry} key={entry.id} />
+          <AuditLogMobileRow
+            entry={entry}
+            key={entry.id}
+            onDetailsClick={onDetailsClick}
+          />
         ))}
       </div>
 
-      <table className="hidden w-full border-collapse text-left text-sm md:table">
-        <thead>
-          <tr className="border-b border-border-subtle text-text-muted">
-            <th className="py-2 pr-4 font-semibold">Time</th>
-            <th className="py-2 pr-4 font-semibold">Action</th>
-            <th className="py-2 pr-4 font-semibold">Actor</th>
-            <th className="py-2 pr-4 font-semibold">Record</th>
-            <th className="py-2 font-semibold">Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          {entries.map((entry) => (
-            <tr className="border-b border-border-subtle" key={entry.id}>
-              <td className="py-3 pr-4 text-text-muted">
-                {formatDateTime(entry.createdAt)}
-              </td>
-              <td className="py-3 pr-4">
-                <StatusBadge
-                  label={formatAction(entry.action)}
-                  tone={getActionTone(entry.action)}
-                />
-              </td>
-              <td className="py-3 pr-4 text-text-muted">
-                {formatActor(entry)}
-              </td>
-              <td className="py-3 pr-4 text-text-muted">
-                {formatEntity(entry)}
-              </td>
-              <td className="py-3 text-text-muted">
-                {formatDetails(entry.details)}
-              </td>
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full min-w-[760px] border-collapse text-left text-sm">
+          <thead>
+            <tr className="border-b border-border-subtle text-text-muted">
+              <th className="py-2 pr-4 font-semibold">Time</th>
+              <th className="py-2 pr-4 font-semibold">Action</th>
+              <th className="py-2 pr-4 font-semibold">Actor</th>
+              <th className="py-2 pr-4 font-semibold">Record</th>
+              <th className="py-2 pr-4 font-semibold">Details</th>
+              <th className="py-2 font-semibold">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {entries.map((entry) => (
+              <tr className="border-b border-border-subtle" key={entry.id}>
+                <td className="py-3 pr-4 text-text-muted">
+                  {formatDateTime(entry.createdAt)}
+                </td>
+                <td className="py-3 pr-4">
+                  <StatusBadge
+                    label={formatAction(entry.action)}
+                    tone={getActionTone(entry.action)}
+                  />
+                </td>
+                <td className="py-3 pr-4 text-text-muted">
+                  {formatActor(entry)}
+                </td>
+                <td className="py-3 pr-4 text-text-muted">
+                  {formatEntity(entry)}
+                </td>
+                <td className="py-3 pr-4 text-text-muted">
+                  {formatDetails(entry.details)}
+                </td>
+                <td className="py-3">
+                  <IconButton
+                    label="Audit event details"
+                    onClick={() => onDetailsClick(entry)}
+                  >
+                    <EyeIcon />
+                  </IconButton>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </>
   );
 }
 
-function AuditLogCard({ entry }: { entry: AuditLogItem }) {
+function AuditLogMobileRow({
+  entry,
+  onDetailsClick,
+}: {
+  entry: AuditLogItem;
+  onDetailsClick: (entry: AuditLogItem) => void;
+}) {
   return (
-    <article className="rounded-md border border-border-subtle bg-panel-soft p-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="truncate text-sm font-semibold">
-            {formatAction(entry.action)}
-          </h3>
-          <p className="text-xs text-text-muted">
-            {formatDateTime(entry.createdAt)}
-          </p>
-        </div>
-        <StatusBadge
-          label={formatEntityType(entry.entityType)}
-          tone={getActionTone(entry.action)}
-        />
+    <article className="theme-card flex items-center justify-between gap-3 p-3">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold">
+          {formatAction(entry.action)}
+        </p>
+        <p className="mt-1 truncate text-xs text-text-muted">
+          {formatDateTime(entry.createdAt)}
+        </p>
+        <p className="mt-1 truncate text-sm text-text-muted">
+          {formatActor(entry)}
+        </p>
       </div>
-      <p className="mt-3 text-sm text-text-muted">{formatActor(entry)}</p>
-      <p className="mt-1 truncate text-sm text-text-muted">
-        {formatEntity(entry)}
-      </p>
-      <p className="mt-2 text-sm text-text-muted">
-        {formatDetails(entry.details)}
-      </p>
+      <IconButton
+        label="Audit event details"
+        onClick={() => onDetailsClick(entry)}
+      >
+        <EyeIcon />
+      </IconButton>
     </article>
+  );
+}
+
+function AuditLogDetailsModal({
+  entry,
+  onClose,
+}: {
+  entry: AuditLogItem;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-6">
+      <div className="theme-panel motion-pop max-h-full w-full max-w-2xl overflow-y-auto p-5 shadow-lg">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-xl font-semibold">Audit Details</h3>
+            <p className="mt-1 text-sm text-text-muted">
+              {formatDateTime(entry.createdAt)}
+            </p>
+          </div>
+          <StatusBadge
+            label={formatAction(entry.action)}
+            tone={getActionTone(entry.action)}
+          />
+        </div>
+
+        <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
+          <AuditDetail label="Action" value={formatAction(entry.action)} />
+          <AuditDetail label="Actor" value={formatActor(entry)} />
+          <AuditDetail label="Record" value={formatEntity(entry)} />
+          <AuditDetail label="Details" value={formatDetails(entry.details)} />
+        </dl>
+
+        <div className="mt-5 flex justify-end">
+          <button
+            className="rounded-md border border-button-border px-4 py-2 text-sm font-semibold text-text-control transition hover:bg-surface-hover"
+            onClick={onClose}
+            type="button"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AuditDetail({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div>
+      <dt className="text-xs font-semibold uppercase text-text-muted">
+        {label}
+      </dt>
+      <dd className="mt-1 font-semibold text-text-control">{value}</dd>
+    </div>
   );
 }
 

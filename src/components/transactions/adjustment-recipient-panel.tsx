@@ -1,6 +1,7 @@
 import type {
   AdjustmentTarget,
 } from "@/components/transactions/ledger-adjustment-types";
+import { XIcon } from "@/components/ui/icons";
 import type { GroupListItem } from "@/services/group-service";
 import type { StudentListItem } from "@/services/user-service";
 
@@ -10,12 +11,14 @@ type AdjustmentRecipientPanelProps = {
   isSearching: boolean;
   onGroupChange: (groupId: string) => void;
   onStudentQueryChange: (value: string) => void;
+  onStudentRemove: (studentId: string) => void;
   onStudentSelect: (student: StudentListItem) => void;
   onTargetChange: (target: AdjustmentTarget) => void;
   recentStudents: StudentListItem[];
+  searchMinChars: number;
   selectedGroup: GroupListItem | null;
   selectedGroupId: string;
-  selectedStudent: StudentListItem | null;
+  selectedStudents: StudentListItem[];
   studentQuery: string;
   studentResults: StudentListItem[];
   target: AdjustmentTarget;
@@ -27,18 +30,20 @@ export function AdjustmentRecipientPanel({
   isSearching,
   onGroupChange,
   onStudentQueryChange,
+  onStudentRemove,
   onStudentSelect,
   onTargetChange,
   recentStudents,
+  searchMinChars,
   selectedGroup,
   selectedGroupId,
-  selectedStudent,
+  selectedStudents,
   studentQuery,
   studentResults,
   target,
 }: AdjustmentRecipientPanelProps) {
   return (
-    <section className="rounded-md border border-border-subtle bg-surface p-3">
+    <section className="theme-card p-3">
       <TargetToggle onChange={onTargetChange} target={target} />
 
       <RecipientHeading
@@ -51,9 +56,11 @@ export function AdjustmentRecipientPanel({
         <StudentSelector
           isSearching={isSearching}
           onQueryChange={onStudentQueryChange}
+          onStudentRemove={onStudentRemove}
           onStudentSelect={onStudentSelect}
           recentStudents={recentStudents}
-          selectedStudent={selectedStudent}
+          searchMinChars={searchMinChars}
+          selectedStudents={selectedStudents}
           studentQuery={studentQuery}
           studentResults={studentResults}
         />
@@ -84,11 +91,6 @@ function RecipientHeading({
         <h3 className="text-base font-semibold">
           {target === "student" ? "Student" : "Group"}
         </h3>
-        <p className="text-sm text-text-muted">
-          {target === "student"
-            ? "Search by name or username."
-            : "Apply the same transaction to every active student."}
-        </p>
       </div>
       {target === "student" && isSearching && (
         <span className="text-xs font-semibold text-text-muted">
@@ -145,17 +147,21 @@ function TargetToggle({
 function StudentSelector({
   isSearching,
   onQueryChange,
+  onStudentRemove,
   onStudentSelect,
   recentStudents,
-  selectedStudent,
+  searchMinChars,
+  selectedStudents,
   studentQuery,
   studentResults,
 }: {
   isSearching: boolean;
   onQueryChange: (value: string) => void;
+  onStudentRemove: (studentId: string) => void;
   onStudentSelect: (student: StudentListItem) => void;
   recentStudents: StudentListItem[];
-  selectedStudent: StudentListItem | null;
+  searchMinChars: number;
+  selectedStudents: StudentListItem[];
   studentQuery: string;
   studentResults: StudentListItem[];
 }) {
@@ -168,14 +174,28 @@ function StudentSelector({
         value={studentQuery}
       />
 
-      {selectedStudent && <SelectedStudentCard student={selectedStudent} />}
+      {selectedStudents.length > 0 && (
+        <SelectedStudentList
+          onRemove={onStudentRemove}
+          students={selectedStudents}
+        />
+      )}
 
-      {!selectedStudent && studentResults.length > 0 && (
+      {studentQuery.trim().length > 0 &&
+        studentQuery.trim().length < searchMinChars && (
+          <p className="theme-subpanel mt-3 px-3 py-2 text-sm text-text-muted">
+            Type at least {searchMinChars} characters to search students.
+          </p>
+        )}
+
+      {studentResults.length > 0 && (
         <StudentResultList onSelect={onStudentSelect} students={studentResults} />
       )}
 
-      {!selectedStudent && studentResults.length === 0 && studentQuery && !isSearching && (
-        <p className="mt-3 rounded-md border border-border-subtle bg-panel-soft px-3 py-2 text-sm text-text-muted">
+      {studentResults.length === 0 &&
+        studentQuery.trim().length >= searchMinChars &&
+        !isSearching && (
+        <p className="theme-subpanel mt-3 px-3 py-2 text-sm text-text-muted">
           No students found.
         </p>
       )}
@@ -203,7 +223,7 @@ function GroupSelector({
 }) {
   if (groups.length === 0) {
     return (
-      <p className="mt-3 rounded-md border border-border-subtle bg-panel-soft px-3 py-2 text-sm text-text-muted">
+      <p className="theme-subpanel mt-3 px-3 py-2 text-sm text-text-muted">
         No active groups are available.
       </p>
     );
@@ -245,11 +265,37 @@ function GroupSelector({
   );
 }
 
-function SelectedStudentCard({ student }: { student: StudentListItem }) {
+function SelectedStudentList({
+  onRemove,
+  students,
+}: {
+  onRemove: (studentId: string) => void;
+  students: StudentListItem[];
+}) {
   return (
     <div className="mt-3 rounded-md border border-success-border bg-success-soft px-3 py-2">
-      <p className="text-sm font-semibold text-success">{student.displayName}</p>
-      <p className="text-xs text-success">{student.username}</p>
+      <p className="text-sm font-semibold text-success">
+        Selected students
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {students.map((student) => (
+          <span
+            className="inline-flex items-center gap-2 rounded-md border border-success-border bg-surface px-2 py-1 text-sm font-semibold text-success"
+            key={student.id}
+          >
+            {student.displayName}
+            <button
+              aria-label={`Remove ${student.displayName}`}
+              className="rounded-sm p-1 text-danger-strong transition hover:bg-danger-soft"
+              onClick={() => onRemove(student.id)}
+              title={`Remove ${student.displayName}`}
+              type="button"
+            >
+              <XIcon className="h-3.5 w-3.5" />
+            </button>
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -262,7 +308,7 @@ function StudentResultList({
   students: StudentListItem[];
 }) {
   return (
-    <div className="mt-3 overflow-hidden rounded-md border border-border-subtle">
+    <div className="mt-3 max-h-64 overflow-y-auto rounded-md border border-border-subtle">
       {students.map((student) => (
         <button
           className="flex w-full items-center justify-between gap-3 border-b border-border-subtle px-3 py-2 text-left text-sm transition last:border-b-0 hover:bg-panel-soft"

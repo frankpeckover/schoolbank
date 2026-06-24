@@ -10,7 +10,7 @@ export function StudentGroupsSection({
   isLoading,
 }: StudentGroupsSectionProps) {
   return (
-    <div className="rounded-md border border-border-subtle bg-panel-soft p-3">
+    <div className="theme-subpanel p-3">
       <div className="flex items-center justify-between gap-3">
         <h4 className="text-sm font-semibold text-text-control">Groups</h4>
         {isLoading && (

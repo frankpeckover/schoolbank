@@ -70,7 +70,7 @@ function GroupFilters({
   showArchived: boolean;
 }) {
   return (
-    <div className="rounded-md border border-border-subtle bg-panel-soft p-4">
+    <div className="theme-subpanel p-4">
       <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
         <div>
           <label className="text-sm font-semibold text-text-control" htmlFor="groupSearch">
@@ -137,7 +137,7 @@ function GroupList({
           {groups.map((group) => (
             <tr
               className={`border-b border-border-subtle ${
-                selectedGroupId === group.id ? "bg-selected-soft" : ""
+                selectedGroupId === group.id ? "bg-brand-soft" : ""
               }`}
               key={group.id}
             >
@@ -184,8 +184,8 @@ function GroupCard({
     <article
       className={`rounded-md border p-3 ${
         isSelected
-          ? "border-brand bg-selected-soft"
-          : "border-border-subtle bg-panel-soft"
+          ? "border-brand bg-brand-soft"
+          : "border-border-subtle bg-surface"
       }`}
     >
       <div className="flex items-start justify-between gap-3">

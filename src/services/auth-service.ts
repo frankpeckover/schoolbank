@@ -36,10 +36,18 @@ export class AuthService {
     try {
       const result = await db.query<UserRow>(
         `
-          select id, username, first_name, last_name, role, password_hash
+          select
+            users.id,
+            users.username,
+            users.first_name,
+            users.last_name,
+            roles.role_key as role,
+            users.password_hash
           from users
+          join roles on roles.id = users.role_id
           where lower(username) = $1
-            and is_active = true
+            and users.is_active = true
+            and roles.is_active = true
           limit 1
         `,
         [normalizedUsername],

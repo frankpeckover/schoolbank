@@ -1,5 +1,5 @@
 import { IconButton } from "@/components/ui/icon-button";
-import { FileUpIcon, FilterIcon, PlusIcon } from "@/components/ui/icons";
+import { FileUpIcon, FilterIcon, PlusIcon, UsersIcon } from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/page-header";
 
 type GroupsPageHeaderProps = {
@@ -48,7 +48,8 @@ export function GroupsPageHeader({
         </button>
         </>
       }
-      description="Create student groups and manage memberships."
+      description="Student groups and memberships."
+      icon={<UsersIcon />}
       title="Groups"
     />
   );

@@ -246,8 +246,9 @@ export class GroupService {
           insert into student_group_memberships (group_id, user_id)
           select $1, users.id
           from users
+          join roles on roles.id = users.role_id
           where users.id = $2
-            and users.role = 'student'
+            and roles.role_key = 'student'
             and users.is_active = true
           on conflict (group_id, user_id) do nothing
         `,
@@ -290,8 +291,9 @@ export class GroupService {
           insert into student_group_memberships (group_id, user_id)
           select $1, users.id
           from users
+          join roles on roles.id = users.role_id
           where users.id = any($2::uuid[])
-            and users.role = 'student'
+            and roles.role_key = 'student'
             and users.is_active = true
           on conflict (group_id, user_id) do nothing
         `,

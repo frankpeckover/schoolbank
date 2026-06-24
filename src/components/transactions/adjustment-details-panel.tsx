@@ -32,7 +32,7 @@ export function AdjustmentDetailsPanel({
   submitLabel,
 }: AdjustmentDetailsPanelProps) {
   return (
-    <section className="rounded-md border border-border-subtle bg-surface p-3">
+    <section className="theme-card p-3">
       <div className="grid gap-3 lg:grid-cols-[auto_1fr]">
         <DirectionToggle
           direction={direction}

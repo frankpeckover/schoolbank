@@ -3,11 +3,9 @@
 import { useState, type FormEvent } from "react";
 import { saveShopItem, uploadShopItemImage } from "@/lib/actions";
 import { PackageIcon, PlusIcon } from "@/components/ui/icons";
-import type { SessionUser } from "@/lib/session";
 import type { SaveShopItemInput, ShopItem } from "@/services/shop-service";
 
 type ShopItemModalProps = {
-  currentUser: SessionUser;
   item: ShopItem | null;
   onClose: () => void;
   onSaved: () => void;
@@ -49,7 +47,6 @@ const fieldClassNames = {
 } as const;
 
 export function ShopItemModal({
-  currentUser,
   item,
   onClose,
   onSaved,
@@ -90,7 +87,7 @@ export function ShopItemModal({
       imageUrl = uploadResult.imageUrl;
     }
 
-    const result = await saveShopItem(currentUser, {
+    const result = await saveShopItem({
       ...form,
       imageUrl,
       price: Number(form.price),
@@ -110,7 +107,7 @@ export function ShopItemModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="motion-pop w-full max-w-lg rounded-md border border-border bg-surface p-5 shadow-lg">
+      <div className="theme-panel motion-pop w-full max-w-lg p-5 shadow-lg">
         <ModalHeader item={item} onClose={onClose} />
 
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
@@ -279,7 +276,7 @@ function ImageUploadField({
   return (
     <div>
       <span className={fieldClassNames.label}>Item Image</span>
-      <div className="mt-2 flex items-center gap-3 rounded-md border border-border-subtle bg-panel-soft p-3">
+      <div className="theme-subpanel mt-2 flex items-center gap-3 p-3">
         <ItemImagePreview imageUrl={currentImageUrl} itemName={itemName} />
         <div className="min-w-0 flex-1">
           <input

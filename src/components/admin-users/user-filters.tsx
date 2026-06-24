@@ -25,7 +25,7 @@ export function UserFiltersPanel({
   }
 
   return (
-    <div className="mt-5 rounded-md border border-border-subtle bg-panel-soft p-4">
+    <div className="theme-subpanel mt-5 p-4">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <FilterInput
           id="filterFirstName"

@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { loginUser } from "@/lib/actions";
+import { loginUser, requestPasswordReset } from "@/lib/actions";
 import { appConfig } from "@/lib/app-config";
 import { type SessionUser } from "@/lib/session";
 
@@ -13,6 +13,7 @@ export function LoginCard({ onLogin }: LoginCardProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -47,7 +48,7 @@ export function LoginCard({ onLogin }: LoginCardProps) {
           </p>
         </div>
 
-        <section className="rounded-md border border-border bg-surface p-5 shadow-sm">
+        <section className="theme-panel p-5">
           <h2 className="text-2xl font-semibold">Log in</h2>
           <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
             <div>
@@ -63,7 +64,7 @@ export function LoginCard({ onLogin }: LoginCardProps) {
                 disabled={isSubmitting}
                 id="username"
                 onChange={(event) => setUsername(event.target.value)}
-                placeholder="username"
+                placeholder="Username"
                 type="text"
                 value={username}
               />
@@ -102,18 +103,109 @@ export function LoginCard({ onLogin }: LoginCardProps) {
               {isSubmitting ? "Signing in..." : "Sign in"}
             </button>
 
-            <button
-              className="w-full rounded-md border border-button-border px-4 py-3 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
-              disabled
-              title="Password recovery is not available yet."
-              type="button"
-            >
-              Forgot password?
-            </button>
+            <div className="text-center">
+              <button
+                className="text-sm font-semibold text-text-muted underline-offset-4 transition hover:text-text-control hover:underline disabled:cursor-not-allowed disabled:opacity-70"
+                onClick={() => setIsForgotPasswordOpen(true)}
+                title="Request a password reset link"
+                type="button"
+              >
+                Forgot password?
+              </button>
+            </div>
           </form>
-
         </section>
       </div>
+
+      {isForgotPasswordOpen && (
+        <ForgotPasswordModal onClose={() => setIsForgotPasswordOpen(false)} />
+      )}
     </main>
+  );
+}
+
+function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
+  const [identifier, setIdentifier] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSubmitting(true);
+    setMessage(null);
+    setError(null);
+
+    const result = await requestPasswordReset(identifier);
+
+    if (!result.ok) {
+      setError(result.message);
+      setIsSubmitting(false);
+      return;
+    }
+
+    setMessage(result.message);
+    setIsSubmitting(false);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+      <div className="theme-panel motion-pop w-full max-w-md p-5 shadow-lg">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-semibold">Reset password</h2>
+            <p className="mt-1 text-sm text-text-muted">
+              Enter your username or email and we&apos;ll send a reset link.
+            </p>
+          </div>
+          <button
+            className="rounded-md border border-button-border px-3 py-2 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
+            onClick={onClose}
+            type="button"
+          >
+            Close
+          </button>
+        </div>
+
+        <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <label
+              className="text-sm font-semibold text-text-control"
+              htmlFor="resetIdentifier"
+            >
+              Username or email
+            </label>
+            <input
+              autoComplete="username"
+              className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition focus:ring-2"
+              disabled={isSubmitting}
+              id="resetIdentifier"
+              onChange={(event) => setIdentifier(event.target.value)}
+              placeholder="Username or email"
+              value={identifier}
+            />
+          </div>
+
+          {message && (
+            <p className="rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
+              {message}
+            </p>
+          )}
+          {error && (
+            <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
+              {error}
+            </p>
+          )}
+
+          <button
+            className="w-full rounded-md bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={isSubmitting}
+            type="submit"
+          >
+            {isSubmitting ? "Sending..." : "Send reset link"}
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }

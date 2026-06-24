@@ -8,11 +8,12 @@ import {
   requestShopItem,
 } from "@/lib/actions";
 import { formatCurrencyAmount } from "@/lib/formatters";
+import { canManageShopItems } from "@/lib/permissions";
 import type { SessionUser } from "@/lib/session";
 import type { ShopItem } from "@/services/shop-service";
 import { ShopItemCard } from "@/components/shop/shop-item-card";
 import { ShopItemModal } from "@/components/shop/shop-item-modal";
-import { PlusIcon, WalletIcon } from "@/components/ui/icons";
+import { PlusIcon, ShoppingBagIcon, WalletIcon } from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/page-header";
 
 type ShopPanelProps = {
@@ -21,7 +22,7 @@ type ShopPanelProps = {
 };
 
 export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
-  const canManage = currentUser.role === "admin" || currentUser.role === "teacher";
+  const canManage = canManageShopItems(currentUser);
   const [items, setItems] = useState<ShopItem[]>([]);
   const [balance, setBalance] = useState<number | null>(null);
   const [requestedItemIds, setRequestedItemIds] = useState<string[]>([]);
@@ -51,7 +52,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
     }
 
     try {
-      const currentBalance = await getStudentBalance(currentUser);
+      const currentBalance = await getStudentBalance();
       setBalance(currentBalance);
     } catch {
       setError("Could not load wallet balance.");
@@ -96,7 +97,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
       }
 
       try {
-        const currentBalance = await getStudentBalance(currentUser);
+        const currentBalance = await getStudentBalance();
 
         if (isMounted) {
           setBalance(currentBalance);
@@ -126,7 +127,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   }
 
   async function handleRemove(itemId: string) {
-    const result = await removeShopItem(currentUser, itemId);
+    const result = await removeShopItem(itemId);
 
     if (!result.ok) {
       setError(result.message);
@@ -138,7 +139,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   }
 
   async function handlePurchase(itemId: string) {
-    const result = await requestShopItem(currentUser, itemId);
+    const result = await requestShopItem(itemId);
 
     if (!result.ok) {
       setError(result.message);
@@ -160,7 +161,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   }
 
   return (
-    <section className="motion-panel mt-5 rounded-md border border-border bg-surface p-4 shadow-sm">
+    <section className="theme-panel motion-panel mt-5 p-4 sm:p-5">
       <ShopPanelHeader
         balance={balance}
         canManage={canManage}
@@ -169,7 +170,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
       />
       <ShopMessages error={error} message={message} />
 
-      <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {isLoading && (
           <p className="text-sm text-text-muted">Loading shop...</p>
         )}
@@ -190,7 +191,6 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
 
       {isModalOpen && (
         <ShopItemModal
-          currentUser={currentUser}
           item={editingItem}
           onClose={() => setIsModalOpen(false)}
           onSaved={handleItemSaved}
@@ -219,7 +219,7 @@ function ShopPanelHeader({
       actions={
         <div className="flex items-center gap-2">
           {!canManage && (
-            <div className="inline-flex h-10 items-center gap-2 rounded-md border border-border-subtle bg-panel-soft px-3 text-sm font-semibold text-text-control">
+            <div className="inline-flex min-h-10 items-center gap-2 rounded-md border border-brand-soft-strong bg-brand-soft px-3 py-2 text-sm font-semibold text-brand-ink shadow-sm">
               <WalletIcon />
               <span>{walletLabel}</span>
             </div>
@@ -239,9 +239,10 @@ function ShopPanelHeader({
       }
       description={
         canManage
-          ? "Manage store items students can purchase."
-          : "Browse rewards and place requests."
+          ? "Manage store items."
+          : "Browse rewards."
       }
+      icon={<ShoppingBagIcon />}
       title="Shop"
       titleSize="base"
     />

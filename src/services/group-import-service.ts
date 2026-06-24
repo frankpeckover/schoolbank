@@ -31,7 +31,7 @@ type ImportGroupRow = {
 type ImportUserRow = {
   id: string;
   is_active: boolean;
-  role: string;
+  role_key: string;
 };
 
 export class GroupImportService {
@@ -73,7 +73,7 @@ export class GroupImportService {
           continue;
         }
 
-        if (user.role !== "student") {
+        if (user.role_key !== "student") {
           errors.push(createImportError(rowNumber, groupName, username, "User is not a student."));
           continue;
         }
@@ -152,9 +152,10 @@ async function findStudentUser(
 ) {
   const userResult = await client.query<ImportUserRow>(
     `
-      select id, role, is_active
+      select users.id, roles.role_key, users.is_active
       from users
-      where username = $1
+      join roles on roles.id = users.role_id
+      where users.username = $1
     `,
     [username],
   );

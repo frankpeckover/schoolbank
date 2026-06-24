@@ -1,6 +1,10 @@
 import type { PoolClient } from "pg";
 import type { ActionResult } from "@/lib/action-results";
 import { db } from "@/lib/db";
+import {
+  canApproveShopRequests,
+  canRequestShopItems,
+} from "@/lib/permissions";
 import type { SessionUser } from "@/lib/session";
 import { AuditService } from "@/services/audit-service";
 import { LedgerService } from "@/services/ledger-service";
@@ -63,7 +67,7 @@ export class ShopPurchaseService {
   async listStudentShopRequests(
     currentUser: SessionUser,
   ): Promise<StudentShopRequest[]> {
-    if (currentUser.role !== "student") {
+    if (!canRequestShopItems(currentUser)) {
       return [];
     }
 
@@ -93,7 +97,7 @@ export class ShopPurchaseService {
     currentUser: SessionUser,
     itemId: string,
   ): Promise<ActionResult> {
-    if (currentUser.role !== "student") {
+    if (!canRequestShopItems(currentUser)) {
       return {
         ok: false,
         message: "Only students can request shop items.",
@@ -225,7 +229,7 @@ export class ShopPurchaseService {
 }
 
 function canManagePurchases(currentUser: SessionUser) {
-  return currentUser.role === "teacher";
+  return canApproveShopRequests(currentUser);
 }
 
 async function getShopItemForUpdate(client: PoolClient, itemId: string) {
@@ -245,11 +249,12 @@ async function getShopItemForUpdate(client: PoolClient, itemId: string) {
 async function lockActiveStudent(client: PoolClient, userId: string) {
   const userResult = await client.query(
     `
-      select id
+      select users.id
       from users
-      where id = $1
-        and role = 'student'
-        and is_active = true
+      join roles on roles.id = users.role_id
+      where users.id = $1
+        and roles.role_key = 'student'
+        and users.is_active = true
       for update
     `,
     [userId],
