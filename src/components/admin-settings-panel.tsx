@@ -123,7 +123,6 @@ export function AdminSettingsPanel({
     <section className="mt-5 space-y-5">
       <form className="space-y-5" onSubmit={handleSubmit}>
         <SettingsPanel
-          description="School identity and wallet naming."
           icon={<WalletIcon />}
           title="Organisation Profile"
         >
@@ -162,7 +161,6 @@ export function AdminSettingsPanel({
         </SettingsPanel>
 
         <SettingsPanel
-          description="Optional school contact details."
           icon={<UsersIcon />}
           title="Contact Details"
         >
@@ -216,12 +214,10 @@ export function AdminSettingsPanel({
 
 function SettingsPanel({
   children,
-  description,
   icon,
   title,
 }: {
   children: ReactNode;
-  description: string;
   icon: ReactNode;
   title: string;
 }) {
@@ -233,7 +229,6 @@ function SettingsPanel({
         </span>
         <div className="min-w-0">
           <h3 className="text-lg font-semibold">{title}</h3>
-          <p className="mt-1 text-sm text-text-muted">{description}</p>
         </div>
       </div>
       <div className="mt-5 min-w-0">{children}</div>

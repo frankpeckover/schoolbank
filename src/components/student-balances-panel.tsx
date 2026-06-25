@@ -23,11 +23,15 @@ export function StudentBalancesPanel({
 
   const filteredBalances = useMemo(
     () =>
-      balances.filter(
-        (student) =>
-          student.isActive &&
-          matchesStudentSearch(student, search),
-      ),
+      balances
+        .filter(
+          (student) =>
+            student.isActive &&
+            matchesStudentSearch(student, search),
+        )
+        .sort((firstStudent, secondStudent) =>
+          secondStudent.balance - firstStudent.balance,
+        ),
     [balances, search],
   );
 
@@ -66,56 +70,64 @@ export function StudentBalancesPanel({
   }, []);
 
   return (
-    <section className="theme-panel motion-panel mt-5 p-4">
-      <PageHeader
-        actions={
-          <IconButton
-            ariaExpanded={areFiltersOpen}
-            label="Toggle balance filters"
-            onClick={() => setAreFiltersOpen((isOpen) => !isOpen)}
-          >
-            <FilterIcon />
-          </IconButton>
-        }
-        description="Current student wallet balances."
-        icon={<WalletIcon />}
-        title="Balances"
-        titleSize="base"
-      />
-
-      <BalanceSummary
-        currencyName={currencyName}
-        studentCount={filteredBalances.length}
-        totalBalance={totalBalance}
-      />
-
-      {areFiltersOpen && (
-        <BalanceFilters
-          onSearchChange={setSearch}
-          search={search}
+    <>
+      <section className="theme-panel motion-panel mt-5 p-4">
+        <PageHeader
+          icon={<WalletIcon />}
+          title="Balances"
+          titleSize="base"
         />
-      )}
 
-      <div className="mt-5">
-        {isLoading && (
-          <p className="text-sm text-text-muted">Loading balances...</p>
-        )}
-        {error && (
-          <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-            {error}
-          </p>
-        )}
-        {!isLoading && !error && filteredBalances.length === 0 && (
-          <p className="text-sm text-text-muted">No students match these filters.</p>
-        )}
-        {!isLoading && !error && filteredBalances.length > 0 && (
-          <BalancesList
-            balances={filteredBalances}
-            currencyName={currencyName}
+        <BalanceSummary
+          currencyName={currencyName}
+          studentCount={filteredBalances.length}
+          totalBalance={totalBalance}
+        />
+      </section>
+
+      <section className="theme-panel motion-panel mt-5 min-w-0 p-4">
+        <PageHeader
+          actions={
+            <IconButton
+              ariaExpanded={areFiltersOpen}
+              label="Toggle balance filters"
+              onClick={() => setAreFiltersOpen((isOpen) => !isOpen)}
+            >
+              <FilterIcon />
+            </IconButton>
+          }
+          title="Students"
+          titleSize="base"
+        />
+
+        {areFiltersOpen && (
+          <BalanceFilters
+            onSearchChange={setSearch}
+            search={search}
           />
         )}
-      </div>
-    </section>
+
+        <div className="mt-5">
+          {isLoading && (
+            <p className="text-sm text-text-muted">Loading balances...</p>
+          )}
+          {error && (
+            <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
+              {error}
+            </p>
+          )}
+          {!isLoading && !error && filteredBalances.length === 0 && (
+            <p className="text-sm text-text-muted">No students match these filters.</p>
+          )}
+          {!isLoading && !error && filteredBalances.length > 0 && (
+            <BalancesList
+              balances={filteredBalances}
+              currencyName={currencyName}
+            />
+          )}
+        </div>
+      </section>
+    </>
   );
 }
 

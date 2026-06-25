@@ -55,9 +55,6 @@ export function StudentShopRequestsPanel({
         </span>
         <div className="min-w-0">
           <h2 className="text-xl font-semibold">My Orders</h2>
-          <p className="mt-1 text-sm text-text-muted">
-            Pending and previous reward requests.
-          </p>
         </div>
       </div>
 

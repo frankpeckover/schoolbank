@@ -24,7 +24,7 @@ type ParseResult =
       ok: false;
     };
 
-const csvHeaders = "group_name,username";
+const csvHeaders = "group_name,username,description";
 
 export function GroupImportModal({
   onClose,
@@ -100,6 +100,9 @@ export function GroupImportModal({
             <h3 className="text-xl font-semibold">Import Groups</h3>
             <p className="mt-1 text-sm text-text-muted">
               Upload a CSV with headers: {csvHeaders}
+            </p>
+            <p className="mt-1 text-sm text-text-muted">
+              Existing groups are reused. The description column is optional.
             </p>
           </div>
           <button
@@ -204,6 +207,7 @@ function parseGroupsCsv(text: string): ParseResult {
     }
 
     const membership = {
+      description: values.description?.trim() ?? "",
       groupName: values.groupname?.trim() ?? "",
       username: values.username?.trim() ?? "",
     };

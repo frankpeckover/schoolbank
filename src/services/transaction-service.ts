@@ -13,6 +13,7 @@ import {
   type LedgerEntryType,
 } from "@/services/ledger-service";
 import { AuditService } from "@/services/audit-service";
+import { ErrorLogService } from "@/services/error-log-service";
 import type { ShopPurchaseStatus } from "@/services/shop-service";
 
 export type TransactionLogItem = {
@@ -122,6 +123,7 @@ type GroupAdjustmentMemberRow = {
 
 const ledgerService = new LedgerService();
 const auditService = new AuditService();
+const errorLogService = new ErrorLogService();
 
 export class TransactionService {
   async getStudentBalance(userId: string): Promise<number> {
@@ -577,6 +579,17 @@ export class TransactionService {
     } catch (error) {
       await client.query("rollback");
       console.error("Create group ledger adjustment failed", error);
+      await errorLogService.log({
+        context: {
+          amount: input.amount,
+          groupId: input.groupId,
+          reason,
+          userId: currentUser.id,
+          username: currentUser.username,
+        },
+        error,
+        source: "TransactionService.createGroupLedgerAdjustment",
+      });
 
       return {
         ok: false,

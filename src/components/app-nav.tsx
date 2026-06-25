@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import type { Role } from "@/lib/session";
 import { isAdmin, isStudent } from "@/lib/permissions";
-import { LogOutIcon, MenuIcon } from "@/components/ui/icons";
+import {
+  ChevronDownIcon,
+  LogOutIcon,
+  UserCircleIcon,
+} from "@/components/ui/icons";
 
 const defaultNavigationItems = [
   "Dashboard",
@@ -20,8 +25,28 @@ const adminNavigationItems = [
   "Shop",
   "Transaction Log",
   "Audit Log",
+  "Error Log",
   "Settings",
 ] as const;
+const adminPrimaryNavigationItems = [
+  "Dashboard",
+  "Users",
+  "Groups",
+  "Balances",
+  "Shop",
+] as const;
+const adminOverflowNavigationItems = [
+  "Transaction Log",
+  "Audit Log",
+  "Error Log",
+  "Settings",
+] as const;
+const defaultPrimaryNavigationItems = [
+  "Dashboard",
+  "Balances",
+  "Shop",
+] as const;
+const defaultOverflowNavigationItems = ["Transaction Log"] as const;
 
 export type NavigationItem = (typeof adminNavigationItems)[number];
 
@@ -40,72 +65,233 @@ export function HeaderNavMenu({
   onPasswordChange,
   role,
 }: HeaderNavMenuProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const navRef = useRef<HTMLElement | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isOverflowMenuOpen, setIsOverflowMenuOpen] = useState(false);
   const navigationItems = getNavigationItems(role);
+  const primaryNavigationItems = getPrimaryNavigationItems(role);
+  const overflowNavigationItems = getOverflowNavigationItems(role);
+  const isOverflowActive = overflowNavigationItems.includes(activeItem);
+  const isAnyMenuOpen = isMobileMenuOpen || isOverflowMenuOpen;
+
+  function closeMenus() {
+    setIsMobileMenuOpen(false);
+    setIsOverflowMenuOpen(false);
+  }
+
+  useEffect(() => {
+    if (!isAnyMenuOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      if (!navRef.current?.contains(event.target as Node)) {
+        closeMenus();
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        closeMenus();
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isAnyMenuOpen]);
 
   function handleItemChange(item: NavigationItem) {
     onItemChange(item);
-    setIsOpen(false);
+    closeMenus();
   }
 
   function handleLogout() {
-    setIsOpen(false);
+    closeMenus();
     onLogout();
   }
 
   function handlePasswordChange() {
-    setIsOpen(false);
+    closeMenus();
     onPasswordChange();
   }
 
   return (
-    <div className="relative z-[100]">
+    <nav className="relative z-[100] flex items-center gap-2" ref={navRef}>
+      <div className="hidden items-center gap-1 lg:flex">
+        {primaryNavigationItems.map((item) => (
+          <DesktopNavButton
+            isActive={activeItem === item}
+            item={item}
+            key={item}
+            onItemChange={handleItemChange}
+          />
+        ))}
+
+        <div className="relative">
+          <button
+            aria-expanded={isOverflowMenuOpen}
+            aria-label="Open menu"
+            className={`inline-flex h-10 items-center justify-center gap-1 rounded-md px-2 text-sm font-semibold transition ${
+              isOverflowActive
+                ? "bg-brand text-white"
+                : "text-text-control hover:bg-panel-soft"
+            }`}
+            onClick={() =>
+              setIsOverflowMenuOpen((currentValue) => !currentValue)
+            }
+            type="button"
+          >
+            <UserCircleIcon className="h-5 w-5" />
+            <ChevronDownIcon className="h-3.5 w-3.5" />
+          </button>
+
+          {isOverflowMenuOpen && (
+            <NavMenuPanel>
+              {overflowNavigationItems.map((item) => (
+                <MenuItemButton
+                  isActive={activeItem === item}
+                  item={item}
+                  key={item}
+                  onItemChange={handleItemChange}
+                />
+              ))}
+              <AccountMenuItems
+                hasTopBorder={overflowNavigationItems.length > 0}
+                onLogout={handleLogout}
+                onPasswordChange={handlePasswordChange}
+              />
+            </NavMenuPanel>
+          )}
+        </div>
+      </div>
+
       <button
-        aria-expanded={isOpen}
+        aria-expanded={isMobileMenuOpen}
         aria-label="Open menu"
-        className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border-subtle bg-panel-soft text-text-control transition hover:bg-surface-hover"
-        onClick={() => setIsOpen((currentValue) => !currentValue)}
+        className="inline-flex h-10 items-center justify-center gap-1 rounded-md border border-border-subtle bg-panel-soft px-2 text-text-control transition hover:bg-surface-hover lg:hidden"
+        onClick={() =>
+          setIsMobileMenuOpen((currentValue) => !currentValue)
+        }
         type="button"
       >
-        <MenuIcon />
+        <UserCircleIcon className="h-5 w-5" />
+        <ChevronDownIcon className="h-3.5 w-3.5" />
       </button>
 
-      {isOpen && (
-        <div className="motion-pop absolute right-0 top-12 z-[110] w-64 rounded-md border border-border bg-surface p-2 shadow-lg">
+      {isMobileMenuOpen && (
+        <NavMenuPanel>
           {navigationItems.map((item) => (
-            <button
-              aria-current={activeItem === item ? "page" : undefined}
-              className={`block w-full rounded-md px-3 py-3 text-left text-sm font-semibold transition ${
-                activeItem === item
-                  ? "bg-brand text-white"
-                  : "text-text-control hover:bg-panel-soft"
-              }`}
+            <MenuItemButton
+              isActive={activeItem === item}
+              item={item}
               key={item}
-              onClick={() => handleItemChange(item)}
-              type="button"
-            >
-              {item}
-            </button>
+              onItemChange={handleItemChange}
+            />
           ))}
 
-          <button
-            className="mt-2 block w-full border-t border-border-subtle px-3 py-3 text-left text-sm font-semibold text-text-control transition hover:bg-panel-soft"
-            onClick={handlePasswordChange}
-            type="button"
-          >
-            Change password
-          </button>
-          <button
-            className="flex w-full items-center gap-2 px-3 py-3 text-left text-sm font-semibold text-text-control transition hover:bg-panel-soft"
-            onClick={handleLogout}
-            type="button"
-          >
-            <LogOutIcon />
-            <span>Sign out</span>
-          </button>
-        </div>
+          <AccountMenuItems
+            hasTopBorder
+            onLogout={handleLogout}
+            onPasswordChange={handlePasswordChange}
+          />
+        </NavMenuPanel>
       )}
+    </nav>
+  );
+}
+
+function DesktopNavButton({
+  isActive,
+  item,
+  onItemChange,
+}: {
+  isActive: boolean;
+  item: NavigationItem;
+  onItemChange: (item: NavigationItem) => void;
+}) {
+  return (
+    <button
+      aria-current={isActive ? "page" : undefined}
+      className={`inline-flex h-10 items-center justify-center rounded-md px-3 text-sm font-semibold transition ${
+        isActive
+          ? "bg-brand text-white"
+          : "text-text-control hover:bg-panel-soft"
+      }`}
+      onClick={() => onItemChange(item)}
+      type="button"
+    >
+      {item}
+    </button>
+  );
+}
+
+function NavMenuPanel({ children }: { children: ReactNode }) {
+  return (
+    <div className="motion-pop absolute right-0 top-12 z-[110] w-64 rounded-md border border-border bg-surface p-2 shadow-lg">
+      {children}
     </div>
+  );
+}
+
+function MenuItemButton({
+  isActive,
+  item,
+  onItemChange,
+}: {
+  isActive: boolean;
+  item: NavigationItem;
+  onItemChange: (item: NavigationItem) => void;
+}) {
+  return (
+    <button
+      aria-current={isActive ? "page" : undefined}
+      className={`block w-full rounded-md px-3 py-3 text-left text-sm font-semibold transition ${
+        isActive
+          ? "bg-brand text-white"
+          : "text-text-control hover:bg-panel-soft"
+      }`}
+      onClick={() => onItemChange(item)}
+      type="button"
+    >
+      {item}
+    </button>
+  );
+}
+
+function AccountMenuItems({
+  hasTopBorder,
+  onLogout,
+  onPasswordChange,
+}: {
+  hasTopBorder: boolean;
+  onLogout: () => void;
+  onPasswordChange: () => void;
+}) {
+  return (
+    <>
+      <button
+        className={`block w-full px-3 py-3 text-left text-sm font-semibold text-text-control transition hover:bg-panel-soft ${
+          hasTopBorder ? "mt-2 border-t border-border-subtle" : ""
+        }`}
+        onClick={onPasswordChange}
+        type="button"
+      >
+        Change password
+      </button>
+      <button
+        className="flex w-full items-center gap-2 px-3 py-3 text-left text-sm font-semibold text-text-control transition hover:bg-panel-soft"
+        onClick={onLogout}
+        type="button"
+      >
+        <LogOutIcon />
+        <span>Sign out</span>
+      </button>
+    </>
   );
 }
 
@@ -121,4 +307,32 @@ function getNavigationItems(role: Role) {
   }
 
   return defaultNavigationItems;
+}
+
+function getPrimaryNavigationItems(role: Role): readonly NavigationItem[] {
+  const userRole = { role };
+
+  if (isAdmin(userRole)) {
+    return adminPrimaryNavigationItems;
+  }
+
+  if (isStudent(userRole)) {
+    return studentNavigationItems;
+  }
+
+  return defaultPrimaryNavigationItems;
+}
+
+function getOverflowNavigationItems(role: Role): readonly NavigationItem[] {
+  const userRole = { role };
+
+  if (isAdmin(userRole)) {
+    return adminOverflowNavigationItems;
+  }
+
+  if (isStudent(userRole)) {
+    return [];
+  }
+
+  return defaultOverflowNavigationItems;
 }

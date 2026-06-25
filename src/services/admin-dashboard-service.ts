@@ -3,6 +3,7 @@ import type { LedgerEntryStatus, LedgerEntryType } from "@/services/ledger-servi
 
 export type AdminDashboardSummary = {
   activeUsers: number;
+  circulationEntries: AdminDashboardEntry[];
   ledgerBalance: number;
   moneyIn: number;
   moneyOut: number;
@@ -42,9 +43,12 @@ type RecentEntryRow = {
   type: LedgerEntryType;
 };
 
+const recentLedgerLimit = 6;
+const circulationHistoryDays = 180;
+
 export class AdminDashboardService {
   async getSummary(): Promise<AdminDashboardSummary> {
-    const [summaryResult, recentResult] = await Promise.all([
+    const [summaryResult, recentResult, circulationResult] = await Promise.all([
       db.query<SummaryRow>(`
         select
           (select count(*) from users) as total_users,
@@ -94,27 +98,40 @@ export class AdminDashboardService {
         join accounts on accounts.id = ledger_entries.account_id
         join users on users.id = accounts.user_id
         order by ledger_entries.created_at desc
-        limit 6
-      `),
+        limit $1
+      `, [recentLedgerLimit]),
+      db.query<RecentEntryRow>(`
+        select
+          ledger_entries.amount,
+          ledger_entries.created_at,
+          ledger_entries.description,
+          ledger_entries.status as entry_status,
+          trim(users.first_name || ' ' || users.last_name) as student_name,
+          ledger_entries.entry_type as type
+        from ledger_entries
+        join accounts on accounts.id = ledger_entries.account_id
+        join users on users.id = accounts.user_id
+        where ledger_entries.status in ('pending', 'posted')
+          and not (
+            ledger_entries.status = 'pending'
+            and ledger_entries.is_voided = true
+          )
+          and ledger_entries.created_at >= now() - ($1::int * interval '1 day')
+        order by ledger_entries.created_at asc
+      `, [circulationHistoryDays]),
     ]);
 
     const summary = summaryResult.rows[0];
 
     return {
       activeUsers: toNumber(summary.active_users),
+      circulationEntries: circulationResult.rows.map(mapDashboardEntry),
       ledgerBalance: toNumber(summary.ledger_balance),
       moneyIn: toNumber(summary.money_in),
       moneyOut: toNumber(summary.money_out),
       pendingHolds: toNumber(summary.pending_holds),
       pendingShopRequests: toNumber(summary.pending_shop_requests),
-      recentEntries: recentResult.rows.map((entry) => ({
-        amount: entry.amount,
-        createdAt: entry.created_at.toISOString(),
-        description: entry.description,
-        entryStatus: entry.entry_status,
-        studentName: entry.student_name,
-        type: entry.type,
-      })),
+      recentEntries: recentResult.rows.map(mapDashboardEntry),
       studentAccounts: toNumber(summary.student_accounts),
       totalUsers: toNumber(summary.total_users),
     };
@@ -123,4 +140,15 @@ export class AdminDashboardService {
 
 function toNumber(value: string | number | null | undefined) {
   return Number(value ?? 0);
+}
+
+function mapDashboardEntry(entry: RecentEntryRow): AdminDashboardEntry {
+  return {
+    amount: entry.amount,
+    createdAt: entry.created_at.toISOString(),
+    description: entry.description,
+    entryStatus: entry.entry_status,
+    studentName: entry.student_name,
+    type: entry.type,
+  };
 }

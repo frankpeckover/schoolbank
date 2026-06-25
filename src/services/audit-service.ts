@@ -62,7 +62,6 @@ export class AuditService {
       left join users on users.id = audit_log.actor_user_id
       where ${buildAdminAuditActionFilter()}
       order by audit_log.created_at desc
-      limit 100
     `,
       adminAuditActionPrefixes,
     );

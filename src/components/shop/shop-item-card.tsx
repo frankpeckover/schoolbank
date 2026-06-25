@@ -1,9 +1,10 @@
 import { IconButton } from "@/components/ui/icon-button";
 import {
   CheckIcon,
-  PackageIcon,
+  EyeIcon,
   PencilIcon,
   ShoppingBagIcon,
+  TicketIcon,
   TrashIcon,
 } from "@/components/ui/icons";
 import type { ShopItem } from "@/services/shop-service";
@@ -15,6 +16,7 @@ type ShopItemCardProps = {
   onEdit: (item: ShopItem) => void;
   onPurchase: (itemId: string) => void;
   onRemove: (itemId: string) => void;
+  onView: (item: ShopItem) => void;
   requested: boolean;
 };
 
@@ -25,6 +27,7 @@ export function ShopItemCard({
   onEdit,
   onPurchase,
   onRemove,
+  onView,
   requested,
 }: ShopItemCardProps) {
   return (
@@ -47,7 +50,7 @@ export function ShopItemCard({
         </div>
 
         <div className="mt-2 flex items-center justify-between gap-2 text-sm">
-          <span className="rounded-md bg-brand-soft px-2.5 py-1.5 font-semibold text-brand-ink shadow-sm">
+          <span className="rounded-md bg-accent-soft px-2.5 py-1.5 font-semibold text-accent shadow-sm">
             {item.price} {currencyName}
           </span>
           <span
@@ -68,6 +71,7 @@ export function ShopItemCard({
           onEdit={onEdit}
           onPurchase={onPurchase}
           onRemove={onRemove}
+          onView={onView}
           requested={requested}
         />
       </div>
@@ -88,9 +92,9 @@ function ShopItemImage({ item }: { item: ShopItem }) {
   }
 
   return (
-    <div className="reward-shine flex aspect-[5/3] items-center justify-center bg-brand-soft text-brand">
+    <div className="reward-shine flex aspect-[5/3] items-center justify-center bg-accent-soft text-accent">
       <div className="flex h-12 w-12 items-center justify-center rounded-md bg-surface/85 shadow-sm">
-        <PackageIcon className="h-7 w-7" />
+        <TicketIcon className="h-7 w-7" />
       </div>
     </div>
   );
@@ -102,13 +106,17 @@ function ShopItemActions({
   onEdit,
   onPurchase,
   onRemove,
+  onView,
   requested,
 }: ShopItemCardProps) {
   if (!canManage) {
     return (
-      <div className="mt-3">
+      <div className="mt-3 flex gap-2">
+        <IconButton label={`View ${item.name}`} onClick={() => onView(item)}>
+          <EyeIcon />
+        </IconButton>
         <button
-          className={`inline-flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70 ${
+          className={`inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70 ${
             requested
               ? "border border-success-border bg-success-soft text-success"
               : "bg-brand text-white shadow-sm hover:bg-brand-hover"
@@ -135,6 +143,9 @@ function ShopItemActions({
 
   return (
     <div className="mt-3 flex gap-2">
+      <IconButton label={`View ${item.name}`} onClick={() => onView(item)}>
+        <EyeIcon />
+      </IconButton>
       <IconButton label={`Edit ${item.name}`} onClick={() => onEdit(item)}>
         <PencilIcon />
       </IconButton>

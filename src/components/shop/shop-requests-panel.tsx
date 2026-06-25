@@ -14,11 +14,13 @@ import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
 import { TextReasonModal } from "@/components/ui/text-reason-modal";
 
 type ShopRequestsPanelProps = {
+  className?: string;
   currencyName: string;
   onRequestActioned?: () => void;
 };
 
 export function ShopRequestsPanel({
+  className = "mt-5",
   currencyName,
   onRequestActioned,
 }: ShopRequestsPanelProps) {
@@ -112,18 +114,21 @@ export function ShopRequestsPanel({
     activeView === "pending"
       ? requests.filter((request) => request.status === "pending")
       : requests.filter((request) => request.status !== "pending");
+  const pendingRequestCount = requests.filter(
+    (request) => request.status === "pending",
+  ).length;
 
   return (
-    <section className="theme-panel mt-5 p-4">
+    <section className={`theme-panel motion-panel p-4 ${className}`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand-soft text-brand">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-panel-soft text-text-muted">
             <ShoppingBagIcon />
           </span>
           <div className="min-w-0">
             <h3 className="text-lg font-semibold">Shop Requests</h3>
-            <p className="mt-1 text-sm text-text-muted">
-              Reserved reward orders.
+            <p className="mt-2 inline-flex rounded-md bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent">
+              {pendingRequestCount} pending
             </p>
           </div>
         </div>
@@ -232,7 +237,7 @@ function ShopRequestCard({
     <article className="theme-card p-3 transition hover:border-brand-soft-strong hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand-soft text-brand">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent">
             <ShoppingBagIcon />
           </span>
           <div className="min-w-0">

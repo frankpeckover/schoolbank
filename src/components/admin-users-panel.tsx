@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { listUsers } from "@/lib/actions";
 import { UserFiltersPanel } from "@/components/admin-users/user-filters";
 import { matchesUserFilters } from "@/components/admin-users/user-filter-utils";
@@ -19,6 +19,8 @@ import type { UserListItem } from "@/services/user-service";
 type AdminUsersPanelProps = {
   schoolName: string;
 };
+
+const visibleUserLimit = 100;
 
 export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
   const [users, setUsers] = useState<UserListItem[]>([]);
@@ -91,12 +93,20 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
     }
   }
 
-  const filteredUsers = users.filter((user) =>
-    matchesUserFilters(user, filters, showInactiveUsers),
+  const filteredUsers = useMemo(
+    () =>
+      users.filter((user) =>
+        matchesUserFilters(user, filters, showInactiveUsers),
+      ),
+    [filters, showInactiveUsers, users],
   );
+  const visibleUsers = filteredUsers.slice(0, visibleUserLimit);
 
   return (
-    <section className="theme-panel motion-panel mt-5 p-5">
+    <section
+      aria-label={`${schoolName} users`}
+      className="theme-panel motion-panel mt-5 p-5"
+    >
       <PageHeader
         actions={
           <>
@@ -129,8 +139,8 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
           </button>
           </>
         }
-        description={`${schoolName} access.`}
         icon={<UsersIcon />}
+        iconTone="neutral"
         title="Users"
       />
 
@@ -158,9 +168,14 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
           </p>
         )}
         {!isLoading && !error && filteredUsers.length > 0 && (
+          <p className="mb-3 text-sm font-semibold text-text-muted">
+            Showing {visibleUsers.length} of {filteredUsers.length} users.
+          </p>
+        )}
+        {!isLoading && !error && filteredUsers.length > 0 && (
           <UsersTable
             onEdit={setEditingUser}
-            users={filteredUsers}
+            users={visibleUsers}
           />
         )}
         {!isLoading && !error && filteredUsers.length === 0 && (

@@ -48,8 +48,8 @@ export function GroupsPageHeader({
         </button>
         </>
       }
-      description="Student groups and memberships."
       icon={<UsersIcon />}
+      iconTone="neutral"
       title="Groups"
     />
   );

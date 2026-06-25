@@ -2,6 +2,7 @@
 
 import { useState, type ChangeEvent } from "react";
 import { importUsers } from "@/lib/actions";
+import { downloadCsv } from "@/lib/client-csv";
 import { parseCsvObjects } from "@/lib/csv";
 import type { Role } from "@/lib/session";
 import type {
@@ -111,6 +112,9 @@ export function UserImportModal({
             <p className="mt-1 text-sm text-text-muted">
               Upload a CSV with headers: {csvHeaders}
             </p>
+            <p className="mt-1 text-sm text-text-muted">
+              Existing usernames or emails are skipped and reported below.
+            </p>
           </div>
           <button
             className="rounded-md border border-button-border px-3 py-2 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
@@ -202,9 +206,18 @@ function ImportErrors({ errors }: { errors: ImportUserError[] }) {
 function GeneratedPasswords({ users }: { users: ImportedUserCredential[] }) {
   return (
     <div className="theme-subpanel mt-4 p-3">
-      <p className="text-sm font-semibold text-text-control">
-        Temporary passwords
-      </p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-semibold text-text-control">
+          Temporary passwords
+        </p>
+        <button
+          className="rounded-md border border-button-border px-3 py-2 text-sm font-semibold text-text-control transition hover:bg-surface-hover"
+          onClick={() => downloadPasswordCsv(users)}
+          type="button"
+        >
+          Download CSV
+        </button>
+      </div>
       <div className="mt-2 max-h-44 overflow-y-auto pr-1">
         <div className="grid gap-2 md:hidden">
           {users.map((user) => (
@@ -232,6 +245,14 @@ function GeneratedPasswords({ users }: { users: ImportedUserCredential[] }) {
         </table>
       </div>
     </div>
+  );
+}
+
+function downloadPasswordCsv(users: ImportedUserCredential[]) {
+  downloadCsv(
+    "imported-user-passwords.csv",
+    ["username", "temporary_password"],
+    users.map((user) => [user.username, user.temporaryPassword]),
   );
 }
 

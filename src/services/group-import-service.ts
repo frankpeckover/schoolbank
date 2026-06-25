@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 
 export type ImportGroupMembershipInput = {
+  description?: string;
   groupName: string;
   username: string;
 };
@@ -47,6 +48,7 @@ export class GroupImportService {
 
       for (const [index, membership] of input.memberships.entries()) {
         const rowNumber = index + 2;
+        const description = membership.description?.trim() ?? "";
         const groupName = membership.groupName.trim();
         const username = membership.username.trim().toLowerCase();
 
@@ -55,7 +57,7 @@ export class GroupImportService {
           continue;
         }
 
-        const group = await upsertGroup(client, groupName);
+        const group = await upsertGroup(client, groupName, description);
 
         if (group.wasInserted) {
           createdGroupCount += 1;
@@ -124,18 +126,23 @@ export class GroupImportService {
 async function upsertGroup(
   client: import("pg").PoolClient,
   groupName: string,
+  description: string,
 ) {
   const groupResult = await client.query<
     ImportGroupRow & { was_inserted: boolean }
   >(
     `
       insert into student_groups (name, description)
-      values ($1, '')
+      values ($1, $2)
       on conflict (name) do update
-      set updated_at = now()
+      set description = case
+            when excluded.description <> '' then excluded.description
+            else student_groups.description
+          end,
+          updated_at = now()
       returning id, is_active, xmax = 0 as was_inserted
     `,
-    [groupName],
+    [groupName, description],
   );
   const group = groupResult.rows[0];
 

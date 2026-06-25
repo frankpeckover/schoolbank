@@ -10,6 +10,9 @@ export {
   listAuditLog,
 } from "@/lib/actions/audit-actions";
 export {
+  listErrorLog,
+} from "@/lib/actions/error-log-actions";
+export {
   addStudentsToGroup,
   addStudentToGroup,
   createGroup,

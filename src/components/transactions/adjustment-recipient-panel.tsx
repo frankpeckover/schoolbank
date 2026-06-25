@@ -113,32 +113,28 @@ function TargetToggle({
   onChange: (target: AdjustmentTarget) => void;
   target: AdjustmentTarget;
 }) {
+  const options: { label: string; value: AdjustmentTarget }[] = [
+    { label: "Student", value: "student" },
+    { label: "Group", value: "group" },
+  ];
+
   return (
     <div className="mb-4">
-      <p className="text-sm font-semibold text-text-control">Recipient</p>
-      <div className="mt-2 grid grid-cols-2 overflow-hidden rounded-md border border-button-border">
-        <button
-          className={`px-4 py-3 text-sm font-semibold transition ${
-            target === "student"
-              ? "bg-brand text-white"
-              : "bg-surface text-text-control hover:bg-panel-soft"
-          }`}
-          onClick={() => onChange("student")}
-          type="button"
-        >
-          Student
-        </button>
-        <button
-          className={`px-4 py-3 text-sm font-semibold transition ${
-            target === "group"
-              ? "bg-brand text-white"
-              : "bg-surface text-text-control hover:bg-panel-soft"
-          }`}
-          onClick={() => onChange("group")}
-          type="button"
-        >
-          Group
-        </button>
+      <div className="grid grid-cols-2 rounded-md border border-border bg-surface p-1.5">
+        {options.map((option) => (
+          <button
+            className={`rounded-sm px-4 py-3 text-base font-semibold transition ${
+              target === option.value
+                ? "bg-brand text-white"
+                : "text-text-control hover:bg-surface-hover"
+            }`}
+            key={option.value}
+            onClick={() => onChange(option.value)}
+            type="button"
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
     </div>
   );

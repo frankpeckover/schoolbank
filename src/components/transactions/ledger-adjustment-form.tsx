@@ -17,7 +17,7 @@ import type { StudentListItem } from "@/services/user-service";
 
 type LedgerAdjustmentFormProps = {
   currencyName: string;
-  onCreated: () => void;
+  onCreated: (message: string) => void;
   onError: (message: string | null) => void;
 };
 
@@ -35,9 +35,7 @@ const studentSearchMinChars = 2;
 const recentStudentLimit = 6;
 const emptyStudentResults: StudentListItem[] = [];
 const emptyGroupResults: GroupListItem[] = [];
-const adjustmentSteps = ["recipient", "amount", "reason"] as const;
-
-type AdjustmentStep = (typeof adjustmentSteps)[number];
+type AdjustmentStep = "recipient" | "amount" | "reason";
 
 export function LedgerAdjustmentForm({
   currencyName,
@@ -187,6 +185,14 @@ export function LedgerAdjustmentForm({
       return;
     }
 
+    const successMessage = getAdjustmentSuccessMessage({
+      amount: selectedAmount,
+      currencyName,
+      direction,
+      reason,
+      recipientLabel,
+    });
+
     if (target === "student") {
       setRecentStudents((current) =>
         [
@@ -211,7 +217,7 @@ export function LedgerAdjustmentForm({
     setStep("recipient");
     setIsSaving(false);
     onError(null);
-    onCreated();
+    onCreated(successMessage);
   }
 
   function selectStudent(student: StudentListItem) {
@@ -287,12 +293,7 @@ export function LedgerAdjustmentForm({
       className="theme-subpanel mt-4 p-3"
       onSubmit={(event) => event.preventDefault()}
     >
-      <AdjustmentStepHeader
-        currentStep={step}
-        recipientLabel={recipientLabel}
-      />
-
-      <div className="mt-4">
+      <div>
         {step === "recipient" && (
           <AdjustmentRecipientPanel
             groups={groups}
@@ -348,55 +349,6 @@ export function LedgerAdjustmentForm({
         submitLabel={submitLabel}
       />
     </form>
-  );
-}
-
-function AdjustmentStepHeader({
-  currentStep,
-  recipientLabel,
-}: {
-  currentStep: AdjustmentStep;
-  recipientLabel: string;
-}) {
-  return (
-    <div>
-      <div className="flex flex-wrap items-center gap-2">
-        {adjustmentSteps.map((stepName, index) => {
-          const isCurrent = stepName === currentStep;
-          const isComplete =
-            adjustmentSteps.indexOf(stepName) <
-            adjustmentSteps.indexOf(currentStep);
-
-          return (
-            <div className="flex items-center gap-2" key={stepName}>
-              <span
-                className={`flex h-8 w-8 items-center justify-center rounded-full border text-sm font-semibold ${
-                  isCurrent
-                    ? "border-brand bg-brand text-white"
-                    : isComplete
-                      ? "border-success-border bg-success-soft text-success"
-                      : "border-border-subtle bg-surface text-text-muted"
-                }`}
-              >
-                {index + 1}
-              </span>
-              <span
-                className={`text-sm font-semibold ${
-                  isCurrent ? "text-text-control" : "text-text-muted"
-                }`}
-              >
-                {getStepLabel(stepName)}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      {recipientLabel && (
-        <p className="mt-3 inline-flex rounded-md bg-surface px-3 py-2 text-sm font-semibold text-text-control">
-          {recipientLabel}
-        </p>
-      )}
-    </div>
   );
 }
 
@@ -683,14 +635,21 @@ function getRecipientLabel(
   return "";
 }
 
-function getStepLabel(step: AdjustmentStep) {
-  if (step === "recipient") {
-    return "Who";
-  }
+function getAdjustmentSuccessMessage({
+  amount,
+  currencyName,
+  direction,
+  reason,
+  recipientLabel,
+}: {
+  amount: number;
+  currencyName: string;
+  direction: AdjustmentDirection;
+  reason: string;
+  recipientLabel: string;
+}) {
+  const action = direction === "add" ? "Added" : "Removed";
+  const preposition = direction === "add" ? "to" : "from";
 
-  if (step === "amount") {
-    return "What";
-  }
-
-  return "Why";
+  return `${action} ${amount} ${currencyName} ${preposition} ${recipientLabel} for ${reason}.`;
 }

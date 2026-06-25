@@ -120,6 +120,26 @@ type StudentListRow = {
   username: string;
 };
 
+type ImportableUser = {
+  email: string;
+  firstName: string;
+  lastName: string;
+  passwordHash: string;
+  role: Role;
+  rowNumber: number;
+  temporaryPassword: string;
+  username: string;
+};
+
+type ImportedUserRow = {
+  email: string;
+  first_name: string;
+  id: string;
+  last_name: string;
+  role: Role;
+  username: string;
+};
+
 const ledgerService = new LedgerService();
 const auditService = new AuditService();
 const defaultStudentSearchLimit = 12;
@@ -280,39 +300,175 @@ export class UserService {
     input: ImportUsersInput,
     currentUser?: SessionUser,
   ): Promise<ImportUsersResult> {
-    const createdUsers: ImportedUserCredential[] = [];
     const errors: ImportUserError[] = [];
-    let createdCount = 0;
+    const preparedUsers = await prepareImportUsers(input.users, errors);
 
-    for (const [index, user] of input.users.entries()) {
-      const rowNumber = index + 2;
-      const temporaryPassword = generateTemporaryPassword();
-      const result = await this.createUser({
-        ...user,
-        password: temporaryPassword,
-      }, currentUser);
-
-      if (result.ok) {
-        createdCount += 1;
-        createdUsers.push({
-          temporaryPassword,
-          username: result.user.username,
-        });
-      } else {
-        errors.push({
-          message: result.message,
-          rowNumber,
-          username: user.username,
-        });
-      }
+    if (preparedUsers.length === 0) {
+      return {
+        createdCount: 0,
+        createdUsers: [],
+        errors,
+        ok: true,
+      };
     }
 
-    return {
-      createdCount,
-      createdUsers,
-      errors,
-      ok: true,
-    };
+    const client = await db.connect();
+
+    try {
+      await client.query("begin");
+
+      const existingUsers = await client.query<{
+        email: string;
+        username: string;
+      }>(
+        `
+          select username, email
+          from users
+          where username = any($1::text[])
+             or email = any($2::text[])
+        `,
+        [
+          preparedUsers.map((user) => user.username),
+          preparedUsers.map((user) => user.email),
+        ],
+      );
+      const existingUsernames = new Set(
+        existingUsers.rows.map((user) => user.username),
+      );
+      const existingEmails = new Set(
+        existingUsers.rows.map((user) => user.email),
+      );
+      const usersToCreate = preparedUsers.filter((user) => {
+        if (existingUsernames.has(user.username) || existingEmails.has(user.email)) {
+          errors.push({
+            message: "Username or email is already in use.",
+            rowNumber: user.rowNumber,
+            username: user.username,
+          });
+          return false;
+        }
+
+        return true;
+      });
+
+      if (usersToCreate.length === 0) {
+        await client.query("commit");
+        return {
+          createdCount: 0,
+          createdUsers: [],
+          errors,
+          ok: true,
+        };
+      }
+
+      const insertedUsers = await client.query<ImportedUserRow>(
+        `
+          insert into users (
+            role_id,
+            username,
+            first_name,
+            last_name,
+            email,
+            password_hash
+          )
+          select
+            roles.id,
+            imported.username,
+            imported.first_name,
+            imported.last_name,
+            imported.email,
+            imported.password_hash
+          from jsonb_to_recordset($1::jsonb) as imported(
+            email text,
+            first_name text,
+            last_name text,
+            password_hash text,
+            role text,
+            username text
+          )
+          join roles on roles.role_key = imported.role
+            and roles.is_active = true
+          returning
+            id,
+            username,
+            first_name,
+            last_name,
+            email,
+            (select role_key from roles where roles.id = users.role_id) as role
+        `,
+        [
+          JSON.stringify(
+            usersToCreate.map((user) => ({
+              email: user.email,
+              first_name: user.firstName,
+              last_name: user.lastName,
+              password_hash: user.passwordHash,
+              role: user.role,
+              username: user.username,
+            })),
+          ),
+        ],
+      );
+
+      await client.query(
+        `
+          insert into accounts (user_id)
+          select users.id
+          from users
+          join roles on roles.id = users.role_id
+          where users.username = any($1::text[])
+            and roles.role_key = 'student'
+          on conflict (user_id) do nothing
+        `,
+        [insertedUsers.rows.map((user) => user.username)],
+      );
+
+      await auditService.logWithClient(client, {
+        action: "user.imported",
+        actorUserId: currentUser?.id,
+        details: {
+          createdCount: insertedUsers.rows.length,
+          usernames: insertedUsers.rows.map((user) => user.username),
+        },
+        entityType: "user",
+      });
+
+      await client.query("commit");
+
+      const temporaryPasswordsByUsername = new Map(
+        usersToCreate.map((user) => [user.username, user.temporaryPassword]),
+      );
+      const createdUsers = insertedUsers.rows.map((user) => ({
+        temporaryPassword: temporaryPasswordsByUsername.get(user.username) ?? "",
+        username: user.username,
+      }));
+
+      return {
+        createdCount: createdUsers.length,
+        createdUsers,
+        errors,
+        ok: true,
+      };
+    } catch (error) {
+      await client.query("rollback");
+      console.error("Import users failed", error);
+
+      return {
+        createdCount: 0,
+        createdUsers: [],
+        errors: [
+          ...errors,
+          {
+            message: "Could not import users.",
+            rowNumber: 0,
+            username: "",
+          },
+        ],
+        ok: true,
+      };
+    } finally {
+      client.release();
+    }
   }
 
   async updateUser(
@@ -387,12 +543,19 @@ export class UserService {
         await ledgerService.ensureStudentAccount(client, user.id);
       }
 
+      let removedGroupMembershipCount = 0;
+
+      if (!user.is_active || user.role !== "student") {
+        removedGroupMembershipCount = await removeUserFromGroups(client, user.id);
+      }
+
       await auditService.logWithClient(client, {
         action: "user.updated",
         actorUserId: currentUser?.id,
         details: {
           email,
           isActive: input.isActive,
+          removedGroupMembershipCount,
           role: input.role,
           username,
         },
@@ -587,9 +750,16 @@ export class UserService {
         };
       }
 
+      const removedGroupMembershipCount = isActive
+        ? 0
+        : await removeUserFromGroups(client, userId);
+
       await auditService.logWithClient(client, {
         action: isActive ? "user.enabled" : "user.disabled",
         actorUserId: currentUser?.id,
+        details: {
+          removedGroupMembershipCount,
+        },
         entityId: userId,
         entityType: "user",
       });
@@ -635,6 +805,73 @@ function capitaliseName(value: string) {
 
 function formatDisplayName(firstName: string, lastName: string) {
   return `${firstName} ${lastName}`.trim();
+}
+
+async function removeUserFromGroups(
+  client: import("pg").PoolClient,
+  userId: string,
+) {
+  const result = await client.query(
+    `
+      delete from student_group_memberships
+      where user_id = $1
+    `,
+    [userId],
+  );
+
+  return result.rowCount ?? 0;
+}
+
+async function prepareImportUsers(
+  users: ImportUserInput[],
+  errors: ImportUserError[],
+) {
+  const seenEmails = new Set<string>();
+  const seenUsernames = new Set<string>();
+  const preparedUsers = await Promise.all(
+    users.map(async (user, index): Promise<ImportableUser | null> => {
+      const rowNumber = index + 2;
+      const email = user.email.trim().toLowerCase();
+      const firstName = capitaliseName(user.firstName);
+      const lastName = capitaliseName(user.lastName);
+      const temporaryPassword = generateTemporaryPassword();
+      const username = user.username.trim().toLowerCase();
+
+      if (!username || !firstName || !lastName || !email) {
+        errors.push({
+          message: "Missing a required value.",
+          rowNumber,
+          username,
+        });
+        return null;
+      }
+
+      if (seenUsernames.has(username) || seenEmails.has(email)) {
+        errors.push({
+          message: "Duplicate username or email in this CSV.",
+          rowNumber,
+          username,
+        });
+        return null;
+      }
+
+      seenUsernames.add(username);
+      seenEmails.add(email);
+
+      return {
+        email,
+        firstName,
+        lastName,
+        passwordHash: await hashPassword(temporaryPassword),
+        role: user.role,
+        rowNumber,
+        temporaryPassword,
+        username,
+      };
+    }),
+  );
+
+  return preparedUsers.filter((user): user is ImportableUser => Boolean(user));
 }
 
 function getCreateUserErrorMessage(error: unknown) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   getStudentBalance,
   listShopItems,
@@ -12,8 +12,10 @@ import { canManageShopItems } from "@/lib/permissions";
 import type { SessionUser } from "@/lib/session";
 import type { ShopItem } from "@/services/shop-service";
 import { ShopItemCard } from "@/components/shop/shop-item-card";
+import { ShopItemDetailsModal } from "@/components/shop/shop-item-details-modal";
 import { ShopItemModal } from "@/components/shop/shop-item-modal";
-import { PlusIcon, ShoppingBagIcon, WalletIcon } from "@/components/ui/icons";
+import { IconButton } from "@/components/ui/icon-button";
+import { FilterIcon, PlusIcon, ShoppingBagIcon, WalletIcon } from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/page-header";
 
 type ShopPanelProps = {
@@ -24,9 +26,13 @@ type ShopPanelProps = {
 export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   const canManage = canManageShopItems(currentUser);
   const [items, setItems] = useState<ShopItem[]>([]);
+  const [search, setSearch] = useState("");
+  const [showArchivedItems, setShowArchivedItems] = useState(false);
   const [balance, setBalance] = useState<number | null>(null);
   const [requestedItemIds, setRequestedItemIds] = useState<string[]>([]);
   const [editingItem, setEditingItem] = useState<ShopItem | null>(null);
+  const [viewingItem, setViewingItem] = useState<ShopItem | null>(null);
+  const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
@@ -123,6 +129,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
 
   function openEditItemModal(item: ShopItem) {
     setEditingItem(item);
+    setViewingItem(null);
     setIsModalOpen(true);
   }
 
@@ -147,6 +154,9 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
     }
 
     setMessage("Request submitted.");
+    setViewingItem((current) =>
+      current?.id === itemId ? { ...current, quantity: current.quantity - 1 } : current,
+    );
     setRequestedItemIds((current) =>
       current.includes(itemId) ? current : [...current, itemId],
     );
@@ -160,14 +170,32 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
     refreshItems();
   }
 
+  const visibleItems = useMemo(
+    () =>
+      items.filter((item) =>
+        matchesShopFilters(item, search, canManage && showArchivedItems),
+      ),
+    [canManage, items, search, showArchivedItems],
+  );
+
   return (
     <section className="theme-panel motion-panel mt-5 p-4 sm:p-5">
       <ShopPanelHeader
+        areFiltersOpen={areFiltersOpen}
         balance={balance}
         canManage={canManage}
         currencyName={currencyName}
+        onFilterToggle={() => setAreFiltersOpen((isOpen) => !isOpen)}
         onNewItem={openNewItemModal}
       />
+      {canManage && areFiltersOpen && (
+        <ShopFilters
+          onSearchChange={setSearch}
+          onShowArchivedItemsChange={setShowArchivedItems}
+          search={search}
+          showArchivedItems={showArchivedItems}
+        />
+      )}
       <ShopMessages error={error} message={message} />
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
@@ -175,7 +203,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
           <p className="text-sm text-text-muted">Loading shop...</p>
         )}
         {!isLoading &&
-          items.map((item) => (
+          visibleItems.map((item) => (
             <ShopItemCard
               canManage={canManage}
               currencyName={currencyName}
@@ -184,9 +212,13 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
               onEdit={openEditItemModal}
               onPurchase={handlePurchase}
               onRemove={handleRemove}
+              onView={setViewingItem}
               requested={requestedItemIds.includes(item.id)}
             />
           ))}
+        {!isLoading && visibleItems.length === 0 && (
+          <p className="text-sm text-text-muted">No shop items match these filters.</p>
+        )}
       </div>
 
       {isModalOpen && (
@@ -196,19 +228,35 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
           onSaved={handleItemSaved}
         />
       )}
+
+      {viewingItem && (
+        <ShopItemDetailsModal
+          canManage={canManage}
+          currencyName={currencyName}
+          item={viewingItem}
+          onClose={() => setViewingItem(null)}
+          onEdit={openEditItemModal}
+          onPurchase={handlePurchase}
+          requested={requestedItemIds.includes(viewingItem.id)}
+        />
+      )}
     </section>
   );
 }
 
 function ShopPanelHeader({
+  areFiltersOpen,
   balance,
   canManage,
   currencyName,
+  onFilterToggle,
   onNewItem,
 }: {
+  areFiltersOpen: boolean;
   balance: number | null;
   canManage: boolean;
   currencyName: string;
+  onFilterToggle: () => void;
   onNewItem: () => void;
 }) {
   const walletLabel =
@@ -225,27 +273,73 @@ function ShopPanelHeader({
             </div>
           )}
           {canManage && (
-            <button
-              aria-label="New item"
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand text-white transition hover:bg-brand-hover"
-              onClick={onNewItem}
-              title="New item"
-              type="button"
-            >
-              <PlusIcon />
-            </button>
+            <>
+              <IconButton
+                ariaExpanded={areFiltersOpen}
+                label={areFiltersOpen ? "Hide filters" : "Show filters"}
+                onClick={onFilterToggle}
+              >
+                <FilterIcon />
+              </IconButton>
+              <button
+                aria-label="New item"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand text-white transition hover:bg-brand-hover"
+                onClick={onNewItem}
+                title="New item"
+                type="button"
+              >
+                <PlusIcon />
+              </button>
+            </>
           )}
         </div>
       }
-      description={
-        canManage
-          ? "Manage store items."
-          : "Browse rewards."
-      }
       icon={<ShoppingBagIcon />}
+      iconTone="accent"
       title="Shop"
       titleSize="base"
     />
+  );
+}
+
+function ShopFilters({
+  onSearchChange,
+  onShowArchivedItemsChange,
+  search,
+  showArchivedItems,
+}: {
+  onSearchChange: (value: string) => void;
+  onShowArchivedItemsChange: (value: boolean) => void;
+  search: string;
+  showArchivedItems: boolean;
+}) {
+  return (
+    <div className="theme-subpanel mt-4 p-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <label className="text-sm font-semibold text-text-control" htmlFor="shopSearch">
+            Search items
+          </label>
+          <input
+            className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition focus:ring-2"
+            id="shopSearch"
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="Search by item name or description"
+            value={search}
+          />
+        </div>
+      </div>
+
+      <label className="mt-4 flex items-center gap-2 text-sm font-semibold text-text-control">
+        <input
+          checked={showArchivedItems}
+          className="h-4 w-4"
+          onChange={(event) => onShowArchivedItemsChange(event.target.checked)}
+          type="checkbox"
+        />
+        Show archived items
+      </label>
+    </div>
   );
 }
 
@@ -269,5 +363,25 @@ function ShopMessages({
         </p>
       )}
     </>
+  );
+}
+
+function matchesShopFilters(
+  item: ShopItem,
+  search: string,
+  showArchivedItems: boolean,
+) {
+  if (!showArchivedItems && !item.isActive) {
+    return false;
+  }
+
+  const query = search.trim().toLowerCase();
+
+  if (!query) {
+    return true;
+  }
+
+  return [item.name, item.description].some((value) =>
+    value.toLowerCase().includes(query),
   );
 }

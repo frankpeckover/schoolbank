@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { listTransactionLog, voidTransaction } from "@/lib/actions";
+import { downloadCsv } from "@/lib/client-csv";
 import {
   canViewAllTransactions,
   canVoidTransactions,
@@ -19,6 +20,7 @@ import { TransactionStatusBadge } from "@/components/transactions/transaction-st
 import { IconButton } from "@/components/ui/icon-button";
 import {
   EyeIcon,
+  FileDownIcon,
   FilterIcon,
   ListIcon,
   XIcon,
@@ -29,14 +31,12 @@ import { TextReasonModal } from "@/components/ui/text-reason-modal";
 type TransactionLogPanelProps = {
   currencyName: string;
   currentUser: SessionUser;
-  description?: string;
   title?: string;
 };
 
 export function TransactionLogPanel({
   currencyName,
   currentUser,
-  description,
   title = "Transaction Log",
 }: TransactionLogPanelProps) {
   const canViewAllTransactionsForUser = canViewAllTransactions(currentUser);
@@ -121,24 +121,33 @@ export function TransactionLogPanel({
   );
 
   return (
-    <section className="theme-panel motion-panel mt-5 p-4">
+    <section className="theme-panel motion-panel mt-5 min-w-0 p-4">
       <PageHeader
         actions={
-          <IconButton
-            ariaExpanded={areFiltersOpen}
-            label={areFiltersOpen ? "Hide filters" : "Show filters"}
-            onClick={() => setAreFiltersOpen((isOpen) => !isOpen)}
-          >
-            <FilterIcon />
-          </IconButton>
-        }
-        description={
-          description ??
-          (canViewAllTransactionsForUser
-              ? "All recorded transactions."
-              : "Your recorded transactions.")
+          <>
+            <IconButton
+              ariaExpanded={areFiltersOpen}
+              label={areFiltersOpen ? "Hide filters" : "Show filters"}
+              onClick={() => setAreFiltersOpen((isOpen) => !isOpen)}
+            >
+              <FilterIcon />
+            </IconButton>
+            <IconButton
+              label="Export transactions"
+              onClick={() => {
+                if (isLoading || filteredTransactions.length === 0) {
+                  return;
+                }
+
+                downloadTransactions(filteredTransactions, currencyName);
+              }}
+            >
+              <FileDownIcon />
+            </IconButton>
+          </>
         }
         icon={<ListIcon />}
+        iconTone="neutral"
         title={title}
         titleSize="base"
       />
@@ -226,7 +235,7 @@ function TransactionList({
 }) {
   return (
     <>
-      <div className="grid gap-2 md:hidden">
+      <div className="grid w-full min-w-0 gap-2 md:hidden">
         {transactions.map((transaction) => (
           <TransactionMobileRow
             currencyName={currencyName}
@@ -237,8 +246,8 @@ function TransactionList({
         ))}
       </div>
 
-      <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+      <div className="hidden w-full min-w-0 max-w-full overflow-x-auto md:block">
+        <table className="w-full min-w-[720px] table-fixed border-collapse text-left text-sm">
         <thead>
           <tr className="border-b border-border-subtle text-text-muted">
             <th className="py-2 pr-4 font-semibold">Date</th>
@@ -258,7 +267,7 @@ function TransactionList({
               <td className="py-2 pr-4 text-text-muted">
                 {formatDateTime(transaction.createdAt)}
               </td>
-              <td className="py-2 pr-4">
+              <td className="break-words py-2 pr-4">
                 <span className="font-semibold">{transaction.reason}</span>
                 <span className="block text-xs text-text-muted">
                   {transaction.description}
@@ -317,9 +326,11 @@ function TransactionMobileRow({
       : `-${formatCurrencyAmount(transaction.amount, currencyName)}`;
 
   return (
-    <article className="theme-card flex items-center justify-between gap-3 p-3">
-      <div className="min-w-0">
-        <p className="truncate text-sm font-semibold">{transaction.reason}</p>
+    <article className="theme-card flex w-full min-w-0 items-center justify-between gap-3 overflow-hidden p-3">
+      <div className="min-w-0 flex-1 overflow-hidden">
+        <p className="break-words text-sm font-semibold">
+          {transaction.reason}
+        </p>
         <p className="mt-1 truncate text-xs text-text-muted">
           {formatDateTime(transaction.createdAt)}
         </p>
@@ -331,12 +342,14 @@ function TransactionMobileRow({
           {amountLabel}
         </p>
       </div>
-      <IconButton
-        label="Transaction details"
-        onClick={() => onDetailsClick(transaction)}
-      >
-        <EyeIcon />
-      </IconButton>
+      <div className="shrink-0">
+        <IconButton
+          label="Transaction details"
+          onClick={() => onDetailsClick(transaction)}
+        >
+          <EyeIcon />
+        </IconButton>
+      </div>
     </article>
   );
 }
@@ -522,5 +535,36 @@ function FilterInput({
         value={value}
       />
     </div>
+  );
+}
+
+function downloadTransactions(
+  transactions: TransactionLogItem[],
+  currencyName: string,
+) {
+  downloadCsv(
+    "transaction-log.csv",
+    [
+      "date",
+      "description",
+      "account",
+      "username",
+      "status",
+      "amount",
+      "currency",
+      "source",
+      "reference",
+    ],
+    transactions.map((transaction) => [
+      formatDateTime(transaction.createdAt),
+      transaction.reason,
+      transaction.studentName,
+      transaction.studentUsername,
+      transaction.isVoided ? "Voided" : transaction.entryStatus,
+      transaction.amount,
+      currencyName,
+      transaction.source,
+      transaction.reference,
+    ]),
   );
 }

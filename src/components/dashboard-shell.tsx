@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AdminAuditLogPanel } from "@/components/admin-audit-log-panel";
 import { AdminDashboardPanel } from "@/components/admin-dashboard-panel";
+import { AdminErrorLogPanel } from "@/components/admin-error-log-panel";
 import { AdminGroupsPanel } from "@/components/admin-groups-panel";
 import { AdminSettingsPanel } from "@/components/admin-settings-panel";
 import { AdminUsersPanel } from "@/components/admin-users-panel";
@@ -82,22 +83,16 @@ export function DashboardShell({
   const schoolName = schoolInfo.name.trim() || appConfig.defaultSchoolName;
 
   return (
-    <main className="app-shell-surface min-h-screen bg-background text-foreground">
-      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
-        <header className="motion-panel relative z-50 rounded-md border border-border-subtle bg-surface/90 p-3 shadow-sm backdrop-blur sm:p-4">
-          <div className="flex items-start justify-between gap-3 sm:items-center">
+    <main className="app-shell-surface min-h-screen overflow-x-hidden bg-background text-foreground">
+      <div className="mx-auto flex min-h-screen w-full max-w-7xl min-w-0 flex-col overflow-x-hidden px-4 py-4 sm:px-6 lg:px-8">
+        <header className="motion-panel relative z-50 rounded-2xl border border-border-subtle bg-surface/90 px-4 py-3 shadow-sm backdrop-blur sm:px-5">
+          <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <SchoolLogo logoUrl={schoolInfo.logoUrl} name={schoolName} />
               <div className="min-w-0">
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-text-kicker">
-                  {appConfig.name}
-                </p>
-                <h1 className="mt-1 truncate text-2xl font-semibold tracking-normal text-foreground sm:text-4xl">
-                  {user.displayName}
-                </h1>
-                <p className="mt-1 hidden text-sm text-text-muted sm:block">
+                <h1 className="truncate text-lg font-semibold tracking-normal text-foreground sm:text-xl">
                   {schoolName}
-                </p>
+                </h1>
               </div>
             </div>
             <HeaderNavMenu
@@ -162,6 +157,10 @@ export function DashboardShell({
 
         {canViewAuditLog(user) && activeNavItem === "Audit Log" && (
           <AdminAuditLogPanel />
+        )}
+
+        {canViewAuditLog(user) && activeNavItem === "Error Log" && (
+          <AdminErrorLogPanel />
         )}
 
         {canManageSchoolSettings(user) && activeNavItem === "Settings" && (

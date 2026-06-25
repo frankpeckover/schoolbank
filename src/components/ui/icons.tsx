@@ -45,6 +45,14 @@ export function ArrowDownIcon(props: IconProps) {
   );
 }
 
+export function ChevronDownIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="m6 9 6 6 6-6" />
+    </IconBase>
+  );
+}
+
 export function ArrowUpIcon(props: IconProps) {
   return (
     <IconBase {...props}>
@@ -79,6 +87,17 @@ export function FileUpIcon(props: IconProps) {
       <path d="M14 2v6h6" />
       <path d="M12 18v-6" />
       <path d="m9 15 3-3 3 3" />
+    </IconBase>
+  );
+}
+
+export function FileDownIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+      <path d="M14 2v6h6" />
+      <path d="M12 12v6" />
+      <path d="m9 15 3 3 3-3" />
     </IconBase>
   );
 }
@@ -172,6 +191,17 @@ export function SparkleIcon(props: IconProps) {
   );
 }
 
+export function TicketIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M3 9a3 3 0 0 0 0 6v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2a3 3 0 0 0 0-6V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2Z" />
+      <path d="M9 8v8" />
+      <path d="M13 9h4" />
+      <path d="M13 13h4" />
+    </IconBase>
+  );
+}
+
 export function TrashIcon(props: IconProps) {
   return (
     <IconBase {...props}>
@@ -191,6 +221,16 @@ export function UsersIcon(props: IconProps) {
       <circle cx="9" cy="7" r="4" />
       <path d="M22 21v-2a4 4 0 0 0-3-3.9" />
       <path d="M16 3.1a4 4 0 0 1 0 7.8" />
+    </IconBase>
+  );
+}
+
+export function UserCircleIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="10" r="3" />
+      <path d="M6.8 18a6 6 0 0 1 10.4 0" />
     </IconBase>
   );
 }

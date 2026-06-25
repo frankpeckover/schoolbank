@@ -253,6 +253,15 @@ create table if not exists audit_log (
   created_at timestamptz not null default now()
 );
 
+create table if not exists server_error_log (
+  id uuid primary key default gen_random_uuid(),
+  source text not null,
+  message text not null,
+  stack text not null default '',
+  context jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists password_reset_tokens (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references users(id) on delete cascade,
@@ -296,6 +305,8 @@ create index if not exists ledger_entries_related_entity_idx
 create index if not exists audit_log_created_at_idx on audit_log(created_at);
 create index if not exists audit_log_actor_idx on audit_log(actor_user_id);
 create index if not exists audit_log_entity_idx on audit_log(entity_type, entity_id);
+create index if not exists server_error_log_created_at_idx on server_error_log(created_at);
+create index if not exists server_error_log_source_idx on server_error_log(source);
 create index if not exists password_reset_tokens_user_idx
   on password_reset_tokens(user_id);
 create index if not exists password_reset_tokens_expires_idx
@@ -303,11 +314,12 @@ create index if not exists password_reset_tokens_expires_idx
 create index if not exists user_sessions_user_idx on user_sessions(user_id);
 create index if not exists user_sessions_expires_idx on user_sessions(expires_at);
 
-create unique index if not exists ledger_entries_source_unique_idx
+drop index if exists ledger_entries_source_unique_idx;
+
+create unique index ledger_entries_source_unique_idx
   on ledger_entries(related_entity_type, related_entity_id, entry_type)
   where reversal_of_ledger_entry_id is null
-    and related_entity_type is not null
-    and related_entity_id is not null;
+    and related_entity_type = 'shop_purchase';
 
 insert into school_info (id, name, currency_name)
 values (1, :'school_name', :'currency_name')
