@@ -35,6 +35,12 @@ export {
   saveStudentGoal,
 } from "@/lib/actions/student-goal-actions";
 export {
+  createTermDeposit,
+  getTermDepositSettings,
+  listStudentTermDeposits,
+  updateTermDepositSettings,
+} from "@/lib/actions/term-deposit-actions";
+export {
   approveShopRequest,
   denyShopRequest,
   listPendingShopRequests,

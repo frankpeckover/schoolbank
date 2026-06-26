@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { StudentShopRequestsPanel } from "@/components/shop/student-shop-requests-panel";
 import { StudentGoalCard } from "@/components/student-goal-card";
+import { StudentTermDepositCard } from "@/components/student-term-deposit-card";
 import { TransactionLogPanel } from "@/components/transactions/transaction-log-panel";
 import { getStudentBalance, listTransactionLog } from "@/lib/actions";
 import {
@@ -49,6 +50,17 @@ export function StudentDashboardPanel({
 }: StudentDashboardPanelProps) {
   const [balance, setBalance] = useState(0);
   const [error, setError] = useState<string | null>(null);
+
+  const refreshBalance = useCallback(async () => {
+    try {
+      const currentBalance = await getStudentBalance();
+
+      setBalance(currentBalance);
+      setError(null);
+    } catch {
+      setError("Could not load balance.");
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -95,6 +107,12 @@ export function StudentDashboardPanel({
           </p>
         )}
       </section>
+
+      <StudentTermDepositCard
+        balance={balance}
+        currencyName={currencyName}
+        onBalanceChanged={refreshBalance}
+      />
 
       <StudentShopRequestsPanel
         currencyName={currencyName}

@@ -220,6 +220,23 @@ create table if not exists student_goals (
   constraint student_goals_target_positive check (target_amount > 0)
 );
 
+create table if not exists term_deposit_settings (
+  id integer primary key default 1 check (id = 1),
+  is_enabled boolean not null default false,
+  minimum_amount integer not null default 50,
+  maximum_amount integer not null default 0,
+  term_days integer not null default 7,
+  interest_rate numeric(6, 2) not null default 5,
+  maximum_active_deposits integer not null default 1,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint term_deposit_settings_minimum_positive check (minimum_amount > 0),
+  constraint term_deposit_settings_maximum_not_negative check (maximum_amount >= 0),
+  constraint term_deposit_settings_term_positive check (term_days > 0),
+  constraint term_deposit_settings_rate_not_negative check (interest_rate >= 0),
+  constraint term_deposit_settings_active_positive check (maximum_active_deposits > 0)
+);
+
 create table if not exists ledger_entries (
   id uuid primary key default gen_random_uuid(),
   account_id uuid not null references accounts(id) on delete restrict,
@@ -244,12 +261,36 @@ create table if not exists ledger_entries (
       'shop_hold',
       'shop_purchase',
       'shop_refund',
+      'term_deposit_hold',
+      'term_deposit_payout',
       'manual_adjustment',
       'void_reversal'
     )
   ),
   constraint ledger_entries_status_check check (
     status in ('pending', 'posted', 'voided')
+  )
+);
+
+create table if not exists student_term_deposits (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references users(id) on delete cascade,
+  principal_amount integer not null,
+  interest_rate numeric(6, 2) not null,
+  interest_amount integer not null,
+  maturity_amount integer not null,
+  status text not null default 'active',
+  starts_at timestamptz not null default now(),
+  matures_at timestamptz not null,
+  paid_out_at timestamptz,
+  hold_ledger_entry_id uuid references ledger_entries(id) on delete restrict,
+  payout_ledger_entry_id uuid references ledger_entries(id) on delete restrict,
+  created_at timestamptz not null default now(),
+  constraint student_term_deposits_principal_positive check (principal_amount > 0),
+  constraint student_term_deposits_interest_not_negative check (interest_amount >= 0),
+  constraint student_term_deposits_maturity_positive check (maturity_amount > 0),
+  constraint student_term_deposits_status_check check (
+    status in ('active', 'paid_out', 'cancelled')
   )
 );
 
@@ -307,6 +348,12 @@ create index if not exists student_group_memberships_group_idx
 create index if not exists student_group_memberships_user_idx
   on student_group_memberships(user_id);
 create index if not exists student_goals_user_idx on student_goals(user_id);
+create index if not exists student_term_deposits_user_idx
+  on student_term_deposits(user_id);
+create index if not exists student_term_deposits_status_idx
+  on student_term_deposits(status);
+create index if not exists student_term_deposits_matures_idx
+  on student_term_deposits(matures_at);
 create index if not exists ledger_entries_account_idx on ledger_entries(account_id);
 create index if not exists ledger_entries_created_at_idx on ledger_entries(created_at);
 create index if not exists ledger_entries_status_idx on ledger_entries(status);
@@ -334,6 +381,10 @@ create unique index ledger_entries_source_unique_idx
 
 insert into school_info (id, name, currency_name)
 values (1, :'school_name', :'currency_name')
+on conflict (id) do nothing;
+
+insert into term_deposit_settings (id)
+values (1)
 on conflict (id) do nothing;
 
 insert into permissions (key, name, description, category)
