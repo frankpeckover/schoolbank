@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node tests/static-smoke.mjs",
+    "test:db": "node tests/db-smoke.mjs"
   },
   "dependencies": {
     "next": "16.2.9",
