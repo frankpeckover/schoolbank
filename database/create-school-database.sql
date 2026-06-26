@@ -210,6 +210,16 @@ create table if not exists student_group_memberships (
   unique (group_id, user_id)
 );
 
+create table if not exists student_goals (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null unique references users(id) on delete cascade,
+  title text not null default 'Savings goal',
+  target_amount integer not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint student_goals_target_positive check (target_amount > 0)
+);
+
 create table if not exists ledger_entries (
   id uuid primary key default gen_random_uuid(),
   account_id uuid not null references accounts(id) on delete restrict,
@@ -296,6 +306,7 @@ create index if not exists student_group_memberships_group_idx
   on student_group_memberships(group_id);
 create index if not exists student_group_memberships_user_idx
   on student_group_memberships(user_id);
+create index if not exists student_goals_user_idx on student_goals(user_id);
 create index if not exists ledger_entries_account_idx on ledger_entries(account_id);
 create index if not exists ledger_entries_created_at_idx on ledger_entries(created_at);
 create index if not exists ledger_entries_status_idx on ledger_entries(status);

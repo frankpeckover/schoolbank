@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { StudentShopRequestsPanel } from "@/components/shop/student-shop-requests-panel";
+import { StudentGoalCard } from "@/components/student-goal-card";
 import { TransactionLogPanel } from "@/components/transactions/transaction-log-panel";
 import { getStudentBalance, listTransactionLog } from "@/lib/actions";
 import {
@@ -76,16 +77,20 @@ export function StudentDashboardPanel({
 
   return (
     <>
-      <section className="motion-panel mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
+      <section className="motion-panel mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(18rem,0.85fr)]">
         <StudentWalletCard
           balance={balance}
           currencyName={currencyName}
           currentUser={currentUser}
         />
         <BalanceTrendCard currencyName={currencyName} />
+        <StudentGoalCard
+          balance={balance}
+          currencyName={currencyName}
+        />
 
         {error && (
-          <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong lg:col-span-2">
+          <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong lg:col-span-3">
             {error}
           </p>
         )}

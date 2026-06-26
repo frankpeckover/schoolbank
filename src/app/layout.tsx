@@ -1,6 +1,21 @@
 import type { Metadata } from "next";
 import { appConfig } from "@/lib/app-config";
+import { themeStorageKey } from "@/lib/theme-config";
 import "./globals.css";
+
+const themeInitScript = `
+(() => {
+  try {
+    const savedTheme = window.localStorage.getItem(${JSON.stringify(
+      themeStorageKey,
+    )});
+    document.documentElement.dataset.theme =
+      savedTheme === "dark" ? "dark" : "light";
+  } catch {
+    document.documentElement.dataset.theme = "light";
+  }
+})();
+`;
 
 export const metadata: Metadata = {
   title: appConfig.name,
@@ -13,7 +28,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

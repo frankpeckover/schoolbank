@@ -31,6 +31,10 @@ export {
   uploadSchoolLogo,
 } from "@/lib/actions/school-actions";
 export {
+  getStudentGoal,
+  saveStudentGoal,
+} from "@/lib/actions/student-goal-actions";
+export {
   approveShopRequest,
   denyShopRequest,
   listPendingShopRequests,

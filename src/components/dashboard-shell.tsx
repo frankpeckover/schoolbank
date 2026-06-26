@@ -17,7 +17,7 @@ import { StudentDashboardPanel } from "@/components/student-dashboard-panel";
 import { StudentBalancesPanel } from "@/components/student-balances-panel";
 import { TeacherDashboardPanel } from "@/components/teacher-dashboard-panel";
 import { TransactionLogPanel } from "@/components/transactions/transaction-log-panel";
-import { SchoolLogo } from "@/components/ui/school-logo";
+import { AppBrand } from "@/components/ui/app-brand";
 import { getSchoolInfo } from "@/lib/actions";
 import { appConfig } from "@/lib/app-config";
 import {
@@ -46,6 +46,7 @@ export function DashboardShell({
   const [activeNavItem, setActiveNavItem] =
     useState<NavigationItem>("Dashboard");
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [greeting, setGreeting] = useState("Hello");
   const [schoolInfo, setSchoolInfo] = useState<SchoolInfo>({
     name: appConfig.defaultSchoolName,
     address: "",
@@ -80,21 +81,23 @@ export function DashboardShell({
     };
   }, []);
 
+  useEffect(() => {
+    window.queueMicrotask(() => {
+      setGreeting(getTimeOfDayGreeting(new Date()));
+    });
+  }, []);
+
   const schoolName = schoolInfo.name.trim() || appConfig.defaultSchoolName;
 
   return (
     <main className="app-shell-surface min-h-screen overflow-x-hidden bg-background text-foreground">
       <div className="mx-auto flex min-h-screen w-full max-w-7xl min-w-0 flex-col overflow-x-hidden px-4 py-4 sm:px-6 lg:px-8">
-        <header className="motion-panel relative z-50 rounded-2xl border border-border-subtle bg-surface/90 px-4 py-3 shadow-sm backdrop-blur sm:px-5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <SchoolLogo logoUrl={schoolInfo.logoUrl} name={schoolName} />
-              <div className="min-w-0">
-                <h1 className="truncate text-lg font-semibold tracking-normal text-foreground sm:text-xl">
-                  {schoolName}
-                </h1>
-              </div>
-            </div>
+        <header className="relative z-50 py-3">
+          <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-3">
+            <AppBrand />
+            <p className="min-w-0 flex-1 truncate text-left text-base font-semibold text-foreground sm:text-center sm:text-lg">
+              {greeting}, {getGreetingName(user)}!
+            </p>
             <HeaderNavMenu
               activeItem={activeNavItem}
               onItemChange={setActiveNavItem}
@@ -177,4 +180,22 @@ export function DashboardShell({
       </div>
     </main>
   );
+}
+
+function getGreetingName(user: SessionUser) {
+  return user.firstName.trim() || user.displayName.trim() || user.username;
+}
+
+function getTimeOfDayGreeting(date: Date) {
+  const hour = date.getHours();
+
+  if (hour < 12) {
+    return "Good morning";
+  }
+
+  if (hour < 18) {
+    return "Good afternoon";
+  }
+
+  return "Good evening";
 }

@@ -4,9 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { Role } from "@/lib/session";
 import { isAdmin, isStudent } from "@/lib/permissions";
+import { useThemeMode } from "@/lib/use-theme-mode";
 import {
   ChevronDownIcon,
   LogOutIcon,
+  MoonIcon,
+  SunIcon,
   UserCircleIcon,
 } from "@/components/ui/icons";
 
@@ -68,6 +71,7 @@ export function HeaderNavMenu({
   const navRef = useRef<HTMLElement | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isOverflowMenuOpen, setIsOverflowMenuOpen] = useState(false);
+  const { isDarkMode, toggleThemeMode } = useThemeMode();
   const navigationItems = getNavigationItems(role);
   const primaryNavigationItems = getPrimaryNavigationItems(role);
   const overflowNavigationItems = getOverflowNavigationItems(role);
@@ -162,8 +166,10 @@ export function HeaderNavMenu({
               ))}
               <AccountMenuItems
                 hasTopBorder={overflowNavigationItems.length > 0}
+                isDarkMode={isDarkMode}
                 onLogout={handleLogout}
                 onPasswordChange={handlePasswordChange}
+                onThemeToggle={toggleThemeMode}
               />
             </NavMenuPanel>
           )}
@@ -196,8 +202,10 @@ export function HeaderNavMenu({
 
           <AccountMenuItems
             hasTopBorder
+            isDarkMode={isDarkMode}
             onLogout={handleLogout}
             onPasswordChange={handlePasswordChange}
+            onThemeToggle={toggleThemeMode}
           />
         </NavMenuPanel>
       )}
@@ -265,19 +273,31 @@ function MenuItemButton({
 
 function AccountMenuItems({
   hasTopBorder,
+  isDarkMode,
   onLogout,
   onPasswordChange,
+  onThemeToggle,
 }: {
   hasTopBorder: boolean;
+  isDarkMode: boolean;
   onLogout: () => void;
   onPasswordChange: () => void;
+  onThemeToggle: () => void;
 }) {
   return (
     <>
       <button
-        className={`block w-full px-3 py-3 text-left text-sm font-semibold text-text-control transition hover:bg-panel-soft ${
+        className={`flex w-full items-center gap-2 px-3 py-3 text-left text-sm font-semibold text-text-control transition hover:bg-panel-soft ${
           hasTopBorder ? "mt-2 border-t border-border-subtle" : ""
         }`}
+        onClick={onThemeToggle}
+        type="button"
+      >
+        {isDarkMode ? <SunIcon /> : <MoonIcon />}
+        <span>{isDarkMode ? "Light theme" : "Dark theme"}</span>
+      </button>
+      <button
+        className="block w-full px-3 py-3 text-left text-sm font-semibold text-text-control transition hover:bg-panel-soft"
         onClick={onPasswordChange}
         type="button"
       >

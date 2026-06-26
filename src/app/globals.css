@@ -1,7 +1,9 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light;
   --background: #f6f5ef;
+  --background-gradient-start: #edf5ef;
   --foreground: #20231f;
   --surface: #ffffff;
   --panel-soft: #f8f7f1;
@@ -43,12 +45,65 @@
   --wallet-highlight: #e9c46a;
   --progress-track: #e4ded3;
   --activity-meta: #7a8077;
+  --shell-gradient-accent: rgba(36, 92, 99, 0.08);
+  --shell-gradient-surface: rgba(255, 255, 255, 0.72);
+  --shadow-panel: rgba(32, 35, 31, 0.05);
   --radius-control: 0.875rem;
   --radius-card: 1.25rem;
   --radius-panel: 1.5rem;
   --motion-fast: 140ms;
   --motion-standard: 180ms;
   --motion-ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #101614;
+  --background-gradient-start: #17221f;
+  --foreground: #edf3ee;
+  --surface: #17201d;
+  --panel-soft: #1d2925;
+  --surface-hover: #24322d;
+  --border: #34433d;
+  --border-subtle: #2a3833;
+  --border-muted: #22302b;
+  --border-strong: #52645d;
+  --button-border: #52645d;
+  --text-muted: #a3afa8;
+  --text-subtle: #b5beb8;
+  --text-kicker: #9eafa5;
+  --text-label: #bbc7c0;
+  --text-control: #d8e1dc;
+  --brand: #78c7bb;
+  --brand-hover: #9ad9d0;
+  --brand-soft: #1e3936;
+  --brand-soft-strong: #2d5b55;
+  --brand-ink: #d6f4ef;
+  --section-highlight: #78c7bb;
+  --accent: #f0b06e;
+  --accent-soft: #3a2a1f;
+  --success: #8acb91;
+  --success-hover: #a3d9a9;
+  --success-soft: #1f3327;
+  --success-soft-hover: #274230;
+  --success-border: #41634a;
+  --danger: #e58572;
+  --danger-strong: #ffad9d;
+  --danger-border: #70453d;
+  --danger-button-border: #b56b5d;
+  --danger-soft: #3b231f;
+  --danger-soft-hover: #4a2b25;
+  --selected-soft: #1f333c;
+  --chip-bg: #293a31;
+  --chip-text: #d1e4d5;
+  --balance-bg: #0f292c;
+  --balance-muted: #a9d8d1;
+  --wallet-highlight: #d7b95d;
+  --progress-track: #39433d;
+  --activity-meta: #a7b0aa;
+  --shell-gradient-accent: rgba(120, 199, 187, 0.11);
+  --shell-gradient-surface: rgba(23, 32, 29, 0.72);
+  --shadow-panel: rgba(0, 0, 0, 0.28);
 }
 
 @theme inline {
@@ -100,7 +155,7 @@
 
 body {
   background:
-    linear-gradient(180deg, #edf5ef 0, var(--background) 260px),
+    linear-gradient(180deg, var(--background-gradient-start) 0, var(--background) 260px),
     var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
@@ -134,8 +189,8 @@ button:not(:disabled):active {
 
 .app-shell-surface {
   background:
-    linear-gradient(135deg, rgba(36, 92, 99, 0.08), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), transparent 18rem);
+    linear-gradient(135deg, var(--shell-gradient-accent), transparent 34%),
+    linear-gradient(180deg, var(--shell-gradient-surface), transparent 18rem);
 }
 
 .wallet-card {
@@ -167,7 +222,7 @@ button:not(:disabled):active {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);
-  box-shadow: 0 1px 2px rgba(32, 35, 31, 0.05);
+  box-shadow: 0 1px 2px var(--shadow-panel);
 }
 
 .theme-card {
