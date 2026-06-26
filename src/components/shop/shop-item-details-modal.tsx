@@ -112,7 +112,7 @@ function ShopItemDetailsImage({ item }: { item: ShopItem }) {
   }
 
   return (
-    <div className="reward-shine flex aspect-[5/3] items-center justify-center rounded-md bg-accent-soft text-accent">
+    <div className="reward-shine flex aspect-[5/3] items-center justify-center rounded-md bg-brand-soft text-brand">
       <div className="flex h-14 w-14 items-center justify-center rounded-md bg-surface/85 shadow-sm">
         <TicketIcon className="h-8 w-8" />
       </div>

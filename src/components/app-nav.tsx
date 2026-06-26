@@ -2,8 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import {
+  defaultCustomAccentColor,
+  type AccentTheme,
+  type AccentThemeOption,
+} from "@/lib/accent-theme-config";
 import type { Role } from "@/lib/session";
 import { isAdmin, isStudent } from "@/lib/permissions";
+import { useAccentTheme } from "@/lib/use-accent-theme";
 import { useThemeMode } from "@/lib/use-theme-mode";
 import {
   ChevronDownIcon,
@@ -71,6 +77,13 @@ export function HeaderNavMenu({
   const navRef = useRef<HTMLElement | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isOverflowMenuOpen, setIsOverflowMenuOpen] = useState(false);
+  const {
+    accentTheme,
+    accentThemeOptions,
+    customAccentColor,
+    setCustomAccentColor,
+    setAccentTheme,
+  } = useAccentTheme();
   const { isDarkMode, toggleThemeMode } = useThemeMode();
   const navigationItems = getNavigationItems(role);
   const primaryNavigationItems = getPrimaryNavigationItems(role);
@@ -165,8 +178,13 @@ export function HeaderNavMenu({
                 />
               ))}
               <AccountMenuItems
+                accentTheme={accentTheme}
+                accentThemeOptions={accentThemeOptions}
+                customAccentColor={customAccentColor}
                 hasTopBorder={overflowNavigationItems.length > 0}
                 isDarkMode={isDarkMode}
+                onAccentThemeChange={setAccentTheme}
+                onCustomAccentColorChange={setCustomAccentColor}
                 onLogout={handleLogout}
                 onPasswordChange={handlePasswordChange}
                 onThemeToggle={toggleThemeMode}
@@ -201,8 +219,13 @@ export function HeaderNavMenu({
           ))}
 
           <AccountMenuItems
+            accentTheme={accentTheme}
+            accentThemeOptions={accentThemeOptions}
+            customAccentColor={customAccentColor}
             hasTopBorder
             isDarkMode={isDarkMode}
+            onAccentThemeChange={setAccentTheme}
+            onCustomAccentColorChange={setCustomAccentColor}
             onLogout={handleLogout}
             onPasswordChange={handlePasswordChange}
             onThemeToggle={toggleThemeMode}
@@ -272,18 +295,30 @@ function MenuItemButton({
 }
 
 function AccountMenuItems({
+  accentTheme,
+  accentThemeOptions,
+  customAccentColor,
   hasTopBorder,
   isDarkMode,
+  onAccentThemeChange,
+  onCustomAccentColorChange,
   onLogout,
   onPasswordChange,
   onThemeToggle,
 }: {
+  accentTheme: AccentTheme;
+  accentThemeOptions: AccentThemeOption[];
+  customAccentColor: string;
   hasTopBorder: boolean;
   isDarkMode: boolean;
+  onAccentThemeChange: (accentTheme: AccentTheme) => void;
+  onCustomAccentColorChange: (customAccentColor: string) => void;
   onLogout: () => void;
   onPasswordChange: () => void;
   onThemeToggle: () => void;
 }) {
+  const colorInputValue = getColorInputValue(customAccentColor);
+
   return (
     <>
       <button
@@ -296,6 +331,66 @@ function AccountMenuItems({
         {isDarkMode ? <SunIcon /> : <MoonIcon />}
         <span>{isDarkMode ? "Light theme" : "Dark theme"}</span>
       </button>
+      <div className="px-3 py-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-text-kicker">
+          Accent
+        </p>
+        <div className="mt-3 flex items-center gap-2">
+          {accentThemeOptions.map((option) => (
+            <button
+              aria-label={`${option.label} accent`}
+              aria-pressed={accentTheme === option.value}
+              className={`h-7 w-7 rounded-full border transition ${
+                accentTheme === option.value
+                  ? "border-foreground ring-2 ring-brand-soft-strong"
+                  : "border-border-subtle hover:scale-105"
+              }`}
+              key={option.value}
+              onClick={() => onAccentThemeChange(option.value)}
+              style={{
+                backgroundColor:
+                  option.value === "custom"
+                    ? customAccentColor
+                    : option.swatch,
+              }}
+              title={option.label}
+              type="button"
+            />
+          ))}
+        </div>
+        <div className="mt-3 rounded-md border border-border-subtle bg-panel-soft p-2">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold text-text-muted">
+              Custom colour
+            </span>
+            <span
+              className="h-4 w-4 rounded-full border border-border-subtle"
+              style={{ backgroundColor: colorInputValue }}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              aria-label="Custom accent colour"
+              className="h-10 w-11 shrink-0 cursor-pointer rounded-md border border-border bg-surface p-1"
+              onChange={(event) =>
+                onCustomAccentColorChange(event.target.value)
+              }
+              type="color"
+              value={colorInputValue}
+            />
+            <input
+              aria-label="Custom accent hex"
+              className="min-w-0 flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm font-semibold uppercase text-text-control outline-none ring-brand transition placeholder:text-text-muted focus:border-brand focus:ring-2"
+              maxLength={7}
+              onChange={(event) =>
+                onCustomAccentColorChange(event.target.value)
+              }
+              placeholder="#2563EB"
+              value={customAccentColor}
+            />
+          </div>
+        </div>
+      </div>
       <button
         className="block w-full px-3 py-3 text-left text-sm font-semibold text-text-control transition hover:bg-panel-soft"
         onClick={onPasswordChange}
@@ -313,6 +408,14 @@ function AccountMenuItems({
       </button>
     </>
   );
+}
+
+function getColorInputValue(color: string) {
+  if (/^#[0-9a-f]{6}$/i.test(color)) {
+    return color;
+  }
+
+  return defaultCustomAccentColor;
 }
 
 function getNavigationItems(role: Role) {

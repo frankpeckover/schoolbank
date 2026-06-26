@@ -4,6 +4,10 @@
   color-scheme: light;
   --background: #f6f5ef;
   --background-gradient-start: #edf5ef;
+  --accent-primary: #245c63;
+  --accent-secondary: #b8612f;
+  --accent-highlight: #e9c46a;
+  --custom-accent-primary: #2563eb;
   --foreground: #20231f;
   --surface: #ffffff;
   --panel-soft: #f8f7f1;
@@ -18,14 +22,14 @@
   --text-kicker: #66715f;
   --text-label: #5f695d;
   --text-control: #4f5a50;
-  --brand: #245c63;
-  --brand-hover: #1e4d53;
-  --brand-soft: #e9f4f2;
-  --brand-soft-strong: #cde5e0;
-  --brand-ink: #163a40;
-  --section-highlight: #245c63;
-  --accent: #b8612f;
-  --accent-soft: #fff1e5;
+  --brand: var(--accent-primary);
+  --brand-hover: color-mix(in srgb, var(--accent-primary) 84%, black);
+  --brand-soft: color-mix(in srgb, var(--accent-primary) 10%, white);
+  --brand-soft-strong: color-mix(in srgb, var(--accent-primary) 24%, white);
+  --brand-ink: color-mix(in srgb, var(--accent-primary) 68%, black);
+  --section-highlight: var(--accent-primary);
+  --accent: var(--accent-secondary);
+  --accent-soft: color-mix(in srgb, var(--accent-secondary) 12%, white);
   --success: #2f6f4e;
   --success-hover: #285f43;
   --success-soft: #f1f7ec;
@@ -42,10 +46,10 @@
   --chip-text: #344534;
   --balance-bg: #173b40;
   --balance-muted: #cce3df;
-  --wallet-highlight: #e9c46a;
+  --wallet-highlight: var(--accent-highlight);
   --progress-track: #e4ded3;
   --activity-meta: #7a8077;
-  --shell-gradient-accent: rgba(36, 92, 99, 0.08);
+  --shell-gradient-accent: color-mix(in srgb, var(--accent-primary) 8%, transparent);
   --shell-gradient-surface: rgba(255, 255, 255, 0.72);
   --shadow-panel: rgba(32, 35, 31, 0.05);
   --radius-control: 0.875rem;
@@ -74,14 +78,14 @@ html[data-theme="dark"] {
   --text-kicker: #9eafa5;
   --text-label: #bbc7c0;
   --text-control: #d8e1dc;
-  --brand: #78c7bb;
-  --brand-hover: #9ad9d0;
-  --brand-soft: #1e3936;
-  --brand-soft-strong: #2d5b55;
-  --brand-ink: #d6f4ef;
-  --section-highlight: #78c7bb;
-  --accent: #f0b06e;
-  --accent-soft: #3a2a1f;
+  --brand: color-mix(in srgb, var(--accent-primary) 72%, white);
+  --brand-hover: color-mix(in srgb, var(--accent-primary) 54%, white);
+  --brand-soft: color-mix(in srgb, var(--accent-primary) 22%, #17201d);
+  --brand-soft-strong: color-mix(in srgb, var(--accent-primary) 42%, #17201d);
+  --brand-ink: color-mix(in srgb, var(--accent-primary) 32%, white);
+  --section-highlight: color-mix(in srgb, var(--accent-primary) 72%, white);
+  --accent: color-mix(in srgb, var(--accent-secondary) 72%, white);
+  --accent-soft: color-mix(in srgb, var(--accent-secondary) 20%, #17201d);
   --success: #8acb91;
   --success-hover: #a3d9a9;
   --success-soft: #1f3327;
@@ -98,12 +102,36 @@ html[data-theme="dark"] {
   --chip-text: #d1e4d5;
   --balance-bg: #0f292c;
   --balance-muted: #a9d8d1;
-  --wallet-highlight: #d7b95d;
+  --wallet-highlight: color-mix(in srgb, var(--accent-highlight) 86%, white);
   --progress-track: #39433d;
   --activity-meta: #a7b0aa;
-  --shell-gradient-accent: rgba(120, 199, 187, 0.11);
+  --shell-gradient-accent: color-mix(in srgb, var(--accent-primary) 11%, transparent);
   --shell-gradient-surface: rgba(23, 32, 29, 0.72);
   --shadow-panel: rgba(0, 0, 0, 0.28);
+}
+
+html[data-accent="blue"] {
+  --accent-primary: #2563eb;
+  --accent-secondary: #0f766e;
+  --accent-highlight: #93c5fd;
+}
+
+html[data-accent="purple"] {
+  --accent-primary: #7c3aed;
+  --accent-secondary: #c026d3;
+  --accent-highlight: #c4b5fd;
+}
+
+html[data-accent="orange"] {
+  --accent-primary: #c05f24;
+  --accent-secondary: #2563eb;
+  --accent-highlight: #fdba74;
+}
+
+html[data-accent="custom"] {
+  --accent-primary: var(--custom-accent-primary);
+  --accent-secondary: color-mix(in srgb, var(--custom-accent-primary) 64%, #b8612f);
+  --accent-highlight: color-mix(in srgb, var(--custom-accent-primary) 34%, white);
 }
 
 @theme inline {

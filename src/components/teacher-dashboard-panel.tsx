@@ -1,11 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { ShopRequestsPanel } from "@/components/shop/shop-requests-panel";
 import { LedgerAdjustmentForm } from "@/components/transactions/ledger-adjustment-form";
-import { SparkleIcon, UsersIcon, WalletIcon } from "@/components/ui/icons";
-import { listStudentBalances } from "@/lib/actions";
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  SparkleIcon,
+  WalletIcon,
+} from "@/components/ui/icons";
+import { getTeacherDashboardSummary, listStudentBalances } from "@/lib/actions";
 import { formatCurrencyAmount } from "@/lib/formatters";
+import type {
+  TeacherDashboardSummary,
+  TeacherIssuedPeriodTotals,
+} from "@/services/teacher-dashboard-service";
 import type { StudentBalanceItem } from "@/services/transaction-service";
 
 type TeacherDashboardPanelProps = {
@@ -76,6 +86,7 @@ function TeacherSnapshotPanel({
   schoolName: string;
 }) {
   const [balances, setBalances] = useState<StudentBalanceItem[]>([]);
+  const [summary, setSummary] = useState<TeacherDashboardSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,10 +95,14 @@ function TeacherSnapshotPanel({
 
     async function loadSnapshot() {
       try {
-        const loadedBalances = await listStudentBalances();
+        const [loadedBalances, loadedSummary] = await Promise.all([
+          listStudentBalances(),
+          getTeacherDashboardSummary(),
+        ]);
 
         if (isMounted) {
           setBalances(loadedBalances.filter((student) => student.isActive));
+          setSummary(loadedSummary);
           setError(null);
         }
       } catch {
@@ -108,20 +123,10 @@ function TeacherSnapshotPanel({
     };
   }, []);
 
-  const topBalances = useMemo(
-    () =>
-      [...balances]
-        .sort((firstStudent, secondStudent) =>
-          secondStudent.balance - firstStudent.balance,
-        )
-        .slice(0, 3),
-    [balances],
-  );
   const totalBalance = balances.reduce(
     (total, student) => total + student.balance,
     0,
   );
-  const highestBalance = topBalances[0]?.balance ?? 0;
 
   return (
     <section
@@ -148,8 +153,8 @@ function TeacherSnapshotPanel({
         </p>
       )}
       {!isLoading && !error && (
-        <>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+        <div className="mt-4 grid gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <SnapshotMetric
               label="Students"
               value={String(balances.length)}
@@ -158,17 +163,15 @@ function TeacherSnapshotPanel({
               label="In Wallets"
               value={formatCurrencyAmount(totalBalance, currencyName)}
             />
-            <SnapshotMetric
-              label="Top Balance"
-              value={formatCurrencyAmount(highestBalance, currencyName)}
-            />
           </div>
 
-          <TopWalletsList
-            currencyName={currencyName}
-            students={topBalances}
-          />
-        </>
+          {summary && (
+            <TeacherIssuedTotalsCard
+              currencyName={currencyName}
+              totals={summary.issuedTotals}
+            />
+          )}
+        </div>
       )}
     </section>
   );
@@ -186,46 +189,99 @@ function SnapshotMetric({
       <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
         {label}
       </p>
-      <p className="mt-2 break-words text-lg font-semibold text-foreground">
+      <p className="mt-2 break-words text-base font-semibold text-foreground xl:text-lg">
         {value}
       </p>
     </div>
   );
 }
 
-function TopWalletsList({
+function TeacherIssuedTotalsCard({
   currencyName,
-  students,
+  totals,
 }: {
   currencyName: string;
-  students: StudentBalanceItem[];
+  totals: TeacherDashboardSummary["issuedTotals"];
 }) {
   return (
-    <div className="mt-4 rounded-md border border-border-subtle bg-panel-soft p-3">
+    <div className="theme-subpanel p-3">
       <div className="flex items-center gap-2 text-sm font-semibold text-text-control">
-        <UsersIcon />
-        <span>Top wallets</span>
+        <SparkleIcon />
+        <span>Issued</span>
       </div>
-      {students.length === 0 && (
-        <p className="mt-3 text-sm text-text-muted">No student balances yet.</p>
-      )}
-      {students.length > 0 && (
-        <div className="mt-3 grid gap-2">
-          {students.map((student) => (
-            <div
-              className="flex items-center justify-between gap-3 rounded-md bg-panel-soft px-3 py-2"
-              key={student.id}
-            >
-              <span className="truncate text-sm font-semibold">
-                {student.displayName}
-              </span>
-              <span className="shrink-0 text-sm font-semibold text-brand">
-                {formatCurrencyAmount(student.balance, currencyName)}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="mt-3 grid gap-2">
+        <TeacherIssuedPeriod
+          currencyName={currencyName}
+          label="Today"
+          totals={totals.today}
+        />
+        <TeacherIssuedPeriod
+          currencyName={currencyName}
+          label="Week"
+          totals={totals.thisWeek}
+        />
+        <TeacherIssuedPeriod
+          currencyName={currencyName}
+          label="Year"
+          totals={totals.thisYear}
+        />
+      </div>
+    </div>
+  );
+}
+
+function TeacherIssuedPeriod({
+  currencyName,
+  label,
+  totals,
+}: {
+  currencyName: string;
+  label: string;
+  totals: TeacherIssuedPeriodTotals;
+}) {
+  return (
+    <div className="rounded-md bg-surface px-3 py-2">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
+        {label}
+      </p>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <IssuedAmount
+          amount={totals.given}
+          currencyName={currencyName}
+          icon={<ArrowUpIcon />}
+          tone="positive"
+        />
+        <IssuedAmount
+          amount={totals.removed}
+          currencyName={currencyName}
+          icon={<ArrowDownIcon />}
+          tone="negative"
+        />
+      </div>
+    </div>
+  );
+}
+
+function IssuedAmount({
+  amount,
+  currencyName,
+  icon,
+  tone,
+}: {
+  amount: number;
+  currencyName: string;
+  icon: ReactNode;
+  tone: "negative" | "positive";
+}) {
+  const toneClassName =
+    tone === "positive" ? "text-success" : "text-danger-strong";
+
+  return (
+    <div className={`flex min-w-0 items-center gap-1.5 ${toneClassName}`}>
+      <span className="shrink-0">{icon}</span>
+      <span className="truncate text-sm font-semibold">
+        {formatCurrencyAmount(amount, currencyName)}
+      </span>
     </div>
   );
 }

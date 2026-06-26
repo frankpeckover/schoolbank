@@ -35,6 +35,9 @@ export {
   saveStudentGoal,
 } from "@/lib/actions/student-goal-actions";
 export {
+  getTeacherDashboardSummary,
+} from "@/lib/actions/teacher-dashboard-actions";
+export {
   createTermDeposit,
   getTermDepositSettings,
   listStudentTermDeposits,

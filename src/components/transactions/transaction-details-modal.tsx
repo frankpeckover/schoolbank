@@ -1,5 +1,6 @@
 import { TransactionStatusBadge } from "@/components/transactions/transaction-status-badge";
 import { formatCurrencyAmount, formatDateTime } from "@/lib/formatters";
+import { getSignedAmountTextClassName } from "@/lib/amount-style";
 import type { TransactionLogItem } from "@/services/transaction-service";
 
 type TransactionDetailsModalProps = {
@@ -34,7 +35,11 @@ export function TransactionDetailsModal({
         <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
           <TransactionDetail label="Description" value={transaction.reason} />
           <TransactionDetail label="Type" value={transaction.description} />
-          <TransactionDetail label="Amount" value={amountLabel} />
+          <TransactionDetail
+            label="Amount"
+            value={amountLabel}
+            valueClassName={getSignedAmountTextClassName(transaction.amount)}
+          />
           <TransactionDetail label="Status" value={getStatusLabel(transaction)} />
           <TransactionDetail label="Account" value={transaction.studentName} />
           <TransactionDetail label="Account name" value={transaction.accountName} />
@@ -127,16 +132,18 @@ function formatUserReference(name: string | null, username: string | null) {
 function TransactionDetail({
   label,
   value,
+  valueClassName = "text-text-control",
 }: {
   label: string;
   value: string;
+  valueClassName?: string;
 }) {
   return (
     <div>
       <dt className="text-xs font-semibold uppercase text-text-muted">
         {label}
       </dt>
-      <dd className="mt-1 font-semibold text-text-control">{value}</dd>
+      <dd className={`mt-1 font-semibold ${valueClassName}`}>{value}</dd>
     </div>
   );
 }

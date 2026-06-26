@@ -295,7 +295,7 @@ function ShopPanelHeader({
         </div>
       }
       icon={<ShoppingBagIcon />}
-      iconTone="accent"
+      iconTone="brand"
       title="Shop"
       titleSize="base"
     />

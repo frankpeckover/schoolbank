@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import type { AuditLogItem } from "@/services/audit-service";
 import type { LedgerEntryStatus, LedgerEntryType } from "@/services/ledger-service";
 
 export type AdminDashboardSummary = {
@@ -9,8 +10,11 @@ export type AdminDashboardSummary = {
   moneyOut: number;
   pendingHolds: number;
   pendingShopRequests: number;
+  recentAuditEntries: AuditLogItem[];
   recentEntries: AdminDashboardEntry[];
   studentAccounts: number;
+  topCreditIssuers: TeacherIssuerSummary[];
+  topDemeritIssuers: TeacherIssuerSummary[];
   totalUsers: number;
 };
 
@@ -21,6 +25,13 @@ export type AdminDashboardEntry = {
   entryStatus: LedgerEntryStatus;
   studentName: string;
   type: LedgerEntryType;
+};
+
+export type TeacherIssuerSummary = {
+  amount: number;
+  entryCount: number;
+  teacherName: string;
+  username: string;
 };
 
 type SummaryRow = {
@@ -43,12 +54,47 @@ type RecentEntryRow = {
   type: LedgerEntryType;
 };
 
+type TeacherIssuerRow = {
+  amount: string;
+  entry_count: string;
+  teacher_name: string;
+  username: string;
+};
+
+type AuditLogRow = {
+  action: string;
+  actor_name: string | null;
+  actor_username: string | null;
+  created_at: Date;
+  details: Record<string, unknown>;
+  entity_id: string | null;
+  entity_type: string;
+  id: string;
+};
+
 const recentLedgerLimit = 6;
+const recentAuditLimit = 5;
 const circulationHistoryDays = 180;
+const adminAuditActionPrefixes = [
+  "school_info.",
+  "shop_item.",
+  "student_group.",
+  "term_deposit_settings.",
+  "user.",
+];
 
 export class AdminDashboardService {
   async getSummary(): Promise<AdminDashboardSummary> {
-    const [summaryResult, recentResult, circulationResult] = await Promise.all([
+    await ensureAdminAuditLogTable();
+
+    const [
+      summaryResult,
+      recentResult,
+      circulationResult,
+      topCreditIssuers,
+      topDemeritIssuers,
+      recentAuditResult,
+    ] = await Promise.all([
       db.query<SummaryRow>(`
         select
           (select count(*) from users) as total_users,
@@ -119,6 +165,27 @@ export class AdminDashboardService {
           and ledger_entries.created_at >= now() - ($1::int * interval '1 day')
         order by ledger_entries.created_at asc
       `, [circulationHistoryDays]),
+      this.listTopIssuers("credit"),
+      this.listTopIssuers("demerit"),
+      db.query<AuditLogRow>(
+        `
+          select
+            audit_log.id,
+            audit_log.action,
+            audit_log.entity_type,
+            audit_log.entity_id,
+            audit_log.details,
+            audit_log.created_at,
+            trim(users.first_name || ' ' || users.last_name) as actor_name,
+            users.username as actor_username
+          from audit_log
+          left join users on users.id = audit_log.actor_user_id
+          where ${buildAdminAuditActionFilter()}
+          order by audit_log.created_at desc
+          limit $${adminAuditActionPrefixes.length + 1}
+        `,
+        [...adminAuditActionPrefixes, recentAuditLimit],
+      ),
     ]);
 
     const summary = summaryResult.rows[0];
@@ -131,11 +198,45 @@ export class AdminDashboardService {
       moneyOut: toNumber(summary.money_out),
       pendingHolds: toNumber(summary.pending_holds),
       pendingShopRequests: toNumber(summary.pending_shop_requests),
+      recentAuditEntries: recentAuditResult.rows.map(mapAuditLogRow),
       recentEntries: recentResult.rows.map(mapDashboardEntry),
       studentAccounts: toNumber(summary.student_accounts),
+      topCreditIssuers,
+      topDemeritIssuers,
       totalUsers: toNumber(summary.total_users),
     };
   }
+
+  private async listTopIssuers(direction: "credit" | "demerit") {
+    const isCredit = direction === "credit";
+    const result = await db.query<TeacherIssuerRow>(
+      `
+        select
+          trim(created_by.first_name || ' ' || created_by.last_name) as teacher_name,
+          created_by.username,
+          count(*) as entry_count,
+          sum(${isCredit ? "ledger_entries.amount" : "abs(ledger_entries.amount)"}) as amount
+        from ledger_entries
+        join users created_by on created_by.id = ledger_entries.created_by_user_id
+        where ledger_entries.status = 'posted'
+          and ledger_entries.is_voided = false
+          and ledger_entries.entry_type = $1
+          and ledger_entries.amount ${isCredit ? ">" : "<"} 0
+        group by created_by.id, created_by.first_name, created_by.last_name, created_by.username
+        order by amount desc, entry_count desc, teacher_name asc
+        limit 3
+      `,
+      [isCredit ? "reward" : "penalty"],
+    );
+
+    return result.rows.map(mapTeacherIssuer);
+  }
+}
+
+function buildAdminAuditActionFilter() {
+  return adminAuditActionPrefixes
+    .map((_, index) => `audit_log.action like $${index + 1} || '%'`)
+    .join(" or ");
 }
 
 function toNumber(value: string | number | null | undefined) {
@@ -151,4 +252,50 @@ function mapDashboardEntry(entry: RecentEntryRow): AdminDashboardEntry {
     studentName: entry.student_name,
     type: entry.type,
   };
+}
+
+function mapTeacherIssuer(row: TeacherIssuerRow): TeacherIssuerSummary {
+  return {
+    amount: toNumber(row.amount),
+    entryCount: toNumber(row.entry_count),
+    teacherName: row.teacher_name,
+    username: row.username,
+  };
+}
+
+function mapAuditLogRow(row: AuditLogRow): AuditLogItem {
+  return {
+    action: row.action,
+    actorName: row.actor_name,
+    actorUsername: row.actor_username,
+    createdAt: row.created_at.toISOString(),
+    details: row.details ?? {},
+    entityId: row.entity_id,
+    entityType: row.entity_type,
+    id: row.id,
+  };
+}
+
+async function ensureAdminAuditLogTable() {
+  await db.query(`
+    create table if not exists audit_log (
+      id uuid primary key default gen_random_uuid(),
+      actor_user_id uuid references users(id) on delete set null,
+      action text not null,
+      entity_type text not null,
+      entity_id uuid,
+      details jsonb not null default '{}'::jsonb,
+      created_at timestamptz not null default now()
+    )
+  `);
+
+  await db.query(
+    "create index if not exists audit_log_created_at_idx on audit_log(created_at)",
+  );
+  await db.query(
+    "create index if not exists audit_log_actor_idx on audit_log(actor_user_id)",
+  );
+  await db.query(
+    "create index if not exists audit_log_entity_idx on audit_log(entity_type, entity_id)",
+  );
 }

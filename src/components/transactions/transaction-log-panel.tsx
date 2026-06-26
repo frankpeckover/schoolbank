@@ -9,6 +9,7 @@ import {
 } from "@/lib/permissions";
 import type { SessionUser } from "@/lib/session";
 import type { TransactionLogItem } from "@/services/transaction-service";
+import { getSignedAmountTextClassName } from "@/lib/amount-style";
 import { formatCurrencyAmount, formatDateTime } from "@/lib/formatters";
 import { matchesTransactionFilters } from "@/components/transactions/transaction-filter-utils";
 import { TransactionDetailsModal } from "@/components/transactions/transaction-details-modal";
@@ -335,9 +336,7 @@ function TransactionMobileRow({
           {formatDateTime(transaction.createdAt)}
         </p>
         <p
-          className={`mt-1 text-sm font-semibold ${
-            transaction.amount >= 0 ? "text-success" : "text-danger-strong"
-          }`}
+          className={`mt-1 text-sm font-semibold ${getSignedAmountTextClassName(transaction.amount)}`}
         >
           {amountLabel}
         </p>

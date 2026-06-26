@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import {
   CartesianGrid,
   Line,
@@ -24,11 +25,14 @@ import {
   formatDateTime,
   formatSignedCurrencyAmount,
 } from "@/lib/formatters";
+import { getSignedAmountTextClassName } from "@/lib/amount-style";
+import type { AuditLogItem } from "@/services/audit-service";
 import type {
   AdminDashboardEntry,
   AdminDashboardSummary,
+  TeacherIssuerSummary,
 } from "@/services/admin-dashboard-service";
-import { WalletIcon } from "@/components/ui/icons";
+import { ArrowDownIcon, ArrowUpIcon, WalletIcon } from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/page-header";
 
 type AdminDashboardPanelProps = {
@@ -86,7 +90,7 @@ export function AdminDashboardPanel({
   return (
     <>
       <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(24rem,0.9fr)]">
-        <section className="theme-panel min-w-0 p-4">
+        <section className="section-highlight theme-panel min-w-0 p-4">
           <PageHeader
             icon={<WalletIcon />}
             title="Admin Overview"
@@ -103,25 +107,28 @@ export function AdminDashboardPanel({
           )}
 
           {summary && (
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <MetricCard
-                label="Ledger Balance"
-                value={formatBalanceAmount(summary.ledgerBalance, currencyName)}
+            <>
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                <MetricCard
+                  label="Ledger Balance"
+                  value={formatWholeNumber(summary.ledgerBalance)}
+                />
+                <PendingSummaryCard
+                  pendingHolds={summary.pendingHolds}
+                  pendingShopRequests={summary.pendingShopRequests}
+                />
+                <AccountSummaryCard
+                  disabledAccounts={summary.totalUsers - summary.activeUsers}
+                  studentAccounts={summary.studentAccounts}
+                  totalAccounts={summary.totalUsers}
+                />
+              </div>
+              <TeacherIssuerPanel
+                currencyName={currencyName}
+                topCreditIssuers={summary.topCreditIssuers}
+                topDemeritIssuers={summary.topDemeritIssuers}
               />
-              <MetricCard
-                label="Pending Holds"
-                value={formatCurrencyAmount(summary.pendingHolds, currencyName)}
-              />
-              <MetricCard
-                label="Pending Requests"
-                value={String(summary.pendingShopRequests)}
-              />
-              <AccountSummaryCard
-                disabledAccounts={summary.totalUsers - summary.activeUsers}
-                studentAccounts={summary.studentAccounts}
-                totalAccounts={summary.totalUsers}
-              />
-            </div>
+            </>
           )}
         </section>
 
@@ -134,6 +141,8 @@ export function AdminDashboardPanel({
         )}
       </div>
 
+      {summary && <RecentAuditActivity entries={summary.recentAuditEntries} />}
+
       {summary && (
         <RecentLedgerActivity
           currencyName={currencyName}
@@ -141,6 +150,86 @@ export function AdminDashboardPanel({
         />
       )}
     </>
+  );
+}
+
+function TeacherIssuerPanel({
+  currencyName,
+  topCreditIssuers,
+  topDemeritIssuers,
+}: {
+  currencyName: string;
+  topCreditIssuers: TeacherIssuerSummary[];
+  topDemeritIssuers: TeacherIssuerSummary[];
+}) {
+  return (
+    <div className="mt-3 grid gap-3 md:grid-cols-2">
+      <TeacherIssuerList
+        currencyName={currencyName}
+        icon={<ArrowUpIcon />}
+        issuers={topCreditIssuers}
+        title="Top Credit Issuers"
+        tone="positive"
+      />
+      <TeacherIssuerList
+        currencyName={currencyName}
+        icon={<ArrowDownIcon />}
+        issuers={topDemeritIssuers}
+        title="Top Demerit Issuers"
+        tone="negative"
+      />
+    </div>
+  );
+}
+
+function TeacherIssuerList({
+  currencyName,
+  icon,
+  issuers,
+  title,
+  tone,
+}: {
+  currencyName: string;
+  icon: ReactNode;
+  issuers: TeacherIssuerSummary[];
+  title: string;
+  tone: "negative" | "positive";
+}) {
+  const toneClassName =
+    tone === "positive" ? "text-success" : "text-danger-strong";
+
+  return (
+    <article className="theme-card min-w-0 p-3">
+      <div className="flex items-center gap-2">
+        <span className={`shrink-0 ${toneClassName}`}>{icon}</span>
+        <h3 className="truncate text-sm font-semibold">{title}</h3>
+      </div>
+      {issuers.length === 0 && (
+        <p className="mt-3 text-sm text-text-muted">No entries yet.</p>
+      )}
+      {issuers.length > 0 && (
+        <ol className="mt-3 grid gap-2">
+          {issuers.map((issuer, index) => (
+            <li
+              className="flex min-w-0 items-center justify-between gap-3 rounded-md bg-panel-soft px-3 py-2"
+              key={`${issuer.username}-${index}`}
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">
+                  {index + 1}. {issuer.teacherName}
+                </p>
+                <p className="text-xs text-text-muted">
+                  {issuer.entryCount} entries
+                </p>
+              </div>
+              <span className={`shrink-0 text-sm font-semibold ${toneClassName}`}>
+                {formatCurrencyAmount(issuer.amount, currencyName)}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </article>
   );
 }
 
@@ -163,7 +252,7 @@ function CirculationChartSection({
   const timeTicks = getTimeAxisTicks(chartPoints);
 
   return (
-    <section className="theme-panel min-w-0 p-4">
+    <section className="theme-panel flex min-w-0 flex-col p-4">
       <PageHeader
         actions={
           <ChartScaleControl
@@ -176,13 +265,13 @@ function CirculationChartSection({
       />
 
       {chartPoints.length === 0 && (
-        <div className="flex min-h-64 items-center justify-center text-center">
+        <div className="flex min-h-48 flex-1 items-center justify-center text-center">
           <p className="text-sm text-text-muted">No circulation history yet.</p>
         </div>
       )}
 
       {chartPoints.length > 0 && (
-        <div className="mt-4 h-72 xl:h-[calc(100%-3rem)] xl:min-h-64">
+        <div className="mt-4 min-h-56 flex-1">
           <ResponsiveContainer height="100%" width="100%">
             <LineChart
               data={chartPoints}
@@ -245,6 +334,27 @@ function CirculationChartSection({
         </div>
       )}
     </section>
+  );
+}
+
+function PendingSummaryCard({
+  pendingHolds,
+  pendingShopRequests,
+}: {
+  pendingHolds: number;
+  pendingShopRequests: number;
+}) {
+  return (
+    <article className="theme-card flex min-h-24 flex-col p-3">
+      <p className="text-xs font-semibold uppercase text-text-muted">Pending</p>
+      <div className="mt-2 grid flex-1 gap-1">
+        <CompactMetricRow
+          label="Requests"
+          value={pendingShopRequests}
+        />
+        <CompactMetricRow label="Holds" value={pendingHolds} />
+      </div>
+    </article>
   );
 }
 
@@ -322,18 +432,16 @@ function findChartPointLabel(points: BalanceTimePoint[], timestamp: number) {
   );
 }
 
-function formatBalanceAmount(amount: number, currencyName: string) {
-  return amount < 0
-    ? `-${formatCurrencyAmount(amount, currencyName)}`
-    : formatCurrencyAmount(amount, currencyName);
+function formatWholeNumber(amount: number) {
+  return new Intl.NumberFormat("en-AU").format(amount);
 }
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <article className="theme-card flex min-h-28 flex-col p-3">
+    <article className="theme-card flex min-h-24 flex-col p-3">
       <p className="text-xs font-semibold uppercase text-text-muted">{label}</p>
       <div className="flex flex-1 items-center justify-center text-center">
-        <p className="break-words text-2xl font-semibold text-foreground">
+        <p className="text-3xl font-semibold leading-none tracking-normal text-foreground">
           {value}
         </p>
       </div>
@@ -351,20 +459,20 @@ function AccountSummaryCard({
   totalAccounts: number;
 }) {
   return (
-    <article className="theme-card flex min-h-28 flex-col p-3">
+    <article className="theme-card flex min-h-24 flex-col p-3">
       <p className="text-xs font-semibold uppercase text-text-muted">
         Accounts
       </p>
-      <div className="grid flex-1 grid-cols-3 items-center gap-2 text-center">
-        <AccountSummaryMetric label="Total" value={totalAccounts} />
-        <AccountSummaryMetric label="Students" value={studentAccounts} />
-        <AccountSummaryMetric label="Disabled" value={disabledAccounts} />
+      <div className="mt-2 grid flex-1 gap-1">
+        <CompactMetricRow label="Total" value={totalAccounts} />
+        <CompactMetricRow label="Students" value={studentAccounts} />
+        <CompactMetricRow label="Disabled" value={disabledAccounts} />
       </div>
     </article>
   );
 }
 
-function AccountSummaryMetric({
+function CompactMetricRow({
   label,
   value,
 }: {
@@ -372,9 +480,13 @@ function AccountSummaryMetric({
   value: number;
 }) {
   return (
-    <div>
-      <p className="text-2xl font-semibold text-foreground">{value}</p>
-      <p className="mt-1 text-xs font-semibold text-text-muted">{label}</p>
+    <div className="flex min-w-0 items-center justify-between gap-3 rounded-md bg-panel-soft px-3 py-1.5">
+      <p className="truncate text-xs font-semibold uppercase tracking-normal text-text-muted">
+        {label}
+      </p>
+      <p className="shrink-0 text-lg font-semibold leading-none tracking-normal text-foreground">
+        {formatWholeNumber(value)}
+      </p>
     </div>
   );
 }
@@ -402,6 +514,76 @@ function RecentLedgerActivity({
         )}
       </div>
     </section>
+  );
+}
+
+function RecentAuditActivity({ entries }: { entries: AuditLogItem[] }) {
+  return (
+    <section className="theme-panel mt-4 min-w-0 p-4">
+      <PageHeader title="Recent Audit" titleSize="base" />
+
+      <div className="mt-3 min-w-0">
+        {entries.length === 0 && (
+          <p className="text-sm text-text-muted">No audit events yet.</p>
+        )}
+        {entries.length > 0 && <RecentAuditList entries={entries} />}
+      </div>
+    </section>
+  );
+}
+
+function RecentAuditList({ entries }: { entries: AuditLogItem[] }) {
+  return (
+    <>
+      <div className="grid w-full min-w-0 gap-3 md:hidden">
+        {entries.map((entry) => (
+          <RecentAuditCard entry={entry} key={entry.id} />
+        ))}
+      </div>
+
+      <div className="hidden w-full min-w-0 max-w-full overflow-x-auto md:block">
+        <table className="w-full min-w-[460px] table-fixed border-collapse text-left text-sm">
+          <thead>
+            <tr className="border-b border-border-subtle text-text-muted">
+              <th className="py-2 pr-4 font-semibold">Time</th>
+              <th className="py-2 pr-4 font-semibold">Action</th>
+              <th className="py-2 font-semibold">Actor</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((entry) => (
+              <tr className="border-b border-border-subtle" key={entry.id}>
+                <td className="py-2 pr-4 text-text-muted">
+                  {formatDateTime(entry.createdAt)}
+                </td>
+                <td className="break-words py-2 pr-4 font-semibold">
+                  {formatAuditLabel(entry.action)}
+                </td>
+                <td className="py-2 text-text-muted">
+                  {formatAuditActor(entry)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+function RecentAuditCard({ entry }: { entry: AuditLogItem }) {
+  return (
+    <article className="theme-card w-full min-w-0 overflow-hidden p-3">
+      <h4 className="break-words text-sm font-semibold">
+        {formatAuditLabel(entry.action)}
+      </h4>
+      <p className="mt-1 truncate text-sm text-text-muted">
+        {formatAuditActor(entry)}
+      </p>
+      <p className="mt-2 break-words text-xs text-text-muted">
+        {formatDateTime(entry.createdAt)}
+      </p>
+    </article>
   );
 }
 
@@ -454,9 +636,7 @@ function RecentLedgerList({
                   {formatEntryType(entry.type)}
                 </td>
                 <td
-                  className={`py-2 text-right font-semibold ${
-                    entry.amount >= 0 ? "text-success" : "text-danger-strong"
-                  }`}
+                  className={`py-2 text-right font-semibold ${getSignedAmountTextClassName(entry.amount)}`}
                 >
                   {formatSignedCurrencyAmount(entry.amount, currencyName)}
                 </td>
@@ -477,7 +657,7 @@ function RecentLedgerCard({
   entry: AdminDashboardEntry;
 }) {
   const amountClassName =
-    entry.amount >= 0 ? "text-success" : "text-danger-strong";
+    getSignedAmountTextClassName(entry.amount);
 
   return (
     <article className="theme-card w-full min-w-0 overflow-hidden p-3">
@@ -504,6 +684,29 @@ function RecentLedgerCard({
 function formatEntryType(type: AdminDashboardEntry["type"]) {
   return type
     .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function formatAuditActor(entry: AuditLogItem) {
+  if (entry.actorName && entry.actorUsername) {
+    return `${entry.actorName} (${entry.actorUsername})`;
+  }
+
+  return entry.actorName ?? entry.actorUsername ?? "System";
+}
+
+function formatAuditLabel(action: string) {
+  return action
+    .split(".")
+    .map(formatLabelPart)
+    .join(" ");
+}
+
+function formatLabelPart(value: string) {
+  return value
+    .split("_")
+    .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 }

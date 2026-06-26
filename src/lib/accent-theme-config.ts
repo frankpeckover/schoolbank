@@ -1,0 +1,45 @@
+export type AccentTheme =
+  | "teal"
+  | "blue"
+  | "purple"
+  | "orange"
+  | "custom";
+
+export type AccentThemeOption = {
+  label: string;
+  swatch: string;
+  value: AccentTheme;
+};
+
+export const accentThemeStorageKey = "schoolbank-accent-theme";
+export const customAccentColorStorageKey = "schoolbank-custom-accent-color";
+export const defaultAccentTheme: AccentTheme = "teal";
+export const defaultCustomAccentColor = "#2563eb";
+
+export const accentThemeOptions: AccentThemeOption[] = [
+  {
+    label: "Teal",
+    swatch: "#245c63",
+    value: "teal",
+  },
+  {
+    label: "Blue",
+    swatch: "#2563eb",
+    value: "blue",
+  },
+  {
+    label: "Purple",
+    swatch: "#7c3aed",
+    value: "purple",
+  },
+  {
+    label: "Orange",
+    swatch: "#c05f24",
+    value: "orange",
+  },
+  {
+    label: "Custom",
+    swatch: defaultCustomAccentColor,
+    value: "custom",
+  },
+];
