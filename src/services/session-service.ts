@@ -27,8 +27,6 @@ const sessionLengthMilliseconds =
 
 export class SessionService {
   async createSession(userId: string) {
-    await ensureSessionTable();
-
     const token = randomBytes(sessionTokenBytes).toString("base64url");
     const expiresAt = new Date(Date.now() + sessionLengthMilliseconds);
 
@@ -59,8 +57,6 @@ export class SessionService {
     }
 
     try {
-      await ensureSessionTable();
-
       const result = await db.query<SessionUserRow>(
         `
           select
@@ -108,7 +104,6 @@ export class SessionService {
 
     if (token) {
       try {
-        await ensureSessionTable();
         await db.query(
           `
             delete from user_sessions
@@ -123,25 +118,6 @@ export class SessionService {
 
     cookieStore.delete(sessionCookieName);
   }
-}
-
-async function ensureSessionTable() {
-  await db.query(`
-    create table if not exists user_sessions (
-      id uuid primary key default gen_random_uuid(),
-      user_id uuid not null references users(id) on delete cascade,
-      token_hash text not null unique,
-      expires_at timestamptz not null,
-      created_at timestamptz not null default now(),
-      last_seen_at timestamptz not null default now()
-    )
-  `);
-  await db.query(`
-    create index if not exists user_sessions_user_idx on user_sessions(user_id)
-  `);
-  await db.query(`
-    create index if not exists user_sessions_expires_idx on user_sessions(expires_at)
-  `);
 }
 
 function hashSessionToken(token: string) {
