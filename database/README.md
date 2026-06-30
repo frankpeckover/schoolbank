@@ -1,56 +1,76 @@
 # SchoolBank Database Setup
 
-This folder now has two runnable setup scripts:
+This folder has two DBeaver-friendly setup scripts:
 
 - `create-school-database.sql`
 - `create-platform-database.sql`
 
-Both scripts are intended to be run with `psql` because they create a database
-and then use `\connect` to switch into it.
+Both scripts are normal SQL. They do not use `psql` backslash commands, so they
+can be run from DBeaver.
+
+Normal SQL cannot create a database and then switch into it inside the same
+script. Create the database/user first in DBeaver, connect to the target
+database, then run the relevant file.
 
 ## School Database
 
-Creates one school database, all school tables, and the initial admin user.
+Creates one school database with:
+
+- the current app tables
+- default roles and permissions
+- one `school_info` row
+- default term deposit settings
+- the initial admin user
 
 ```bash
-psql -U postgres -f database/create-school-database.sql
+database/create-school-database.sql
 ```
 
-Before running it for a real school, edit the variables at the top of the file:
+In DBeaver:
 
-```sql
-\set app_password 'change_me_before_running_in_production'
-\set school_database 'schoolbank'
-\set school_name 'SchoolBank School'
-\set currency_name 'credits'
-```
+1. Create a database, for example `schoolbank`.
+2. Create or choose the app user, for example `schoolbank_app`.
+3. Connect to the `schoolbank` database.
+4. Run `create-school-database.sql`.
+
+To change the seeded school name or currency, edit the `insert into school_info`
+statement near the bottom of the file.
 
 Initial admin login:
 
 ```txt
 username: admin
-password: demo123
+password: admin
 ```
 
 ## Platform Database
 
-Creates the shared platform database and the `organisations` table used to map
-domains/subdomains to school databases.
+Creates the shared platform database with:
+
+- the `organisations` table
+- one first development organisation row
 
 ```bash
-psql -U postgres -f database/create-platform-database.sql
+database/create-platform-database.sql
 ```
 
-Before running it for real, edit the variables at the top of the file,
-especially:
+In DBeaver:
 
-```sql
-\set app_password 'change_me_before_running_in_production'
-\set default_school_database_password 'change_me_to_match_the_schoolbank_app_password'
-```
+1. Create a database, for example `schoolbank_platform`.
+2. Create or choose the app user, for example `schoolbank_app`.
+3. Connect to the `schoolbank_platform` database.
+4. Run `create-platform-database.sql`.
+
+To change the first seeded organisation, edit the `insert into organisations`
+statement near the bottom of the file.
+
+The app looks up an organisation by `primary_domain`. For local testing, create
+a local DNS or hosts-file entry that points your dev domain at the app server IP,
+then set that same domain as `primary_domain`.
 
 The platform database stores each organisation's school database connection
-details. The browser never sees these credentials.
+details. The browser never sees these credentials. Add one row to
+`organisations` for each future school.
 
 ## Useful Checks
 

@@ -78,7 +78,7 @@ export class AuthService {
 
       return {
         ok: false,
-        message: `Could not connect to the ${appConfig.name} database. Check the POSTGRES and PLATFORM_POSTGRES settings in .env.local.`,
+        message: `Could not connect to the ${appConfig.name} database. Check the PLATFORM_POSTGRES settings and organisation lookup row.`,
       };
     }
   }

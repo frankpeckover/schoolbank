@@ -1,52 +1,19 @@
--- SchoolBank platform database setup.
--- Run with psql from an administrative database:
+-- SchoolBank platform database setup for DBeaver or any normal SQL editor.
 --
---   psql -U postgres -f database/create-platform-database.sql
+-- Before running this file:
+--   1. Create the PostgreSQL role/user that the app will use, for example schoolbank_app.
+--   2. Create the platform database, for example schoolbank_platform.
+--   3. Connect DBeaver to that platform database.
+--   4. Run this whole file.
 --
--- This creates the shared platform database used to map domains/subdomains to
--- school databases. Change the variables below before using this anywhere real.
-
-\set app_role 'schoolbank_app'
-\set app_password 'change_me_before_running_in_production'
-\set platform_database 'schoolbank_platform'
-\set default_org_slug 'springfield'
-\set default_org_name 'Springfield School'
-\set default_org_domain 'springfield.schoolbank.com'
-\set default_school_database 'schoolbank'
-\set default_school_database_host 'localhost'
-\set default_school_database_port '5432'
-\set default_school_database_user 'schoolbank_app'
-\set default_school_database_password 'change_me_to_match_the_schoolbank_app_password'
-
-select format(
-  'create role %I with login password %L',
-  :'app_role',
-  :'app_password'
-)
-where not exists (
-  select 1
-  from pg_roles
-  where rolname = :'app_role'
-)
-\gexec
-
-select format(
-  'create database %I with owner %I encoding %L template template0',
-  :'platform_database',
-  :'app_role',
-  'UTF8'
-)
-where not exists (
-  select 1
-  from pg_database
-  where datname = :'platform_database'
-)
-\gexec
-
-\connect :platform_database
-
-set role :app_role;
-
+-- This creates the platform lookup table and seeds one development organisation.
+--
+-- First seeded organisation:
+--   slug: local
+--   domain: dev.schoolbank.local
+--   school database: schoolbank
+--
+-- Change that seed row near the bottom of this file when needed.
 begin;
 
 create extension if not exists pgcrypto;
@@ -80,14 +47,14 @@ insert into organisations (
   database_password
 )
 values (
-  :'default_org_slug',
-  :'default_org_name',
-  :'default_org_domain',
-  :'default_school_database_host',
-  :'default_school_database_port',
-  :'default_school_database',
-  :'default_school_database_user',
-  :'default_school_database_password'
+  'local',
+  'Development School',
+  'dev.schoolbank.local',
+  'localhost',
+  5432,
+  'schoolbank',
+  'schoolbank_app',
+  'change_me_to_match_school_database_password'
 )
 on conflict (slug) do update
 set name = excluded.name,
@@ -97,6 +64,8 @@ set name = excluded.name,
     database_name = excluded.database_name,
     database_user = excluded.database_user,
     database_password = excluded.database_password,
+    is_active = true,
     updated_at = now();
 
 commit;
+

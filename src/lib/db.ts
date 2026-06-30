@@ -77,10 +77,6 @@ async function getTenantPool() {
 async function resolveTenantDatabaseConfig(): Promise<TenantDatabaseConfig> {
   const tenantLookup = await resolveTenantLookup();
 
-  if (tenantLookup.slug === localOrganisationSlug) {
-    return getLocalDatabaseConfig();
-  }
-
   return getOrganisationDatabaseConfig(tenantLookup);
 }
 
@@ -138,8 +134,8 @@ async function getOrganisationDatabaseConfig(lookup: TenantLookup) {
              database_password,
              is_active
       from organisations
-      where slug = $1
-         or primary_domain = $2
+      where organisations.slug = $1
+         or organisations.primary_domain = $2
       limit 1
     `,
     [lookup.slug, lookup.host],
@@ -162,34 +158,19 @@ async function getOrganisationDatabaseConfig(lookup: TenantLookup) {
   };
 }
 
-function getLocalDatabaseConfig(): TenantDatabaseConfig {
-  return {
-    database: process.env.POSTGRES_DATABASE,
-    host: process.env.POSTGRES_HOST,
-    password: process.env.POSTGRES_PASSWORD,
-    port: Number(process.env.POSTGRES_PORT ?? defaultPostgresPort),
-    slug: localOrganisationSlug,
-    user: process.env.POSTGRES_USER,
-  };
-}
-
 function getPlatformPool() {
   if (globalThis.schoolbankPlatformPool) {
     return globalThis.schoolbankPlatformPool;
   }
 
   const platformPool = new Pool({
-    database:
-      process.env.PLATFORM_POSTGRES_DATABASE ?? process.env.POSTGRES_DATABASE,
-    host: process.env.PLATFORM_POSTGRES_HOST ?? process.env.POSTGRES_HOST,
-    password:
-      process.env.PLATFORM_POSTGRES_PASSWORD ?? process.env.POSTGRES_PASSWORD,
+    database: process.env.PLATFORM_POSTGRES_DATABASE,
+    host: process.env.PLATFORM_POSTGRES_HOST,
+    password: process.env.PLATFORM_POSTGRES_PASSWORD,
     port: Number(
-      process.env.PLATFORM_POSTGRES_PORT ??
-        process.env.POSTGRES_PORT ??
-        defaultPostgresPort,
+      process.env.PLATFORM_POSTGRES_PORT ?? defaultPostgresPort,
     ),
-    user: process.env.PLATFORM_POSTGRES_USER ?? process.env.POSTGRES_USER,
+    user: process.env.PLATFORM_POSTGRES_USER,
   });
 
   if (process.env.NODE_ENV !== "production") {
