@@ -31,8 +31,8 @@ export function TeacherDashboardPanel({
 
   return (
     <>
-      <section className="motion-panel mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.75fr)]">
-        <section className="section-highlight theme-panel p-4 sm:p-5">
+      <section className="dashboard-grid motion-panel mt-5">
+        <section className="dashboard-unit-3 section-highlight theme-panel p-4 sm:p-5">
           <div className="flex h-full min-h-52 flex-col">
             <div className="flex items-start gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-brand-soft text-brand">
@@ -131,7 +131,7 @@ function TeacherActivityPanel({
   return (
     <section
       aria-label={`${schoolName} teacher activity`}
-      className="theme-panel p-4"
+      className="dashboard-unit-1 theme-panel p-4"
     >
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-panel-soft text-text-muted">

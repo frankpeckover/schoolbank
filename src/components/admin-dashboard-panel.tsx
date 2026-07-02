@@ -94,8 +94,8 @@ export function AdminDashboardPanel({
 
   return (
     <>
-      <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(24rem,0.9fr)]">
-        <section className="section-highlight theme-panel min-w-0 p-4">
+      <div className="dashboard-grid mt-5">
+        <section className="dashboard-unit-2 section-highlight theme-panel min-w-0 p-4">
           <PageHeader
             icon={<WalletIcon />}
             title="Admin Overview"
@@ -263,7 +263,7 @@ function CirculationChartSection({
   const timeTicks = getTimeAxisTicks(chartPoints);
 
   return (
-    <section className="theme-panel flex min-w-0 flex-col p-4">
+    <section className="dashboard-unit-2 theme-panel flex min-w-0 flex-col p-4">
       <PageHeader
         actions={
           <ChartScaleControl
@@ -630,6 +630,12 @@ function RecentLedgerList({
 
       <div className="hidden w-full min-w-0 max-w-full overflow-x-auto md:block">
         <table className="w-full min-w-full table-fixed border-collapse text-left text-sm">
+          <colgroup>
+            <col className="w-[24%]" />
+            <col className="w-[46%]" />
+            <col className="w-[15%]" />
+            <col className="w-[15%]" />
+          </colgroup>
           <thead>
             <tr className="border-b border-border-subtle text-text-muted">
               <th className="py-2 pr-4 font-semibold">Account</th>

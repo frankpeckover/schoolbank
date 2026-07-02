@@ -77,7 +77,7 @@ export function StudentDashboardPanel({
 
   return (
     <>
-      <section className="motion-panel mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(18rem,0.85fr)]">
+      <section className="dashboard-grid motion-panel mt-5">
         <StudentWalletCard
           balance={balance}
           currencyName={currencyName}
@@ -86,11 +86,12 @@ export function StudentDashboardPanel({
         <BalanceTrendCard currencyName={currencyName} />
         <StudentGoalCard
           balance={balance}
+          className="dashboard-unit-1"
           currencyName={currencyName}
         />
 
         {error && (
-          <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong lg:col-span-3">
+          <p className="dashboard-unit-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
             {error}
           </p>
         )}
@@ -121,7 +122,7 @@ function StudentWalletCard({
   const balanceAmount = Math.abs(balance);
 
   return (
-    <article className="wallet-card rounded-3xl border border-brand-soft-strong p-5 text-foreground shadow-sm transition hover:shadow-md sm:p-6">
+    <article className="dashboard-unit-1 wallet-card rounded-3xl border border-brand-soft-strong p-5 text-foreground shadow-sm transition hover:shadow-md sm:p-6">
       <div className="relative flex h-full min-h-52 flex-col items-center justify-center gap-4 text-center">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-text-kicker">
@@ -192,7 +193,7 @@ function BalanceTrendCard({
   const timeTicks = getTimeAxisTicks(chartPoints);
 
   return (
-    <article className="flex min-h-52 rounded-3xl border border-border-subtle bg-surface p-4 shadow-sm sm:p-5">
+    <article className="dashboard-unit-2 flex min-h-52 rounded-3xl border border-border-subtle bg-surface p-4 shadow-sm sm:p-5">
       <div className="flex min-h-56 w-full flex-col rounded-2xl bg-surface">
         <ChartScaleControl
           onScaleChange={setTimeScale}

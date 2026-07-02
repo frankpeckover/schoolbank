@@ -259,59 +259,89 @@ function TransactionList({
 
       <div className="hidden w-full min-w-0 max-w-full overflow-x-auto md:block">
         <table className="w-full min-w-full table-fixed border-collapse text-left text-sm">
-        <thead>
-          <tr className="border-b border-border-subtle text-text-muted">
-            <th className="py-2 pr-4 font-semibold">Description</th>
-            {canViewAllTransactions && (
-              <th className="py-2 pr-4 font-semibold">Account</th>
-            )}
-            <th className="py-2 pr-4 font-semibold">Status</th>
-            <th className="py-2 pr-4 text-right font-semibold">Amount</th>
-            <th className="py-2 font-semibold">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {transactions.map((transaction) => (
-            <tr className="border-b border-border-subtle" key={transaction.id}>
-              <td className="break-words py-2 pr-4">
-                <span className="font-semibold">{transaction.reason}</span>
-                <span className="mt-1 block text-xs text-text-muted">
-                  {formatDateTime(transaction.createdAt)}
-                </span>
-                <span className="mt-1 block text-xs text-text-subtle">
-                  {transaction.description}
-                </span>
-              </td>
+          <TransactionTableColumnGroup
+            canViewAllTransactions={canViewAllTransactions}
+          />
+          <thead>
+            <tr className="border-b border-border-subtle text-text-muted">
+              <th className="py-2 pr-4 font-semibold">Description</th>
               {canViewAllTransactions && (
-                <td className="py-2 pr-4 text-text-muted">
-                  {transaction.studentName}
-                  <span className="block text-xs">
-                    {transaction.studentUsername}
+                <th className="py-2 pr-4 font-semibold">Account</th>
+              )}
+              <th className="py-2 pr-4 font-semibold">Status</th>
+              <th className="py-2 pr-4 text-right font-semibold">Amount</th>
+              <th className="py-2 font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {transactions.map((transaction) => (
+              <tr className="border-b border-border-subtle" key={transaction.id}>
+                <td className="break-words py-2 pr-4">
+                  <span className="font-semibold">{transaction.reason}</span>
+                  <span className="mt-1 block text-xs text-text-muted">
+                    {formatDateTime(transaction.createdAt)}
+                  </span>
+                  <span className="mt-1 block text-xs text-text-subtle">
+                    {transaction.description}
                   </span>
                 </td>
-              )}
-              <td className="py-2 pr-4">
-                <TransactionStatusBadge transaction={transaction} />
-              </td>
-              <td
-                className={`py-2 pr-4 text-right font-semibold ${getSignedAmountTextClassName(transaction.amount)}`}
-              >
-                {formatSignedCurrencyAmount(transaction.amount, currencyName)}
-              </td>
-              <td className="py-2">
-                <TransactionActions
-                  canVoidTransactions={canVoidTransactions}
-                  onDetailsClick={onDetailsClick}
-                  onVoidClick={onVoidClick}
-                  transaction={transaction}
-                />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                {canViewAllTransactions && (
+                  <td className="py-2 pr-4 text-text-muted">
+                    {transaction.studentName}
+                    <span className="block text-xs">
+                      {transaction.studentUsername}
+                    </span>
+                  </td>
+                )}
+                <td className="py-2 pr-4">
+                  <TransactionStatusBadge transaction={transaction} />
+                </td>
+                <td
+                  className={`py-2 pr-4 text-right font-semibold ${getSignedAmountTextClassName(transaction.amount)}`}
+                >
+                  {formatSignedCurrencyAmount(transaction.amount, currencyName)}
+                </td>
+                <td className="py-2">
+                  <TransactionActions
+                    canVoidTransactions={canVoidTransactions}
+                    onDetailsClick={onDetailsClick}
+                    onVoidClick={onVoidClick}
+                    transaction={transaction}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </>
+  );
+}
+
+function TransactionTableColumnGroup({
+  canViewAllTransactions,
+}: {
+  canViewAllTransactions: boolean;
+}) {
+  if (canViewAllTransactions) {
+    return (
+      <colgroup>
+        <col className="w-[42%]" />
+        <col className="w-[20%]" />
+        <col className="w-[14%]" />
+        <col className="w-[14%]" />
+        <col className="w-[10%]" />
+      </colgroup>
+    );
+  }
+
+  return (
+    <colgroup>
+      <col className="w-[52%]" />
+      <col className="w-[18%]" />
+      <col className="w-[20%]" />
+      <col className="w-[10%]" />
+    </colgroup>
   );
 }
 

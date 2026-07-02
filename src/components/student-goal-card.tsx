@@ -11,6 +11,7 @@ import { PencilIcon, TargetIcon } from "@/components/ui/icons";
 
 type StudentGoalCardProps = {
   balance: number;
+  className?: string;
   currencyName: string;
 };
 
@@ -24,6 +25,7 @@ const emptyProgressPercent = 0;
 
 export function StudentGoalCard({
   balance,
+  className = "",
   currencyName,
 }: StudentGoalCardProps) {
   const [goal, setGoal] = useState<StudentGoal | null>(null);
@@ -110,7 +112,9 @@ export function StudentGoalCard({
   }
 
   return (
-    <article className="rounded-3xl border border-border-subtle bg-surface p-5 shadow-sm">
+    <article
+      className={`h-full rounded-3xl border border-border-subtle bg-surface p-5 shadow-sm ${className}`}
+    >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">

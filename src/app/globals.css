@@ -292,6 +292,42 @@ button:not(:disabled):active {
     linear-gradient(180deg, var(--shell-gradient-surface), transparent 18rem);
 }
 
+.dashboard-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.dashboard-unit-1,
+.dashboard-unit-2,
+.dashboard-unit-3,
+.dashboard-unit-4 {
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .dashboard-grid {
+    align-items: stretch;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .dashboard-unit-1 {
+    grid-column: span 1 / span 1;
+  }
+
+  .dashboard-unit-2 {
+    grid-column: span 2 / span 2;
+  }
+
+  .dashboard-unit-3 {
+    grid-column: span 3 / span 3;
+  }
+
+  .dashboard-unit-4 {
+    grid-column: span 4 / span 4;
+  }
+}
+
 .wallet-card {
   background: var(--wallet-card-background);
   overflow: hidden;
