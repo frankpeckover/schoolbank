@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ChangeEvent } from "react";
-import { importUsers } from "@/lib/actions";
+import { importUsers, previewImportUsers } from "@/lib/actions";
 import { downloadCsv } from "@/lib/client-csv";
 import { parseCsvObjects } from "@/lib/csv";
 import type { Role } from "@/lib/session";
@@ -9,6 +9,7 @@ import type {
   ImportedUserCredential,
   ImportUserInput,
   ImportUserError,
+  ImportUsersPreviewResult,
 } from "@/services/user-service";
 
 type UserImportModalProps = {
@@ -40,6 +41,7 @@ export function UserImportModal({
   const [createdUsers, setCreatedUsers] = useState<ImportedUserCredential[]>(
     [],
   );
+  const [preview, setPreview] = useState<ImportUsersPreviewResult | null>(null);
   const [errors, setErrors] = useState<ImportUserError[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +52,7 @@ export function UserImportModal({
 
     setUsers([]);
     setCreatedUsers([]);
+    setPreview(null);
     setErrors([]);
     setMessage(null);
     setError(null);
@@ -70,7 +73,16 @@ export function UserImportModal({
     }
 
     setUsers(result.users);
-    setMessage(`${result.users.length} users ready to import.`);
+    setMessage("Checking import preview...");
+
+    try {
+      const previewResult = await previewImportUsers({ users: result.users });
+
+      setPreview(previewResult);
+      setMessage(null);
+    } catch {
+      setError("Could not preview this import. Check the CSV and try again.");
+    }
   }
 
   async function handleImport() {
@@ -155,6 +167,8 @@ export function UserImportModal({
           </p>
         )}
 
+        {preview && <ImportPreview preview={preview} />}
+
         {errors.length > 0 && (
           <ImportErrors errors={errors} />
         )}
@@ -173,14 +187,49 @@ export function UserImportModal({
           </button>
           <button
             className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70"
-            disabled={isImporting || users.length === 0}
+            disabled={isImporting || users.length === 0 || !preview}
             onClick={handleImport}
             type="button"
           >
-            {isImporting ? "Importing..." : "Import Users"}
+            {isImporting ? "Importing..." : "Confirm Import"}
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ImportPreview({
+  preview,
+}: {
+  preview: ImportUsersPreviewResult;
+}) {
+  return (
+    <section className="theme-subpanel mt-4 p-3">
+      <p className="text-sm font-semibold text-text-control">Import preview</p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-5">
+        <PreviewMetric label="Rows" value={preview.rowCount} />
+        <PreviewMetric label="New" value={preview.newCount} />
+        <PreviewMetric label="Existing" value={preview.existingCount} />
+        <PreviewMetric label="Duplicates" value={preview.duplicateCount} />
+        <PreviewMetric label="Invalid" value={preview.invalidCount} />
+      </div>
+      {(preview.existingCount > 0 ||
+        preview.invalidCount > 0 ||
+        preview.duplicateCount > 0) && (
+        <p className="mt-3 text-sm text-text-muted">
+          Existing, duplicate, or invalid rows will be skipped during import.
+        </p>
+      )}
+    </section>
+  );
+}
+
+function PreviewMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-md bg-panel-soft px-3 py-2">
+      <p className="text-xs font-semibold uppercase text-text-muted">{label}</p>
+      <p className="mt-1 text-lg font-semibold leading-none">{value}</p>
     </div>
   );
 }

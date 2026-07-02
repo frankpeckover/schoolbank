@@ -28,8 +28,6 @@ const defaultGoalTitle = "Savings goal";
 
 export class StudentGoalService {
   async getGoal(userId: string): Promise<StudentGoal | null> {
-    await ensureStudentGoalsTable();
-
     const result = await db.query<StudentGoalRow>(
       `
         select id, title, target_amount, updated_at
@@ -70,7 +68,6 @@ export class StudentGoalService {
 
     try {
       await client.query("begin");
-      await ensureStudentGoalsTable(client);
 
       const result = await client.query<{ id: string }>(
         `
@@ -119,22 +116,4 @@ function mapStudentGoalRow(row: StudentGoalRow): StudentGoal {
     title: row.title,
     updatedAt: row.updated_at.toISOString(),
   };
-}
-
-async function ensureStudentGoalsTable(client: Pick<typeof db, "query"> = db) {
-  await client.query(`
-    create table if not exists student_goals (
-      id uuid primary key default gen_random_uuid(),
-      user_id uuid not null unique references users(id) on delete cascade,
-      title text not null default 'Savings goal',
-      target_amount integer not null,
-      created_at timestamptz not null default now(),
-      updated_at timestamptz not null default now(),
-      constraint student_goals_target_positive check (target_amount > 0)
-    )
-  `);
-
-  await client.query(
-    "create index if not exists student_goals_user_idx on student_goals(user_id)",
-  );
 }

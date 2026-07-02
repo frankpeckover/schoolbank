@@ -18,6 +18,7 @@ import {
   type TransactionFilters,
 } from "@/components/transactions/transaction-log-types";
 import { TransactionStatusBadge } from "@/components/transactions/transaction-status-badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { IconButton } from "@/components/ui/icon-button";
 import {
   EyeIcon,
@@ -178,12 +179,18 @@ export function TransactionLogPanel({
           </p>
         )}
         {!isLoading && !error && transactions.length === 0 && (
-          <p className="text-sm text-text-muted">No transactions recorded yet.</p>
+          <EmptyState
+            description="Transactions will appear here after credits are issued, removed, held, spent, or voided."
+            icon={<ListIcon />}
+            title="No transactions yet"
+          />
         )}
         {!isLoading && !error && transactions.length > 0 && filteredTransactions.length === 0 && (
-          <p className="text-sm text-text-muted">
-            No transactions match these filters.
-          </p>
+          <EmptyState
+            description="Try changing or clearing the filters to see more ledger activity."
+            icon={<FilterIcon />}
+            title="No matching transactions"
+          />
         )}
         {!isLoading && !error && filteredTransactions.length > 0 && (
           <TransactionList

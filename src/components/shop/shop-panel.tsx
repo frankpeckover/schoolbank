@@ -14,6 +14,7 @@ import type { ShopItem } from "@/services/shop-service";
 import { ShopItemCard } from "@/components/shop/shop-item-card";
 import { ShopItemDetailsModal } from "@/components/shop/shop-item-details-modal";
 import { ShopItemModal } from "@/components/shop/shop-item-modal";
+import { EmptyState } from "@/components/ui/empty-state";
 import { IconButton } from "@/components/ui/icon-button";
 import { FilterIcon, PlusIcon, ShoppingBagIcon, WalletIcon } from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/page-header";
@@ -217,7 +218,19 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
             />
           ))}
         {!isLoading && visibleItems.length === 0 && (
-          <p className="text-sm text-text-muted">No shop items match these filters.</p>
+          <div className="sm:col-span-2 lg:col-span-3 xl:col-span-4 2xl:col-span-5">
+            <EmptyState
+              description={
+                items.length === 0
+                  ? canManage
+                    ? "Create the first reward item so students have something to request."
+                    : "Rewards will appear here once staff add them."
+                  : "Try changing the search or archived-item filter."
+              }
+              icon={<ShoppingBagIcon />}
+              title={items.length === 0 ? "No shop items yet" : "No matching shop items"}
+            />
+          </div>
         )}
       </div>
 

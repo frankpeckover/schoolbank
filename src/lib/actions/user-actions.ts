@@ -48,6 +48,11 @@ export async function importUsers(input: ImportUsersInput) {
   return userService.importUsers(input, currentUser);
 }
 
+export async function previewImportUsers(input: ImportUsersInput) {
+  await requireAdmin();
+  return userService.previewImportUsers(input);
+}
+
 export async function updateUser(input: UpdateUserInput) {
   const currentUser = await requireAdmin();
   return userService.updateUser(input, currentUser);

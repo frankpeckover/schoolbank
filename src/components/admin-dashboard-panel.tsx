@@ -26,13 +26,20 @@ import {
   formatSignedCurrencyAmount,
 } from "@/lib/formatters";
 import { getSignedAmountTextClassName } from "@/lib/amount-style";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { AuditLogItem } from "@/services/audit-service";
 import type {
   AdminDashboardEntry,
   AdminDashboardSummary,
+  AdminSetupChecklistItem,
   TeacherIssuerSummary,
 } from "@/services/admin-dashboard-service";
-import { ArrowDownIcon, ArrowUpIcon, WalletIcon } from "@/components/ui/icons";
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  CheckIcon,
+  WalletIcon,
+} from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/page-header";
 
 type AdminDashboardPanelProps = {
@@ -128,6 +135,7 @@ export function AdminDashboardPanel({
                 topCreditIssuers={summary.topCreditIssuers}
                 topDemeritIssuers={summary.topDemeritIssuers}
               />
+              <SetupChecklist items={summary.setupChecklist} />
             </>
           )}
         </section>
@@ -150,6 +158,45 @@ export function AdminDashboardPanel({
         />
       )}
     </>
+  );
+}
+
+function SetupChecklist({ items }: { items: AdminSetupChecklistItem[] }) {
+  const completedCount = items.filter((item) => item.isComplete).length;
+
+  return (
+    <section className="theme-card mt-3 p-3">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold">Setup Checklist</h3>
+        <span className="rounded-full bg-panel-soft px-3 py-1 text-xs font-semibold text-text-muted">
+          {completedCount}/{items.length}
+        </span>
+      </div>
+      <div className="mt-3 grid gap-2 md:grid-cols-2">
+        {items.map((item) => (
+          <article
+            className="flex min-w-0 gap-3 rounded-md bg-panel-soft p-3"
+            key={item.title}
+          >
+            <span
+              className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+                item.isComplete
+                  ? "bg-success-soft text-success"
+                  : "bg-brand-soft text-brand"
+              }`}
+            >
+              {item.isComplete ? <CheckIcon /> : null}
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">{item.title}</p>
+              <p className="mt-1 text-xs text-text-muted">
+                {item.description}
+              </p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -205,7 +252,13 @@ function TeacherIssuerList({
         <h3 className="truncate text-sm font-semibold">{title}</h3>
       </div>
       {issuers.length === 0 && (
-        <p className="mt-3 text-sm text-text-muted">No entries yet.</p>
+        <div className="mt-3">
+          <EmptyState
+            description="This will fill in after staff record posted ledger entries."
+            icon={icon}
+            title="No entries yet"
+          />
+        </div>
       )}
       {issuers.length > 0 && (
         <ol className="mt-3 grid gap-2">
@@ -266,7 +319,11 @@ function CirculationChartSection({
 
       {chartPoints.length === 0 && (
         <div className="flex min-h-48 flex-1 items-center justify-center text-center">
-          <p className="text-sm text-text-muted">No circulation history yet.</p>
+          <EmptyState
+            description="The graph will appear after posted or pending ledger activity exists."
+            icon={<WalletIcon />}
+            title="No circulation history yet"
+          />
         </div>
       )}
 
@@ -507,7 +564,11 @@ function RecentLedgerActivity({
 
       <div className="mt-3 min-w-0">
         {entries.length === 0 && (
-          <p className="text-sm text-text-muted">No ledger activity yet.</p>
+          <EmptyState
+            description="Recent ledger entries will appear after credits, holds, purchases, or refunds are recorded."
+            icon={<WalletIcon />}
+            title="No ledger activity yet"
+          />
         )}
         {entries.length > 0 && (
           <RecentLedgerList currencyName={currencyName} entries={entries} />
@@ -524,7 +585,10 @@ function RecentAuditActivity({ entries }: { entries: AuditLogItem[] }) {
 
       <div className="mt-3 min-w-0">
         {entries.length === 0 && (
-          <p className="text-sm text-text-muted">No audit events yet.</p>
+          <EmptyState
+            description="Administrative changes such as user imports, school settings, and shop updates will appear here."
+            title="No audit events yet"
+          />
         )}
         {entries.length > 0 && <RecentAuditList entries={entries} />}
       </div>

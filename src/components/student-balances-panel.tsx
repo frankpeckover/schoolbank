@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { listStudentBalances } from "@/lib/actions";
 import { formatCurrencyAmount } from "@/lib/formatters";
 import type { StudentBalanceItem } from "@/services/transaction-service";
+import { EmptyState } from "@/components/ui/empty-state";
 import { FilterIcon, WalletIcon } from "@/components/ui/icons";
 import { IconButton } from "@/components/ui/icon-button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -117,7 +118,15 @@ export function StudentBalancesPanel({
             </p>
           )}
           {!isLoading && !error && filteredBalances.length === 0 && (
-            <p className="text-sm text-text-muted">No students match these filters.</p>
+            <EmptyState
+              description={
+                balances.length === 0
+                  ? "Student balances will appear after student accounts are created."
+                  : "Try changing or clearing the filters to see more students."
+              }
+              icon={<WalletIcon />}
+              title={balances.length === 0 ? "No balances yet" : "No matching balances"}
+            />
           )}
           {!isLoading && !error && filteredBalances.length > 0 && (
             <BalancesList

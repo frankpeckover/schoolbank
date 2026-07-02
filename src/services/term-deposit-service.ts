@@ -68,8 +68,6 @@ const auditService = new AuditService();
 
 export class TermDepositService {
   async getSettings(): Promise<TermDepositSettings> {
-    await ensureTermDepositTables();
-
     const result = await db.query<TermDepositSettingsRow>(`
       select
         is_enabled,
@@ -115,7 +113,6 @@ export class TermDepositService {
 
     try {
       await client.query("begin");
-      await ensureTermDepositTables(client);
 
       await client.query(
         `
@@ -179,7 +176,6 @@ export class TermDepositService {
     }
 
     await this.payMaturedDeposits(currentUser.id);
-    await ensureTermDepositTables();
 
     const result = await db.query<StudentTermDepositRow>(
       `
@@ -230,7 +226,6 @@ export class TermDepositService {
 
     try {
       await client.query("begin");
-      await ensureTermDepositTables(client);
       await this.payMaturedDepositsWithClient(client, currentUser.id);
 
       const settings = await getSettingsWithClient(client);
@@ -357,7 +352,6 @@ export class TermDepositService {
 
     try {
       await client.query("begin");
-      await ensureTermDepositTables(client);
       await this.payMaturedDepositsWithClient(client, userId);
       await client.query("commit");
     } catch (error) {
@@ -411,93 +405,6 @@ export class TermDepositService {
       );
     }
   }
-}
-
-async function ensureTermDepositTables(
-  client: Pick<typeof db, "query"> = db,
-) {
-  await ensureLedgerEntryTypes(client);
-
-  await client.query(`
-    create table if not exists term_deposit_settings (
-      id integer primary key default 1 check (id = 1),
-      is_enabled boolean not null default false,
-      minimum_amount integer not null default 50,
-      maximum_amount integer not null default 0,
-      term_days integer not null default 7,
-      interest_rate numeric(6, 2) not null default 5,
-      maximum_active_deposits integer not null default 1,
-      created_at timestamptz not null default now(),
-      updated_at timestamptz not null default now(),
-      constraint term_deposit_settings_minimum_positive check (minimum_amount > 0),
-      constraint term_deposit_settings_maximum_not_negative check (maximum_amount >= 0),
-      constraint term_deposit_settings_term_positive check (term_days > 0),
-      constraint term_deposit_settings_rate_not_negative check (interest_rate >= 0),
-      constraint term_deposit_settings_active_positive check (maximum_active_deposits > 0)
-    )
-  `);
-
-  await client.query(`
-    create table if not exists student_term_deposits (
-      id uuid primary key default gen_random_uuid(),
-      user_id uuid not null references users(id) on delete cascade,
-      principal_amount integer not null,
-      interest_rate numeric(6, 2) not null,
-      interest_amount integer not null,
-      maturity_amount integer not null,
-      status text not null default 'active',
-      starts_at timestamptz not null default now(),
-      matures_at timestamptz not null,
-      paid_out_at timestamptz,
-      hold_ledger_entry_id uuid references ledger_entries(id) on delete restrict,
-      payout_ledger_entry_id uuid references ledger_entries(id) on delete restrict,
-      created_at timestamptz not null default now(),
-      constraint student_term_deposits_principal_positive check (principal_amount > 0),
-      constraint student_term_deposits_interest_not_negative check (interest_amount >= 0),
-      constraint student_term_deposits_maturity_positive check (maturity_amount > 0),
-      constraint student_term_deposits_status_check check (
-        status in ('active', 'paid_out', 'cancelled')
-      )
-    )
-  `);
-
-  await client.query(`
-    insert into term_deposit_settings (id)
-    values (1)
-    on conflict (id) do nothing
-  `);
-
-  await client.query(
-    "create index if not exists student_term_deposits_user_idx on student_term_deposits(user_id)",
-  );
-  await client.query(
-    "create index if not exists student_term_deposits_status_idx on student_term_deposits(status)",
-  );
-  await client.query(
-    "create index if not exists student_term_deposits_matures_idx on student_term_deposits(matures_at)",
-  );
-}
-
-async function ensureLedgerEntryTypes(client: Pick<typeof db, "query">) {
-  await client.query(
-    "alter table ledger_entries drop constraint if exists ledger_entries_type_check",
-  );
-  await client.query(`
-    alter table ledger_entries
-      add constraint ledger_entries_type_check check (
-        entry_type in (
-          'reward',
-          'penalty',
-          'shop_hold',
-          'shop_purchase',
-          'shop_refund',
-          'term_deposit_hold',
-          'term_deposit_payout',
-          'manual_adjustment',
-          'void_reversal'
-        )
-      )
-  `);
 }
 
 async function getSettingsWithClient(client: Pick<typeof db, "query">) {

@@ -70,6 +70,7 @@ export {
   importUsers,
   listStudents,
   listUsers,
+  previewImportUsers,
   resetUserPassword,
   searchStudents,
   setUserActive,

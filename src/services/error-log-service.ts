@@ -32,8 +32,6 @@ export class ErrorLogService {
       return [];
     }
 
-    await ensureErrorLogTable(db);
-
     const result = await db.query<ErrorLogRow>(`
       select id, source, message, stack, context, created_at
       from server_error_log
@@ -46,8 +44,6 @@ export class ErrorLogService {
 
   async log(input: ErrorLogInput) {
     try {
-      await ensureErrorLogTable(db);
-
       await db.query(
         `
           insert into server_error_log (source, message, stack, context)
@@ -91,24 +87,4 @@ function getErrorStack(error: unknown) {
   }
 
   return "";
-}
-
-async function ensureErrorLogTable(client: Pick<typeof db, "query">) {
-  await client.query(`
-    create table if not exists server_error_log (
-      id uuid primary key default gen_random_uuid(),
-      source text not null,
-      message text not null,
-      stack text not null default '',
-      context jsonb not null default '{}'::jsonb,
-      created_at timestamptz not null default now()
-    )
-  `);
-
-  await client.query(
-    "create index if not exists server_error_log_created_at_idx on server_error_log(created_at)",
-  );
-  await client.query(
-    "create index if not exists server_error_log_source_idx on server_error_log(source)",
-  );
 }

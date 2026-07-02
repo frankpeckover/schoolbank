@@ -47,8 +47,6 @@ export class AuditService {
       return [];
     }
 
-    await ensureAuditLogTable(db);
-
     const result = await db.query<AuditLogRow>(`
       select
         audit_log.id,
@@ -82,8 +80,6 @@ export class AuditService {
     client: Pick<typeof db, "query">,
     input: AuditLogInput,
   ) {
-    await ensureAuditLogTable(client);
-
     await client.query(
       `
         insert into audit_log (
@@ -123,28 +119,4 @@ function mapAuditLogRow(row: AuditLogRow): AuditLogItem {
     entityType: row.entity_type,
     id: row.id,
   };
-}
-
-async function ensureAuditLogTable(client: Pick<typeof db, "query">) {
-  await client.query(`
-    create table if not exists audit_log (
-      id uuid primary key default gen_random_uuid(),
-      actor_user_id uuid references users(id) on delete set null,
-      action text not null,
-      entity_type text not null,
-      entity_id uuid,
-      details jsonb not null default '{}'::jsonb,
-      created_at timestamptz not null default now()
-    )
-  `);
-
-  await client.query(
-    "create index if not exists audit_log_created_at_idx on audit_log(created_at)",
-  );
-  await client.query(
-    "create index if not exists audit_log_actor_idx on audit_log(actor_user_id)",
-  );
-  await client.query(
-    "create index if not exists audit_log_entity_idx on audit_log(entity_type, entity_id)",
-  );
 }

@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { getDatabaseErrorMessage } from "@/lib/database-error-message";
 import {
   generateTemporaryPassword,
   hashPassword,
@@ -41,6 +42,14 @@ export type ImportUsersResult = {
   createdUsers: ImportedUserCredential[];
   errors: ImportUserError[];
   ok: true;
+};
+
+export type ImportUsersPreviewResult = {
+  duplicateCount: number;
+  existingCount: number;
+  invalidCount: number;
+  newCount: number;
+  rowCount: number;
 };
 
 export type ImportedUserCredential = {
@@ -459,7 +468,7 @@ export class UserService {
         errors: [
           ...errors,
           {
-            message: "Could not import users.",
+            message: getDatabaseErrorMessage(error, "Could not import users."),
             rowNumber: 0,
             username: "",
           },
@@ -469,6 +478,63 @@ export class UserService {
     } finally {
       client.release();
     }
+  }
+
+  async previewImportUsers(
+    input: ImportUsersInput,
+  ): Promise<ImportUsersPreviewResult> {
+    const previewRows = normaliseImportRows(input.users);
+    const validRows = previewRows.filter((row) => row.isValid);
+
+    if (validRows.length === 0) {
+      return {
+        duplicateCount: previewRows.filter((row) => row.isDuplicate).length,
+        existingCount: 0,
+        invalidCount: previewRows.filter(
+          (row) => !row.isValid && !row.isDuplicate,
+        ).length,
+        newCount: 0,
+        rowCount: previewRows.length,
+      };
+    }
+
+    const existingUsers = await db.query<{
+      email: string;
+      username: string;
+    }>(
+      `
+        select username, email
+        from users
+        where username = any($1::text[])
+           or email = any($2::text[])
+      `,
+      [
+        validRows.map((row) => row.username),
+        validRows.map((row) => row.email),
+      ],
+    );
+    const existingUsernames = new Set(
+      existingUsers.rows.map((user) => user.username),
+    );
+    const existingEmails = new Set(
+      existingUsers.rows.map((user) => user.email),
+    );
+    const existingCount = validRows.filter(
+      (row) =>
+        existingUsernames.has(row.username) || existingEmails.has(row.email),
+    ).length;
+    const duplicateCount = previewRows.filter((row) => row.isDuplicate).length;
+    const invalidCount = previewRows.filter(
+      (row) => !row.isValid && !row.isDuplicate,
+    ).length;
+
+    return {
+      duplicateCount,
+      existingCount,
+      invalidCount,
+      newCount: Math.max(0, validRows.length - existingCount),
+      rowCount: previewRows.length,
+    };
   }
 
   async updateUser(
@@ -874,6 +940,41 @@ async function prepareImportUsers(
   return preparedUsers.filter((user): user is ImportableUser => Boolean(user));
 }
 
+function normaliseImportRows(users: ImportUserInput[]) {
+  const seenEmails = new Set<string>();
+  const seenUsernames = new Set<string>();
+
+  return users.map((user, index) => {
+    const email = user.email.trim().toLowerCase();
+    const firstName = capitaliseName(user.firstName);
+    const lastName = capitaliseName(user.lastName);
+    const username = user.username.trim().toLowerCase();
+    const isDuplicate = seenUsernames.has(username) || seenEmails.has(email);
+    const isValid =
+      Boolean(username) &&
+      Boolean(firstName) &&
+      Boolean(lastName) &&
+      Boolean(email) &&
+      !isDuplicate;
+
+    if (username) {
+      seenUsernames.add(username);
+    }
+
+    if (email) {
+      seenEmails.add(email);
+    }
+
+    return {
+      email,
+      isDuplicate,
+      isValid,
+      rowNumber: index + 2,
+      username,
+    };
+  });
+}
+
 function getCreateUserErrorMessage(error: unknown) {
   const errorCode =
     typeof error === "object" && error !== null && "code" in error
@@ -884,5 +985,5 @@ function getCreateUserErrorMessage(error: unknown) {
     return "Username or email is already in use.";
   }
 
-  return "Could not create user.";
+  return getDatabaseErrorMessage(error, "Could not create user.");
 }

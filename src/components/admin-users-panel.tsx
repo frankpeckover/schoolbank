@@ -11,6 +11,7 @@ import {
 import { UserImportModal } from "@/components/admin-users/user-import-modal";
 import { UserModal } from "@/components/admin-users/user-modal";
 import { UsersTable } from "@/components/admin-users/users-table";
+import { EmptyState } from "@/components/ui/empty-state";
 import { IconButton } from "@/components/ui/icon-button";
 import { FileUpIcon, FilterIcon, PlusIcon, UsersIcon } from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/page-header";
@@ -179,7 +180,15 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
           />
         )}
         {!isLoading && !error && filteredUsers.length === 0 && (
-          <p className="mt-4 text-sm text-text-muted">No users match these filters.</p>
+          <EmptyState
+            description={
+              users.length === 0
+                ? "Add a user or import a CSV to start setting up accounts."
+                : "Try changing or clearing the filters to see more accounts."
+            }
+            icon={<UsersIcon />}
+            title={users.length === 0 ? "No users yet" : "No matching users"}
+          />
         )}
       </div>
 

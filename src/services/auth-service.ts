@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { getDatabaseErrorMessage } from "@/lib/database-error-message";
 import { appConfig } from "@/lib/app-config";
 import { verifyPassword } from "@/lib/passwords";
 import type { Role, SessionUser } from "@/lib/session";
@@ -78,7 +79,10 @@ export class AuthService {
 
       return {
         ok: false,
-        message: `Could not connect to the ${appConfig.name} database. Check the PLATFORM_POSTGRES settings and organisation lookup row.`,
+        message: getDatabaseErrorMessage(
+          error,
+          `Could not connect to the ${appConfig.name} database. Check the PLATFORM_POSTGRES settings and organisation lookup row.`,
+        ),
       };
     }
   }
