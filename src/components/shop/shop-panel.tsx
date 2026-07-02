@@ -181,14 +181,15 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
 
   return (
     <section className="motion-panel mt-5">
-      <ShopPanelHeader
-        areFiltersOpen={areFiltersOpen}
-        balance={balance}
-        canManage={canManage}
-        currencyName={currencyName}
-        onFilterToggle={() => setAreFiltersOpen((isOpen) => !isOpen)}
-        onNewItem={openNewItemModal}
-      />
+      {canManage ? (
+        <ShopPanelHeader
+          areFiltersOpen={areFiltersOpen}
+          onFilterToggle={() => setAreFiltersOpen((isOpen) => !isOpen)}
+          onNewItem={openNewItemModal}
+        />
+      ) : (
+        <StudentShopWallet balance={balance} currencyName={currencyName} />
+      )}
       {canManage && areFiltersOpen && (
         <ShopFilters
           onSearchChange={setSearch}
@@ -259,52 +260,33 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
 
 function ShopPanelHeader({
   areFiltersOpen,
-  balance,
-  canManage,
-  currencyName,
   onFilterToggle,
   onNewItem,
 }: {
   areFiltersOpen: boolean;
-  balance: number | null;
-  canManage: boolean;
-  currencyName: string;
   onFilterToggle: () => void;
   onNewItem: () => void;
 }) {
-  const walletLabel =
-    balance === null ? "Loading wallet..." : formatCurrencyAmount(balance, currencyName);
-
   return (
     <PageHeader
       actions={
         <div className="flex items-center gap-2">
-          {!canManage && (
-            <div className="inline-flex min-h-10 items-center gap-2 rounded-md border border-brand-soft-strong bg-brand-soft px-3 py-2 text-sm font-semibold text-brand-ink shadow-sm">
-              <WalletIcon />
-              <span>{walletLabel}</span>
-            </div>
-          )}
-          {canManage && (
-            <>
-              <IconButton
-                ariaExpanded={areFiltersOpen}
-                label={areFiltersOpen ? "Hide filters" : "Show filters"}
-                onClick={onFilterToggle}
-              >
-                <FilterIcon />
-              </IconButton>
-              <button
-                aria-label="New item"
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand text-white transition hover:bg-brand-hover"
-                onClick={onNewItem}
-                title="New item"
-                type="button"
-              >
-                <PlusIcon />
-              </button>
-            </>
-          )}
+          <IconButton
+            ariaExpanded={areFiltersOpen}
+            label={areFiltersOpen ? "Hide filters" : "Show filters"}
+            onClick={onFilterToggle}
+          >
+            <FilterIcon />
+          </IconButton>
+          <button
+            aria-label="New item"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand text-white transition hover:bg-brand-hover"
+            onClick={onNewItem}
+            title="New item"
+            type="button"
+          >
+            <PlusIcon />
+          </button>
         </div>
       }
       icon={<ShoppingBagIcon />}
@@ -312,6 +294,36 @@ function ShopPanelHeader({
       title="Shop"
       titleSize="base"
     />
+  );
+}
+
+function StudentShopWallet({
+  balance,
+  currencyName,
+}: {
+  balance: number | null;
+  currencyName: string;
+}) {
+  const walletLabel =
+    balance === null ? "Loading wallet..." : formatCurrencyAmount(balance, currencyName);
+
+  return (
+    <div className="wallet-card flex min-h-24 items-center justify-between gap-4 rounded-3xl border border-brand-soft-strong px-5 py-4 text-foreground shadow-sm sm:px-6">
+      <div className="relative flex min-w-0 items-center gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-surface/80 text-brand shadow-sm">
+          <WalletIcon />
+        </span>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-text-kicker">
+            Wallet
+          </p>
+          <p className="mt-1 text-2xl font-bold text-brand-ink sm:text-3xl">
+            {walletLabel}
+          </p>
+        </div>
+      </div>
+      <ShoppingBagIcon className="relative hidden h-8 w-8 shrink-0 text-brand sm:block" />
+    </div>
   );
 }
 
