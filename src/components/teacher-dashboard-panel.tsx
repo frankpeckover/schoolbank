@@ -32,17 +32,14 @@ export function TeacherDashboardPanel({
   return (
     <>
       <section className="dashboard-grid motion-panel mt-5">
-        <section className="dashboard-unit-3 section-highlight theme-panel p-4 sm:p-5">
+        <section className="dashboard-unit-2 section-highlight theme-panel p-4 sm:p-5">
           <div className="flex h-full min-h-52 flex-col">
             <div className="flex items-start gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-brand-soft text-brand">
                 <WalletIcon className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-text-kicker">
-                  Teacher dashboard
-                </p>
-                <h2 className="mt-1 text-xl font-semibold">
+                <h2 className="text-xl font-semibold">
                   Record {currencyName}
                 </h2>
               </div>
@@ -131,7 +128,7 @@ function TeacherActivityPanel({
   return (
     <section
       aria-label={`${schoolName} teacher activity`}
-      className="dashboard-unit-1 theme-panel p-4"
+      className="dashboard-unit-2 theme-panel p-4"
     >
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-panel-soft text-text-muted">
