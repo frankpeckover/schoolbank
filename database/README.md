@@ -4,6 +4,7 @@ This folder has two DBeaver-friendly setup scripts:
 
 - `create-school-database.sql`
 - `create-platform-database.sql`
+- `provision-school-database-user.sql`
 
 Both scripts are normal SQL. They do not use `psql` backslash commands, so they
 can be run from DBeaver.
@@ -32,6 +33,8 @@ In DBeaver:
 2. Create or choose the app user, for example `schoolbank_app`.
 3. Connect to the `schoolbank` database.
 4. Run `create-school-database.sql`.
+5. Run `provision-school-database-user.sql` if this school needs its own
+   dedicated database login.
 
 To change the seeded school name or currency, edit the `insert into school_info`
 statement near the bottom of the file.
@@ -42,6 +45,33 @@ Initial admin login:
 username: admin
 password: admin
 ```
+
+## School Database User
+
+Creates or updates the PostgreSQL login used by the app for one school database,
+then grants it access to the current database's tables and sequences.
+
+```bash
+database/provision-school-database-user.sql
+```
+
+In DBeaver:
+
+1. Connect to the target school database, for example `schoolbank_dev`.
+2. Open `provision-school-database-user.sql`.
+3. Change `school_db_user` and `school_db_password` near the top.
+4. Run the whole file as a PostgreSQL admin or database owner.
+
+Use a different database login per school, for example:
+
+```txt
+schoolbank_user_dev
+schoolbank_user_springfield
+schoolbank_user_riverside
+```
+
+After this, add the same username and password to the matching organisation row
+in the platform database.
 
 ## Platform Database
 
