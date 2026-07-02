@@ -1,5 +1,50 @@
 @import "tailwindcss";
 
+@font-face {
+  font-display: swap;
+  font-family: "SchoolBank Numerals";
+  font-style: normal;
+  font-weight: 400;
+  src: url("https://fonts.gstatic.com/s/sora/v17/xMQOuFFYT72X5wkB_18qmnndmSdSnn-K.ttf") format("truetype");
+  unicode-range: U+0024-0025, U+002B, U+002C, U+002D, U+002E, U+0030-003A;
+}
+
+@font-face {
+  font-display: swap;
+  font-family: "SchoolBank Numerals";
+  font-style: normal;
+  font-weight: 500;
+  src: url("https://fonts.gstatic.com/s/sora/v17/xMQOuFFYT72X5wkB_18qmnndmSdgnn-K.ttf") format("truetype");
+  unicode-range: U+0024-0025, U+002B, U+002C, U+002D, U+002E, U+0030-003A;
+}
+
+@font-face {
+  font-display: swap;
+  font-family: "SchoolBank Numerals";
+  font-style: normal;
+  font-weight: 600;
+  src: url("https://fonts.gstatic.com/s/sora/v17/xMQOuFFYT72X5wkB_18qmnndmSeMmX-K.ttf") format("truetype");
+  unicode-range: U+0024-0025, U+002B, U+002C, U+002D, U+002E, U+0030-003A;
+}
+
+@font-face {
+  font-display: swap;
+  font-family: "SchoolBank Numerals";
+  font-style: normal;
+  font-weight: 700;
+  src: url("https://fonts.gstatic.com/s/sora/v17/xMQOuFFYT72X5wkB_18qmnndmSe1mX-K.ttf") format("truetype");
+  unicode-range: U+0024-0025, U+002B, U+002C, U+002D, U+002E, U+0030-003A;
+}
+
+@font-face {
+  font-display: swap;
+  font-family: "SchoolBank Numerals";
+  font-style: normal;
+  font-weight: 800;
+  src: url("https://fonts.gstatic.com/s/sora/v17/xMQOuFFYT72X5wkB_18qmnndmSfSmX-K.ttf") format("truetype");
+  unicode-range: U+0024-0025, U+002B, U+002C, U+002D, U+002E, U+0030-003A;
+}
+
 :root {
   color-scheme: light;
   --background: #eef1f0;
@@ -62,6 +107,7 @@
   --radius-control: 0.75rem;
   --radius-card: 1rem;
   --radius-panel: 1.25rem;
+  --font-numeric: "SchoolBank Numerals", Sora, Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
   --motion-fast: 140ms;
   --motion-standard: 180ms;
   --motion-ease: cubic-bezier(0.2, 0, 0, 1);
@@ -191,7 +237,8 @@ html[data-accent="custom"] {
   --color-wallet-highlight: var(--wallet-highlight);
   --color-progress-track: var(--progress-track);
   --color-activity-meta: var(--activity-meta);
-  --font-sans: Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
+  --font-numeric: "SchoolBank Numerals", Sora, Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
+  --font-sans: var(--font-numeric);
   --font-heading: Sora, Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
   --font-mono: "Cascadia Code", Consolas, monospace;
 }
@@ -201,7 +248,7 @@ body {
     linear-gradient(180deg, var(--background-gradient-start) 0, var(--background) 260px),
     var(--background);
   color: var(--foreground);
-  font-family: Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
+  font-family: var(--font-numeric), Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
 }
 
 h1,
@@ -278,7 +325,7 @@ button:not(:disabled):active {
 }
 
 .wallet-balance-number {
-  font-family: Sora, Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
+  font-family: var(--font-heading);
   font-weight: 800;
   letter-spacing: 0;
 }
