@@ -136,8 +136,10 @@ function StudentWalletCard({
   currencyName: string;
   currentUser: SessionUser;
 }) {
+  const balanceAmount = Math.abs(balance);
+
   return (
-    <article className="section-highlight wallet-card rounded-3xl border border-brand-soft-strong p-5 text-foreground shadow-sm transition hover:shadow-md sm:p-6">
+    <article className="wallet-card rounded-3xl border border-brand-soft-strong p-5 text-foreground shadow-sm transition hover:shadow-md sm:p-6">
       <div className="relative flex h-full min-h-52 flex-col items-center justify-center gap-4 text-center">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-text-kicker">
@@ -152,8 +154,13 @@ function StudentWalletCard({
           <p className="text-sm font-semibold text-text-muted">
             Available balance
           </p>
-          <p className="mt-2 break-words text-5xl font-semibold text-brand-ink sm:text-6xl">
-            {formatCurrencyAmount(balance, currencyName)}
+          <p className="mt-2 flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 break-words text-brand-ink">
+            <span className="text-6xl font-semibold leading-none sm:text-7xl">
+              {balanceAmount}
+            </span>
+            <span className="text-lg font-semibold text-text-control sm:text-xl">
+              {currencyName}
+            </span>
           </p>
         </div>
       </div>
