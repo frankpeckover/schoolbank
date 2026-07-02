@@ -95,7 +95,7 @@ export function DashboardShell({
         <header className="relative z-50 py-3">
           <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-3">
             <AppBrand />
-            <p className="min-w-0 flex-1 truncate text-left text-base font-semibold text-foreground sm:text-center sm:text-lg">
+            <p className="min-w-0 flex-1 truncate text-left text-sm font-medium text-text-control sm:text-center sm:text-base">
               {greeting}, {getGreetingName(user)}!
             </p>
             <HeaderNavMenu

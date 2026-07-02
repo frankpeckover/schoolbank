@@ -155,7 +155,7 @@ export function HeaderNavMenu({
             aria-label="Open menu"
             className={`inline-flex h-10 items-center justify-center gap-1 rounded-md px-2 text-sm font-semibold transition ${
               isOverflowActive
-                ? "bg-brand text-white"
+                ? "bg-brand-soft text-brand"
                 : "text-text-control hover:bg-panel-soft"
             }`}
             onClick={() =>
@@ -250,7 +250,7 @@ function DesktopNavButton({
       aria-current={isActive ? "page" : undefined}
       className={`inline-flex h-10 items-center justify-center rounded-md px-3 text-sm font-semibold transition ${
         isActive
-          ? "bg-brand text-white"
+          ? "bg-brand-soft text-brand"
           : "text-text-control hover:bg-panel-soft"
       }`}
       onClick={() => onItemChange(item)}
@@ -283,7 +283,7 @@ function MenuItemButton({
       aria-current={isActive ? "page" : undefined}
       className={`block w-full rounded-md px-3 py-3 text-left text-sm font-semibold transition ${
         isActive
-          ? "bg-brand text-white"
+          ? "bg-brand-soft text-brand"
           : "text-text-control hover:bg-panel-soft"
       }`}
       onClick={() => onItemChange(item)}

@@ -14,9 +14,9 @@ export function EmptyState({
   title,
 }: EmptyStateProps) {
   return (
-    <div className="rounded-lg border border-dashed border-border-subtle bg-panel-soft px-4 py-5 text-center">
+    <div className="rounded-md border border-border-subtle bg-panel-soft px-4 py-5 text-center">
       {icon && (
-        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-surface text-brand">
+        <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-md border border-border-subtle bg-surface text-text-muted">
           {icon}
         </div>
       )}

@@ -21,22 +21,22 @@ export function PageHeader({
 }: PageHeaderProps) {
   const titleClassName =
     titleSize === "large"
-      ? "truncate text-2xl font-semibold"
-      : "truncate text-xl font-semibold";
+      ? "truncate text-xl font-semibold"
+      : "truncate text-base font-semibold";
 
   return (
     <div className="flex min-w-0 items-start justify-between gap-3">
       <div className="flex min-w-0 items-start gap-3">
         {icon && (
           <span
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md ${getIconToneClassName(iconTone)}`}
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md border ${getIconToneClassName(iconTone)}`}
           >
             {icon}
           </span>
         )}
         <div className="min-w-0 overflow-hidden">
           {kicker && (
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-text-kicker">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-text-kicker">
               {kicker}
             </p>
           )}
@@ -53,12 +53,12 @@ export function PageHeader({
 
 function getIconToneClassName(tone: "accent" | "brand" | "neutral") {
   if (tone === "accent") {
-    return "bg-accent-soft text-accent";
+    return "border-border-subtle bg-accent-soft text-accent";
   }
 
   if (tone === "neutral") {
-    return "bg-panel-soft text-text-muted";
+    return "border-border-subtle bg-panel-soft text-text-muted";
   }
 
-  return "bg-brand-soft text-brand";
+  return "border-border-subtle bg-brand-soft text-brand";
 }

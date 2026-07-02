@@ -31,7 +31,7 @@ export function ShopItemCard({
   requested,
 }: ShopItemCardProps) {
   return (
-    <article className="group overflow-hidden rounded-md border border-border-subtle bg-surface shadow-sm transition hover:border-brand-soft-strong hover:shadow-md">
+    <article className="overflow-hidden rounded-md border border-border-subtle bg-surface shadow-sm transition hover:border-border-strong">
       <ShopItemImage item={item} />
 
       <div className="p-2.5">
@@ -43,21 +43,21 @@ export function ShopItemCard({
             </p>
           </div>
           {!item.isActive && (
-            <span className="rounded-sm bg-danger-soft px-2 py-1 text-xs font-semibold text-danger-strong">
+            <span className="rounded-md border border-danger-border bg-danger-soft px-2 py-1 text-xs font-medium text-danger-strong">
               Removed
             </span>
           )}
         </div>
 
         <div className="mt-2 flex items-center justify-between gap-2 text-sm">
-          <span className="rounded-md bg-accent-soft px-2.5 py-1.5 font-semibold text-accent shadow-sm">
+          <span className="rounded-md border border-border-subtle bg-panel-soft px-2.5 py-1.5 font-semibold text-text-control">
             {item.price} {currencyName}
           </span>
           <span
-            className={`rounded-md px-2 py-1 text-xs font-semibold ${
+            className={`rounded-md border px-2 py-1 text-xs font-medium ${
               item.quantity <= 0
-                ? "bg-danger-soft text-danger-strong"
-                : "bg-panel-soft text-text-muted"
+                ? "border-danger-border bg-danger-soft text-danger-strong"
+                : "border-border-subtle bg-panel-soft text-text-muted"
             }`}
           >
             {item.quantity <= 0 ? "Sold out" : `${item.quantity} left`}
@@ -84,7 +84,7 @@ function ShopItemImage({ item }: { item: ShopItem }) {
     return (
       <div
         aria-label={`${item.name} image`}
-        className="aspect-[5/3] bg-cover bg-center transition duration-200 group-hover:scale-[1.02]"
+        className="aspect-[5/3] bg-cover bg-center"
         role="img"
         style={{ backgroundImage: `url("${item.imageUrl}")` }}
       />

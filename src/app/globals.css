@@ -2,26 +2,26 @@
 
 :root {
   color-scheme: light;
-  --background: #f6f5ef;
-  --background-gradient-start: #edf5ef;
-  --accent-primary: #245c63;
-  --accent-secondary: #b8612f;
-  --accent-highlight: #e9c46a;
+  --background: #f4f6f5;
+  --background-gradient-start: #eef4f2;
+  --accent-primary: #27575e;
+  --accent-secondary: #9f5b32;
+  --accent-highlight: #d8b85a;
   --custom-accent-primary: #2563eb;
-  --foreground: #20231f;
+  --foreground: #1f2523;
   --surface: #ffffff;
-  --panel-soft: #f8f7f1;
-  --surface-hover: #f2f4ee;
-  --border: #d9ddd2;
-  --border-subtle: #e4e6dc;
-  --border-muted: #ecede5;
-  --border-strong: #c9cfbf;
-  --button-border: #aebdaf;
-  --text-muted: #687064;
-  --text-subtle: #6f756d;
-  --text-kicker: #66715f;
-  --text-label: #5f695d;
-  --text-control: #4f5a50;
+  --panel-soft: #f7f8f6;
+  --surface-hover: #eff3f1;
+  --border: #d9dfdc;
+  --border-subtle: #e3e8e5;
+  --border-muted: #edf0ee;
+  --border-strong: #c3cec8;
+  --button-border: #a9b7b0;
+  --text-muted: #66716c;
+  --text-subtle: #707a75;
+  --text-kicker: #65726c;
+  --text-label: #5f6c66;
+  --text-control: #4b5752;
   --brand: var(--accent-primary);
   --brand-hover: color-mix(in srgb, var(--accent-primary) 84%, black);
   --brand-soft: color-mix(in srgb, var(--accent-primary) 10%, white);
@@ -51,10 +51,10 @@
   --activity-meta: #7a8077;
   --shell-gradient-accent: color-mix(in srgb, var(--accent-primary) 8%, transparent);
   --shell-gradient-surface: rgba(255, 255, 255, 0.72);
-  --shadow-panel: rgba(32, 35, 31, 0.05);
-  --radius-control: 0.875rem;
-  --radius-card: 1.25rem;
-  --radius-panel: 1.5rem;
+  --shadow-panel: rgba(31, 37, 35, 0.055);
+  --radius-control: 0.75rem;
+  --radius-card: 1rem;
+  --radius-panel: 1.25rem;
   --motion-fast: 140ms;
   --motion-standard: 180ms;
   --motion-ease: cubic-bezier(0.2, 0, 0, 1);
@@ -177,7 +177,7 @@ html[data-accent="custom"] {
   --color-wallet-highlight: var(--wallet-highlight);
   --color-progress-track: var(--progress-track);
   --color-activity-meta: var(--activity-meta);
-  --font-sans: Arial, Helvetica, sans-serif;
+  --font-sans: Inter, "Segoe UI", Arial, Helvetica, sans-serif;
   --font-mono: "Cascadia Code", Consolas, monospace;
 }
 
@@ -186,7 +186,7 @@ body {
     linear-gradient(180deg, var(--background-gradient-start) 0, var(--background) 260px),
     var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Inter, "Segoe UI", Arial, Helvetica, sans-serif;
 }
 
 button,
@@ -255,7 +255,7 @@ button:not(:disabled):active {
 .section-highlight::before {
   background: var(--section-highlight);
   content: "";
-  height: 4px;
+  height: 3px;
   inset: 0 0 auto;
   position: absolute;
 }
@@ -268,7 +268,7 @@ button:not(:disabled):active {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);
-  box-shadow: 0 1px 2px var(--shadow-panel);
+  box-shadow: 0 1px 2px var(--shadow-panel), 0 10px 28px rgba(31, 37, 35, 0.035);
 }
 
 .theme-card {
