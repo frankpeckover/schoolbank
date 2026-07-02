@@ -7,7 +7,6 @@ import { LedgerAdjustmentForm } from "@/components/transactions/ledger-adjustmen
 import {
   ArrowDownIcon,
   ArrowUpIcon,
-  SparkleIcon,
   WalletIcon,
 } from "@/components/ui/icons";
 import { getTeacherDashboardSummary, listStudentBalances } from "@/lib/actions";
@@ -32,19 +31,20 @@ export function TeacherDashboardPanel({
 
   return (
     <>
-      <section className="motion-panel mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
+      <section className="motion-panel mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.75fr)]">
         <section className="section-highlight theme-panel p-4 sm:p-5">
           <div className="flex h-full min-h-52 flex-col">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="flex items-start gap-3">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent">
-                  <SparkleIcon className="h-5 w-5" />
-                </span>
-                <div className="min-w-0">
-                  <h2 className="text-2xl font-semibold">
-                    Adjust {currencyName}
-                  </h2>
-                </div>
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-brand-soft text-brand">
+                <WalletIcon className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-text-kicker">
+                  Teacher dashboard
+                </p>
+                <h2 className="mt-1 text-xl font-semibold">
+                  Record {currencyName}
+                </h2>
               </div>
             </div>
 
@@ -67,7 +67,7 @@ export function TeacherDashboardPanel({
           </div>
         </section>
 
-        <TeacherSnapshotPanel
+        <TeacherActivityPanel
           currencyName={currencyName}
           schoolName={schoolName}
         />
@@ -78,7 +78,7 @@ export function TeacherDashboardPanel({
   );
 }
 
-function TeacherSnapshotPanel({
+function TeacherActivityPanel({
   currencyName,
   schoolName,
 }: {
@@ -93,7 +93,7 @@ function TeacherSnapshotPanel({
   useEffect(() => {
     let isMounted = true;
 
-    async function loadSnapshot() {
+    async function loadActivity() {
       try {
         const [loadedBalances, loadedSummary] = await Promise.all([
           listStudentBalances(),
@@ -107,7 +107,7 @@ function TeacherSnapshotPanel({
         }
       } catch {
         if (isMounted) {
-          setError("Could not load snapshot.");
+          setError("Could not load teacher activity.");
         }
       } finally {
         if (isMounted) {
@@ -116,7 +116,7 @@ function TeacherSnapshotPanel({
       }
     }
 
-    loadSnapshot();
+    loadActivity();
 
     return () => {
       isMounted = false;
@@ -130,22 +130,20 @@ function TeacherSnapshotPanel({
 
   return (
     <section
-      aria-label={`${schoolName} wallet snapshot`}
-      className="rounded-md border border-border-subtle bg-surface p-4 shadow-sm"
+      aria-label={`${schoolName} teacher activity`}
+      className="theme-panel p-4"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand-soft text-brand">
-            <WalletIcon />
-          </span>
-          <div className="min-w-0">
-            <h3 className="text-lg font-semibold">Wallet Snapshot</h3>
-          </div>
+      <div className="flex items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-panel-soft text-text-muted">
+          <WalletIcon />
+        </span>
+        <div className="min-w-0">
+          <h3 className="text-base font-semibold">Today&apos;s Activity</h3>
         </div>
       </div>
 
       {isLoading && (
-        <p className="mt-4 text-sm text-text-muted">Loading snapshot...</p>
+        <p className="mt-4 text-sm text-text-muted">Loading activity...</p>
       )}
       {error && (
         <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
@@ -153,23 +151,35 @@ function TeacherSnapshotPanel({
         </p>
       )}
       {!isLoading && !error && (
-        <div className="mt-4 grid gap-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <SnapshotMetric
-              label="Students"
+        <div className="mt-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            <ActivityMetric
+              label="Active Students"
               value={String(balances.length)}
             />
-            <SnapshotMetric
+            <ActivityMetric
               label="In Wallets"
               value={formatCurrencyAmount(totalBalance, currencyName)}
             />
           </div>
 
           {summary && (
-            <TeacherIssuedTotalsCard
-              currencyName={currencyName}
-              totals={summary.issuedTotals}
-            />
+            <>
+              <ActivityPeriod
+                currencyName={currencyName}
+                label="Today"
+                totals={summary.issuedTotals.today}
+              />
+              <ActivityPeriod
+                currencyName={currencyName}
+                label="This Week"
+                totals={summary.issuedTotals.thisWeek}
+              />
+              <YearActivity
+                currencyName={currencyName}
+                totals={summary.issuedTotals.thisYear}
+              />
+            </>
           )}
         </div>
       )}
@@ -177,7 +187,7 @@ function TeacherSnapshotPanel({
   );
 }
 
-function SnapshotMetric({
+function ActivityMetric({
   label,
   value,
 }: {
@@ -185,52 +195,18 @@ function SnapshotMetric({
   value: string;
 }) {
   return (
-    <div className="theme-subpanel p-3">
+    <div className="rounded-md border border-border-subtle bg-panel-soft px-3 py-3">
       <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
         {label}
       </p>
-      <p className="mt-2 break-words text-base font-semibold text-foreground xl:text-lg">
+      <p className="mt-2 break-words text-lg font-semibold text-foreground">
         {value}
       </p>
     </div>
   );
 }
 
-function TeacherIssuedTotalsCard({
-  currencyName,
-  totals,
-}: {
-  currencyName: string;
-  totals: TeacherDashboardSummary["issuedTotals"];
-}) {
-  return (
-    <div className="theme-subpanel p-3">
-      <div className="flex items-center gap-2 text-sm font-semibold text-text-control">
-        <SparkleIcon />
-        <span>Issued</span>
-      </div>
-      <div className="mt-3 grid gap-2">
-        <TeacherIssuedPeriod
-          currencyName={currencyName}
-          label="Today"
-          totals={totals.today}
-        />
-        <TeacherIssuedPeriod
-          currencyName={currencyName}
-          label="Week"
-          totals={totals.thisWeek}
-        />
-        <TeacherIssuedPeriod
-          currencyName={currencyName}
-          label="Year"
-          totals={totals.thisYear}
-        />
-      </div>
-    </div>
-  );
-}
-
-function TeacherIssuedPeriod({
+function ActivityPeriod({
   currencyName,
   label,
   totals,
@@ -240,9 +216,41 @@ function TeacherIssuedPeriod({
   totals: TeacherIssuedPeriodTotals;
 }) {
   return (
-    <div className="rounded-md bg-surface px-3 py-2">
+    <div className="mt-4 border-t border-border-subtle pt-4">
       <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
         {label}
+      </p>
+      <div className="mt-3 grid gap-2">
+        <ActivityAmount
+          amount={totals.given}
+          currencyName={currencyName}
+          icon={<ArrowUpIcon />}
+          label="Given"
+          tone="positive"
+        />
+        <ActivityAmount
+          amount={totals.removed}
+          currencyName={currencyName}
+          icon={<ArrowDownIcon />}
+          label="Removed"
+          tone="negative"
+        />
+      </div>
+    </div>
+  );
+}
+
+function YearActivity({
+  currencyName,
+  totals,
+}: {
+  currencyName: string;
+  totals: TeacherIssuedPeriodTotals;
+}) {
+  return (
+    <div className="mt-4 rounded-md border border-border-subtle bg-panel-soft px-3 py-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
+        Year
       </p>
       <div className="mt-2 grid grid-cols-2 gap-2">
         <IssuedAmount
@@ -258,6 +266,35 @@ function TeacherIssuedPeriod({
           tone="negative"
         />
       </div>
+    </div>
+  );
+}
+
+function ActivityAmount({
+  amount,
+  currencyName,
+  icon,
+  label,
+  tone,
+}: {
+  amount: number;
+  currencyName: string;
+  icon: ReactNode;
+  label: string;
+  tone: "negative" | "positive";
+}) {
+  const toneClassName =
+    tone === "positive" ? "text-success" : "text-danger-strong";
+
+  return (
+    <div className="flex min-w-0 items-center justify-between gap-3">
+      <div className="flex min-w-0 items-center gap-2 text-sm text-text-muted">
+        <span className={`shrink-0 ${toneClassName}`}>{icon}</span>
+        <span className="truncate">{label}</span>
+      </div>
+      <span className={`shrink-0 text-sm font-semibold ${toneClassName}`}>
+        {formatCurrencyAmount(amount, currencyName)}
+      </span>
     </div>
   );
 }
