@@ -629,7 +629,7 @@ function RecentLedgerList({
       </div>
 
       <div className="hidden w-full min-w-0 max-w-full overflow-x-auto md:block">
-        <table className="w-full min-w-[640px] table-fixed border-collapse text-left text-sm">
+        <table className="w-full min-w-full table-fixed border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-border-subtle text-text-muted">
               <th className="py-2 pr-4 font-semibold">Account</th>
