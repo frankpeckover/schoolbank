@@ -31,13 +31,11 @@ import type { AuditLogItem } from "@/services/audit-service";
 import type {
   AdminDashboardEntry,
   AdminDashboardSummary,
-  AdminSetupChecklistItem,
   TeacherIssuerSummary,
 } from "@/services/admin-dashboard-service";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
-  CheckIcon,
   WalletIcon,
 } from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/page-header";
@@ -135,7 +133,6 @@ export function AdminDashboardPanel({
                 topCreditIssuers={summary.topCreditIssuers}
                 topDemeritIssuers={summary.topDemeritIssuers}
               />
-              <SetupChecklist items={summary.setupChecklist} />
             </>
           )}
         </section>
@@ -158,45 +155,6 @@ export function AdminDashboardPanel({
         />
       )}
     </>
-  );
-}
-
-function SetupChecklist({ items }: { items: AdminSetupChecklistItem[] }) {
-  const completedCount = items.filter((item) => item.isComplete).length;
-
-  return (
-    <section className="theme-card mt-3 p-3">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold">Setup Checklist</h3>
-        <span className="rounded-full bg-panel-soft px-3 py-1 text-xs font-semibold text-text-muted">
-          {completedCount}/{items.length}
-        </span>
-      </div>
-      <div className="mt-3 grid gap-2 md:grid-cols-2">
-        {items.map((item) => (
-          <article
-            className="flex min-w-0 gap-3 rounded-md bg-panel-soft p-3"
-            key={item.title}
-          >
-            <span
-              className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
-                item.isComplete
-                  ? "bg-success-soft text-success"
-                  : "bg-brand-soft text-brand"
-              }`}
-            >
-              {item.isComplete ? <CheckIcon /> : null}
-            </span>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold">{item.title}</p>
-              <p className="mt-1 text-xs text-text-muted">
-                {item.description}
-              </p>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
   );
 }
 

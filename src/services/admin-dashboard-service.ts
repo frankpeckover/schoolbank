@@ -12,17 +12,10 @@ export type AdminDashboardSummary = {
   pendingShopRequests: number;
   recentAuditEntries: AuditLogItem[];
   recentEntries: AdminDashboardEntry[];
-  setupChecklist: AdminSetupChecklistItem[];
   studentAccounts: number;
   topCreditIssuers: TeacherIssuerSummary[];
   topDemeritIssuers: TeacherIssuerSummary[];
   totalUsers: number;
-};
-
-export type AdminSetupChecklistItem = {
-  description: string;
-  isComplete: boolean;
-  title: string;
 };
 
 export type AdminDashboardEntry = {
@@ -43,17 +36,11 @@ export type TeacherIssuerSummary = {
 
 type SummaryRow = {
   active_users: string;
-  active_groups: string;
-  active_shop_items: string;
-  contact_email: string | null;
-  currency_name: string | null;
   ledger_balance: string;
-  logo_url: string | null;
   money_in: string;
   money_out: string;
   pending_holds: string;
   pending_shop_requests: string;
-  school_name: string | null;
   student_accounts: string;
   total_users: string;
 };
@@ -111,12 +98,6 @@ export class AdminDashboardService {
           (select count(*) from users) as total_users,
           (select count(*) from users where is_active = true) as active_users,
           (select count(*) from accounts) as student_accounts,
-          (select count(*) from student_groups where is_active = true) as active_groups,
-          (select count(*) from shop_items where is_active = true) as active_shop_items,
-          (select name from school_info where id = 1) as school_name,
-          (select currency_name from school_info where id = 1) as currency_name,
-          (select contact_email from school_info where id = 1) as contact_email,
-          (select logo_url from school_info where id = 1) as logo_url,
           (
             select count(*)
             from shop_purchases
@@ -217,7 +198,6 @@ export class AdminDashboardService {
       pendingShopRequests: toNumber(summary.pending_shop_requests),
       recentAuditEntries: recentAuditResult.rows.map(mapAuditLogRow),
       recentEntries: recentResult.rows.map(mapDashboardEntry),
-      setupChecklist: buildSetupChecklist(summary),
       studentAccounts: toNumber(summary.student_accounts),
       topCreditIssuers,
       topDemeritIssuers,
@@ -249,40 +229,6 @@ export class AdminDashboardService {
 
     return result.rows.map(mapTeacherIssuer);
   }
-}
-
-function buildSetupChecklist(summary: SummaryRow): AdminSetupChecklistItem[] {
-  return [
-    {
-      description: "Confirm the school name, currency name, contact email, and logo.",
-      isComplete:
-        Boolean(summary.school_name?.trim()) &&
-        Boolean(summary.currency_name?.trim()) &&
-        Boolean(summary.contact_email?.trim()) &&
-        Boolean(summary.logo_url?.trim()),
-      title: "Complete organisation profile",
-    },
-    {
-      description: "Add or import staff and students so accounts can be used.",
-      isComplete: toNumber(summary.total_users) > 1,
-      title: "Add users",
-    },
-    {
-      description: "Create student groups for classes, grades, and activities.",
-      isComplete: toNumber(summary.active_groups) > 0,
-      title: "Create groups",
-    },
-    {
-      description: "Add at least one reward item students can request.",
-      isComplete: toNumber(summary.active_shop_items) > 0,
-      title: "Add shop items",
-    },
-    {
-      description: "Issue the first credits to verify the ledger workflow.",
-      isComplete: toNumber(summary.ledger_balance) !== 0,
-      title: "Record first transaction",
-    },
-  ];
 }
 
 function buildAdminAuditActionFilter() {

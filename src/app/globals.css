@@ -229,6 +229,24 @@ button:not(:disabled):active {
   background: var(--surface);
 }
 
+.color-swatch-input {
+  appearance: none;
+}
+
+.color-swatch-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-swatch-input::-webkit-color-swatch {
+  border: 0;
+  border-radius: 9999px;
+}
+
+.color-swatch-input::-moz-color-swatch {
+  border: 0;
+  border-radius: 9999px;
+}
+
 .section-highlight {
   position: relative;
   overflow: hidden;

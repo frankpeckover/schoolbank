@@ -359,19 +359,15 @@ function AccountMenuItems({
           ))}
         </div>
         <div className="mt-3 rounded-md border border-border-subtle bg-panel-soft p-2">
-          <div className="mb-2 flex items-center justify-between gap-2">
+          <div className="mb-2">
             <span className="text-xs font-semibold text-text-muted">
               Custom colour
             </span>
-            <span
-              className="h-4 w-4 rounded-full border border-border-subtle"
-              style={{ backgroundColor: colorInputValue }}
-            />
           </div>
           <div className="flex items-center gap-2">
             <input
               aria-label="Custom accent colour"
-              className="h-10 w-11 shrink-0 cursor-pointer rounded-md border border-border bg-surface p-1"
+              className="color-swatch-input h-10 w-10 shrink-0 cursor-pointer rounded-full border border-border bg-transparent p-0.5"
               onChange={(event) =>
                 onCustomAccentColorChange(event.target.value)
               }
