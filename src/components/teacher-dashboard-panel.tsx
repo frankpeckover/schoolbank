@@ -175,8 +175,9 @@ function TeacherActivityPanel({
                 label="This Week"
                 totals={summary.issuedTotals.thisWeek}
               />
-              <YearActivity
+              <ActivityPeriod
                 currencyName={currencyName}
+                label="This Year"
                 totals={summary.issuedTotals.thisYear}
               />
             </>
@@ -240,36 +241,6 @@ function ActivityPeriod({
   );
 }
 
-function YearActivity({
-  currencyName,
-  totals,
-}: {
-  currencyName: string;
-  totals: TeacherIssuedPeriodTotals;
-}) {
-  return (
-    <div className="mt-4 rounded-md border border-border-subtle bg-panel-soft px-3 py-3">
-      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
-        Year
-      </p>
-      <div className="mt-2 grid grid-cols-2 gap-2">
-        <IssuedAmount
-          amount={totals.given}
-          currencyName={currencyName}
-          icon={<ArrowUpIcon />}
-          tone="positive"
-        />
-        <IssuedAmount
-          amount={totals.removed}
-          currencyName={currencyName}
-          icon={<ArrowDownIcon />}
-          tone="negative"
-        />
-      </div>
-    </div>
-  );
-}
-
 function ActivityAmount({
   amount,
   currencyName,
@@ -293,30 +264,6 @@ function ActivityAmount({
         <span className="truncate">{label}</span>
       </div>
       <span className={`shrink-0 text-sm font-semibold ${toneClassName}`}>
-        {formatCurrencyAmount(amount, currencyName)}
-      </span>
-    </div>
-  );
-}
-
-function IssuedAmount({
-  amount,
-  currencyName,
-  icon,
-  tone,
-}: {
-  amount: number;
-  currencyName: string;
-  icon: ReactNode;
-  tone: "negative" | "positive";
-}) {
-  const toneClassName =
-    tone === "positive" ? "text-success" : "text-danger-strong";
-
-  return (
-    <div className={`flex min-w-0 items-center gap-1.5 ${toneClassName}`}>
-      <span className="shrink-0">{icon}</span>
-      <span className="truncate text-sm font-semibold">
         {formatCurrencyAmount(amount, currencyName)}
       </span>
     </div>
