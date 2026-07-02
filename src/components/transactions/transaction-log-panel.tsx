@@ -10,7 +10,10 @@ import {
 import type { SessionUser } from "@/lib/session";
 import type { TransactionLogItem } from "@/services/transaction-service";
 import { getSignedAmountTextClassName } from "@/lib/amount-style";
-import { formatCurrencyAmount, formatDateTime } from "@/lib/formatters";
+import {
+  formatDateTime,
+  formatSignedCurrencyAmount,
+} from "@/lib/formatters";
 import { matchesTransactionFilters } from "@/components/transactions/transaction-filter-utils";
 import { TransactionDetailsModal } from "@/components/transactions/transaction-details-modal";
 import {
@@ -255,29 +258,27 @@ function TransactionList({
       </div>
 
       <div className="hidden w-full min-w-0 max-w-full overflow-x-auto md:block">
-        <table className="w-full min-w-[720px] table-fixed border-collapse text-left text-sm">
+        <table className="w-full min-w-[640px] table-fixed border-collapse text-left text-sm">
         <thead>
           <tr className="border-b border-border-subtle text-text-muted">
-            <th className="py-2 pr-4 font-semibold">Date</th>
             <th className="py-2 pr-4 font-semibold">Description</th>
             {canViewAllTransactions && (
               <th className="py-2 pr-4 font-semibold">Account</th>
             )}
             <th className="py-2 pr-4 font-semibold">Status</th>
-            <th className="py-2 pr-4 text-right font-semibold">In</th>
-            <th className="py-2 pr-4 text-right font-semibold">Out</th>
+            <th className="py-2 pr-4 text-right font-semibold">Amount</th>
             <th className="py-2 font-semibold">Actions</th>
           </tr>
         </thead>
         <tbody>
           {transactions.map((transaction) => (
             <tr className="border-b border-border-subtle" key={transaction.id}>
-              <td className="py-2 pr-4 text-text-muted">
-                {formatDateTime(transaction.createdAt)}
-              </td>
               <td className="break-words py-2 pr-4">
                 <span className="font-semibold">{transaction.reason}</span>
-                <span className="block text-xs text-text-muted">
+                <span className="mt-1 block text-xs text-text-muted">
+                  {formatDateTime(transaction.createdAt)}
+                </span>
+                <span className="mt-1 block text-xs text-text-subtle">
                   {transaction.description}
                 </span>
               </td>
@@ -292,15 +293,10 @@ function TransactionList({
               <td className="py-2 pr-4">
                 <TransactionStatusBadge transaction={transaction} />
               </td>
-              <td className="py-2 pr-4 text-right font-semibold text-success">
-                {transaction.amount > 0
-                  ? formatCurrencyAmount(transaction.amount, currencyName)
-                  : ""}
-              </td>
-              <td className="py-2 pr-4 text-right font-semibold text-danger-strong">
-                {transaction.amount < 0
-                  ? formatCurrencyAmount(transaction.amount, currencyName)
-                  : ""}
+              <td
+                className={`py-2 pr-4 text-right font-semibold ${getSignedAmountTextClassName(transaction.amount)}`}
+              >
+                {formatSignedCurrencyAmount(transaction.amount, currencyName)}
               </td>
               <td className="py-2">
                 <TransactionActions
@@ -328,10 +324,10 @@ function TransactionMobileRow({
   onDetailsClick: (transaction: TransactionLogItem) => void;
   transaction: TransactionLogItem;
 }) {
-  const amountLabel =
-    transaction.amount >= 0
-      ? formatCurrencyAmount(transaction.amount, currencyName)
-      : `-${formatCurrencyAmount(transaction.amount, currencyName)}`;
+  const amountLabel = formatSignedCurrencyAmount(
+    transaction.amount,
+    currencyName,
+  );
 
   return (
     <article className="theme-card flex w-full min-w-0 items-center justify-between gap-3 overflow-hidden p-3">

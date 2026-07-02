@@ -629,10 +629,9 @@ function RecentLedgerList({
       </div>
 
       <div className="hidden w-full min-w-0 max-w-full overflow-x-auto md:block">
-        <table className="w-full min-w-[720px] table-fixed border-collapse text-left text-sm">
+        <table className="w-full min-w-[640px] table-fixed border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-border-subtle text-text-muted">
-              <th className="py-2 pr-4 font-semibold">Date</th>
               <th className="py-2 pr-4 font-semibold">Account</th>
               <th className="py-2 pr-4 font-semibold">Description</th>
               <th className="py-2 pr-4 font-semibold">Type</th>
@@ -646,13 +645,13 @@ function RecentLedgerList({
                 key={`${entry.createdAt}-${entry.studentName}-${entry.amount}`}
               >
                 <td className="py-2 pr-4 text-text-muted">
-                  {formatDateTime(entry.createdAt)}
-                </td>
-                <td className="py-2 pr-4 text-text-muted">
                   {entry.studentName}
                 </td>
-                <td className="break-words py-2 pr-4 font-semibold">
-                  {entry.description}
+                <td className="break-words py-2 pr-4">
+                  <span className="font-semibold">{entry.description}</span>
+                  <span className="mt-1 block text-xs text-text-muted">
+                    {formatDateTime(entry.createdAt)}
+                  </span>
                 </td>
                 <td className="py-2 pr-4 text-text-muted">
                   {formatEntryType(entry.type)}
