@@ -180,7 +180,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   );
 
   return (
-    <section className="theme-panel motion-panel mt-5 p-4 sm:p-5">
+    <section className="motion-panel mt-5">
       <ShopPanelHeader
         areFiltersOpen={areFiltersOpen}
         balance={balance}
@@ -199,7 +199,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
       )}
       <ShopMessages error={error} message={message} />
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {isLoading && (
           <p className="text-sm text-text-muted">Loading shop...</p>
         )}
@@ -218,7 +218,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
             />
           ))}
         {!isLoading && visibleItems.length === 0 && (
-          <div className="sm:col-span-2 lg:col-span-3 xl:col-span-4 2xl:col-span-5">
+          <div className="sm:col-span-2 lg:col-span-4">
             <EmptyState
               description={
                 items.length === 0
