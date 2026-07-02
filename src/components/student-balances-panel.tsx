@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { listStudentBalances } from "@/lib/actions";
 import { formatCurrencyAmount } from "@/lib/formatters";
 import type { StudentBalanceItem } from "@/services/transaction-service";
@@ -40,6 +41,11 @@ export function StudentBalancesPanel({
     (total, student) => total + student.balance,
     0,
   );
+  const averageBalance =
+    filteredBalances.length > 0
+      ? Math.round(totalBalance / filteredBalances.length)
+      : 0;
+  const highestBalance = filteredBalances[0]?.balance ?? 0;
 
   useEffect(() => {
     let isMounted = true;
@@ -80,7 +86,9 @@ export function StudentBalancesPanel({
         />
 
         <BalanceSummary
+          averageBalance={averageBalance}
           currencyName={currencyName}
+          highestBalance={highestBalance}
           studentCount={filteredBalances.length}
           totalBalance={totalBalance}
         />
@@ -141,17 +149,21 @@ export function StudentBalancesPanel({
 }
 
 function BalanceSummary({
+  averageBalance,
   currencyName,
+  highestBalance,
   studentCount,
   totalBalance,
 }: {
+  averageBalance: number;
   currencyName: string;
+  highestBalance: number;
   studentCount: number;
   totalBalance: number;
 }) {
   return (
-    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-      <div className="theme-card p-3">
+    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <SummaryMetricCard>
         <div className="flex items-center gap-2 text-sm font-semibold text-text-muted">
           <WalletIcon />
           <span>Total held</span>
@@ -159,13 +171,29 @@ function BalanceSummary({
         <p className="mt-2 text-2xl font-semibold">
           {formatCurrencyAmount(totalBalance, currencyName)}
         </p>
-      </div>
-      <div className="theme-card p-3">
+      </SummaryMetricCard>
+      <SummaryMetricCard>
         <p className="text-sm font-semibold text-text-muted">Students shown</p>
         <p className="mt-2 text-2xl font-semibold">{studentCount}</p>
-      </div>
+      </SummaryMetricCard>
+      <SummaryMetricCard>
+        <p className="text-sm font-semibold text-text-muted">Average balance</p>
+        <p className="mt-2 text-2xl font-semibold">
+          {formatCurrencyAmount(averageBalance, currencyName)}
+        </p>
+      </SummaryMetricCard>
+      <SummaryMetricCard>
+        <p className="text-sm font-semibold text-text-muted">Highest balance</p>
+        <p className="mt-2 text-2xl font-semibold">
+          {formatCurrencyAmount(highestBalance, currencyName)}
+        </p>
+      </SummaryMetricCard>
     </div>
   );
+}
+
+function SummaryMetricCard({ children }: { children: ReactNode }) {
+  return <div className="theme-card p-3">{children}</div>;
 }
 
 function BalanceFilters({
