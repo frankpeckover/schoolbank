@@ -47,8 +47,10 @@
   --balance-bg: #173b40;
   --balance-muted: #cce3df;
   --wallet-highlight: var(--accent-highlight);
-  --wallet-pattern-line-primary: rgba(70, 126, 214, 0.22);
-  --wallet-pattern-line-secondary: rgba(89, 188, 146, 0.22);
+  --wallet-pattern-fill-primary: rgba(70, 126, 214, 0.16);
+  --wallet-pattern-fill-secondary: rgba(89, 188, 146, 0.16);
+  --wallet-pattern-line-primary: rgba(70, 126, 214, 0.18);
+  --wallet-pattern-line-secondary: rgba(89, 188, 146, 0.18);
   --wallet-card-background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.68) 0%, rgba(255, 255, 255, 0.18) 52%, transparent 100%),
     linear-gradient(145deg, #eff6fd 0%, #e8f4fb 48%, #edf8f3 100%);
@@ -108,8 +110,10 @@ html[data-theme="dark"] {
   --balance-bg: #0f292c;
   --balance-muted: #a9d8d1;
   --wallet-highlight: color-mix(in srgb, var(--accent-highlight) 86%, white);
-  --wallet-pattern-line-primary: rgba(116, 161, 232, 0.24);
-  --wallet-pattern-line-secondary: rgba(107, 202, 166, 0.22);
+  --wallet-pattern-fill-primary: rgba(116, 161, 232, 0.16);
+  --wallet-pattern-fill-secondary: rgba(107, 202, 166, 0.14);
+  --wallet-pattern-line-primary: rgba(116, 161, 232, 0.2);
+  --wallet-pattern-line-secondary: rgba(107, 202, 166, 0.18);
   --wallet-card-background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 52%, transparent 100%),
     linear-gradient(145deg, #1c2a35 0%, #172830 48%, #172b25 100%);
@@ -256,6 +260,7 @@ button:not(:disabled):active {
 }
 
 .wallet-card::before {
+  background: var(--wallet-pattern-fill-primary);
   border: 1.5px solid var(--wallet-pattern-line-primary);
   height: 8rem;
   right: -3.25rem;
@@ -264,6 +269,7 @@ button:not(:disabled):active {
 }
 
 .wallet-card::after {
+  background: var(--wallet-pattern-fill-secondary);
   border: 1.5px solid var(--wallet-pattern-line-secondary);
   bottom: -4.75rem;
   height: 11rem;
