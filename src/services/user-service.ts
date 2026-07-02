@@ -17,6 +17,7 @@ export type UserListItem = {
   lastName: string;
   displayName: string;
   email: string;
+  profileImageUrl: string;
   role: Role;
   isActive: boolean;
   lastActivityAt: string | null;
@@ -27,11 +28,15 @@ export type CreateUserInput = {
   firstName: string;
   lastName: string;
   email: string;
+  profileImageUrl: string;
   role: Role;
   password: string;
 };
 
-export type ImportUserInput = Omit<CreateUserInput, "password">;
+export type ImportUserInput = Omit<
+  CreateUserInput,
+  "password" | "profileImageUrl"
+>;
 
 export type ImportUsersInput = {
   users: ImportUserInput[];
@@ -69,6 +74,7 @@ export type UpdateUserInput = {
   firstName: string;
   lastName: string;
   email: string;
+  profileImageUrl: string;
   role: Role;
   isActive: boolean;
 };
@@ -108,6 +114,7 @@ export type StudentListItem = {
   firstName: string;
   lastName: string;
   displayName: string;
+  profileImageUrl: string;
   username: string;
 };
 
@@ -117,6 +124,7 @@ type UserListRow = {
   first_name: string;
   last_name: string;
   email: string;
+  profile_image_url: string;
   role: Role;
   is_active: boolean;
   last_activity_at: Date | null;
@@ -126,6 +134,7 @@ type StudentListRow = {
   id: string;
   first_name: string;
   last_name: string;
+  profile_image_url: string;
   username: string;
 };
 
@@ -145,6 +154,7 @@ type ImportedUserRow = {
   first_name: string;
   id: string;
   last_name: string;
+  profile_image_url: string;
   role: Role;
   username: string;
 };
@@ -162,6 +172,7 @@ export class UserService {
         users.first_name,
         users.last_name,
         users.email,
+        users.profile_image_url,
         roles.role_key as role,
         users.is_active,
         max(ledger_entries.created_at) as last_activity_at
@@ -190,6 +201,7 @@ export class UserService {
         users.id,
         users.first_name,
         users.last_name,
+        users.profile_image_url,
         users.username
       from users
       join roles on roles.id = users.role_id
@@ -212,6 +224,7 @@ export class UserService {
       firstName: student.first_name,
       lastName: student.last_name,
       displayName: formatDisplayName(student.first_name, student.last_name),
+      profileImageUrl: student.profile_image_url,
       username: student.username,
     }));
   }
@@ -224,6 +237,7 @@ export class UserService {
     const firstName = capitaliseName(input.firstName);
     const lastName = capitaliseName(input.lastName);
     const email = input.email.trim().toLowerCase();
+    const profileImageUrl = input.profileImageUrl.trim();
     const password = input.password;
 
     if (!username || !firstName || !lastName || !email || !password) {
@@ -248,6 +262,7 @@ export class UserService {
             first_name,
             last_name,
             email,
+            profile_image_url,
             password_hash
           )
           values (
@@ -256,19 +271,29 @@ export class UserService {
             $3,
             $4,
             $5,
-            $6
+            $6,
+            $7
           )
           returning
             id,
             username,
             first_name,
             last_name,
+            profile_image_url,
             email,
             (select role_key from roles where roles.id = users.role_id) as role,
             is_active,
             null::timestamptz as last_activity_at
         `,
-        [input.role, username, firstName, lastName, email, passwordHash],
+        [
+          input.role,
+          username,
+          firstName,
+          lastName,
+          email,
+          profileImageUrl,
+          passwordHash,
+        ],
       );
 
       if (input.role === "student") {
@@ -378,6 +403,7 @@ export class UserService {
             first_name,
             last_name,
             email,
+            profile_image_url,
             password_hash
           )
           select
@@ -386,6 +412,7 @@ export class UserService {
             imported.first_name,
             imported.last_name,
             imported.email,
+            '',
             imported.password_hash
           from jsonb_to_recordset($1::jsonb) as imported(
             email text,
@@ -402,6 +429,7 @@ export class UserService {
             username,
             first_name,
             last_name,
+            profile_image_url,
             email,
             (select role_key from roles where roles.id = users.role_id) as role
         `,
@@ -545,6 +573,7 @@ export class UserService {
     const firstName = capitaliseName(input.firstName);
     const lastName = capitaliseName(input.lastName);
     const email = input.email.trim().toLowerCase();
+    const profileImageUrl = input.profileImageUrl.trim();
 
     if (!input.id || !username || !firstName || !lastName || !email) {
       return {
@@ -565,15 +594,17 @@ export class UserService {
               first_name = $2,
               last_name = $3,
               email = $4,
-              role_id = (select id from roles where role_key = $5 and is_active = true),
-              is_active = $6,
+              profile_image_url = $5,
+              role_id = (select id from roles where role_key = $6 and is_active = true),
+              is_active = $7,
               updated_at = now()
-          where id = $7
+          where id = $8
           returning
             id,
             username,
             first_name,
             last_name,
+            profile_image_url,
             email,
             (select role_key from roles where roles.id = users.role_id) as role,
             is_active,
@@ -589,6 +620,7 @@ export class UserService {
           firstName,
           lastName,
           email,
+          profileImageUrl,
           input.role,
           input.isActive,
           input.id,
@@ -853,6 +885,7 @@ export class UserService {
       lastName: user.last_name,
       displayName: formatDisplayName(user.first_name, user.last_name),
       email: user.email,
+      profileImageUrl: user.profile_image_url,
       role: user.role,
       isActive: user.is_active,
       lastActivityAt: user.last_activity_at?.toISOString() ?? null,

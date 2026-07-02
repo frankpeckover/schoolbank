@@ -16,21 +16,23 @@ import {
   LogOutIcon,
   MoonIcon,
   SunIcon,
-  UserCircleIcon,
 } from "@/components/ui/icons";
+import { UserAvatar } from "@/components/ui/user-avatar";
 
 const defaultNavigationItems = [
   "Dashboard",
-  "Balances",
+  "Analytics",
   "Shop",
   "Transaction Log",
 ] as const;
 const studentNavigationItems = ["Dashboard", "Shop"] as const;
 const adminNavigationItems = [
   "Dashboard",
+  "Students",
   "Users",
   "Groups",
-  "Balances",
+  "Timetable",
+  "Analytics",
   "Shop",
   "Transaction Log",
   "Audit Log",
@@ -39,9 +41,11 @@ const adminNavigationItems = [
 ] as const;
 const adminPrimaryNavigationItems = [
   "Dashboard",
+  "Students",
   "Users",
   "Groups",
-  "Balances",
+  "Timetable",
+  "Analytics",
   "Shop",
 ] as const;
 const adminOverflowNavigationItems = [
@@ -52,7 +56,7 @@ const adminOverflowNavigationItems = [
 ] as const;
 const defaultPrimaryNavigationItems = [
   "Dashboard",
-  "Balances",
+  "Analytics",
   "Shop",
 ] as const;
 const defaultOverflowNavigationItems = ["Transaction Log"] as const;
@@ -64,7 +68,9 @@ type HeaderNavMenuProps = {
   onItemChange: (item: NavigationItem) => void;
   onLogout: () => void;
   onPasswordChange: () => void;
+  profileImageUrl: string;
   role: Role;
+  userDisplayName: string;
 };
 
 export function HeaderNavMenu({
@@ -72,7 +78,9 @@ export function HeaderNavMenu({
   onItemChange,
   onLogout,
   onPasswordChange,
+  profileImageUrl,
   role,
+  userDisplayName,
 }: HeaderNavMenuProps) {
   const navRef = useRef<HTMLElement | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -163,7 +171,11 @@ export function HeaderNavMenu({
             }
             type="button"
           >
-            <UserCircleIcon className="h-5 w-5" />
+            <UserAvatar
+              displayName={userDisplayName}
+              imageUrl={profileImageUrl}
+              size="sm"
+            />
             <ChevronDownIcon className="h-3.5 w-3.5" />
           </button>
 
@@ -203,7 +215,11 @@ export function HeaderNavMenu({
         }
         type="button"
       >
-        <UserCircleIcon className="h-5 w-5" />
+        <UserAvatar
+          displayName={userDisplayName}
+          imageUrl={profileImageUrl}
+          size="sm"
+        />
         <ChevronDownIcon className="h-3.5 w-3.5" />
       </button>
 

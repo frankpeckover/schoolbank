@@ -94,6 +94,12 @@ function AccountFields({
         type="email"
         value={form.email}
       />
+      <TextField
+        id="profileImageUrl"
+        label="Profile Image URL"
+        onChange={(value) => onChange("profileImageUrl", value)}
+        value={form.profileImageUrl}
+      />
 
       {mode === "create" ? (
         <TextField

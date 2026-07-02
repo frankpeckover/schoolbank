@@ -6,6 +6,7 @@ import { AdminDashboardPanel } from "@/components/admin-dashboard-panel";
 import { AdminErrorLogPanel } from "@/components/admin-error-log-panel";
 import { AdminGroupsPanel } from "@/components/admin-groups-panel";
 import { AdminSettingsPanel } from "@/components/admin-settings-panel";
+import { AdminTimetablePanel } from "@/components/admin-timetable-panel";
 import { AdminUsersPanel } from "@/components/admin-users-panel";
 import {
   HeaderNavMenu,
@@ -14,7 +15,6 @@ import {
 import { ChangePasswordModal } from "@/components/change-password-modal";
 import { ShopPanel } from "@/components/shop/shop-panel";
 import { StudentDashboardPanel } from "@/components/student-dashboard-panel";
-import { StudentBalancesPanel } from "@/components/student-balances-panel";
 import { TeacherDashboardPanel } from "@/components/teacher-dashboard-panel";
 import { TransactionLogPanel } from "@/components/transactions/transaction-log-panel";
 import { AppBrand } from "@/components/ui/app-brand";
@@ -25,7 +25,6 @@ import {
   canManageSchoolSettings,
   canManageUsers,
   canViewAuditLog,
-  canViewStudentBalances,
   isAdmin,
   isStudent,
   isTeacher,
@@ -103,7 +102,9 @@ export function DashboardShell({
               onItemChange={setActiveNavItem}
               onLogout={onLogout}
               onPasswordChange={() => setIsPasswordModalOpen(true)}
+              profileImageUrl={user.profileImageUrl}
               role={user.role}
+              userDisplayName={user.displayName}
             />
           </div>
         </header>
@@ -123,7 +124,18 @@ export function DashboardShell({
           <AdminGroupsPanel />
         )}
 
+        {canManageGroups(user) && activeNavItem === "Timetable" && (
+          <AdminTimetablePanel />
+        )}
+
         {isTeacher(user) && activeNavItem === "Dashboard" && (
+          <TeacherDashboardPanel
+            currencyName={schoolInfo.currencyName}
+            schoolName={schoolName}
+          />
+        )}
+
+        {isAdmin(user) && activeNavItem === "Students" && (
           <TeacherDashboardPanel
             currencyName={schoolInfo.currencyName}
             schoolName={schoolName}
@@ -136,12 +148,6 @@ export function DashboardShell({
             currentUser={user}
             schoolName={schoolName}
           />
-        )}
-
-        {canViewStudentBalances(user) && activeNavItem === "Balances" && (
-            <StudentBalancesPanel
-              currencyName={schoolInfo.currencyName}
-            />
         )}
 
         {activeNavItem === "Shop" && (

@@ -60,5 +60,5 @@ export function canApproveShopRequests(user: PermissionUser) {
 }
 
 export function canCreateLedgerAdjustments(user: PermissionUser) {
-  return isTeacher(user);
+  return isStaff(user);
 }

@@ -29,6 +29,7 @@ export const emptyUserForm: UserFormState = {
   firstName: "",
   lastName: "",
   email: "",
+  profileImageUrl: "",
   role: "student" satisfies Role,
   password: "",
   isActive: true,

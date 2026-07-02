@@ -6,5 +6,6 @@ export type SessionUser = {
   lastName: string;
   username: string;
   displayName: string;
+  profileImageUrl: string;
   role: Role;
 };

@@ -38,6 +38,14 @@ export {
   getTeacherDashboardSummary,
 } from "@/lib/actions/teacher-dashboard-actions";
 export {
+  createTimetableEntry,
+  getCurrentTeacherClass,
+  importTimetableEntries,
+  listTimetableEntries,
+  listTimetableTeachers,
+  setTimetableEntryActive,
+} from "@/lib/actions/timetable-actions";
+export {
   approveShopRequest,
   denyShopRequest,
   listPendingShopRequests,

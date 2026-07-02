@@ -210,6 +210,7 @@ function getInitialFormState(
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
+      profileImageUrl: user.profileImageUrl,
       role: user.role,
       password: "",
       isActive: user.isActive,
@@ -226,6 +227,7 @@ function getUpdateUserInput(form: UserFormState): UpdateUserInput {
     firstName: form.firstName,
     lastName: form.lastName,
     email: form.email,
+    profileImageUrl: form.profileImageUrl,
     role: form.role,
     isActive: form.isActive,
   };

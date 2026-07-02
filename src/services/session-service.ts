@@ -7,6 +7,7 @@ type SessionUserRow = {
   first_name: string;
   id: string;
   last_name: string;
+  profile_image_url: string;
   role: Role;
   username: string;
 };
@@ -64,6 +65,7 @@ export class SessionService {
             users.username,
             users.first_name,
             users.last_name,
+            users.profile_image_url,
             roles.role_key as role
           from user_sessions
           join users on users.id = user_sessions.user_id
@@ -130,6 +132,7 @@ function mapSessionUserRow(user: SessionUserRow): SessionUser {
     firstName: user.first_name,
     id: user.id,
     lastName: user.last_name,
+    profileImageUrl: user.profile_image_url,
     role: user.role,
     username: user.username,
   };

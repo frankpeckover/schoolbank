@@ -14,7 +14,6 @@ type AdjustmentRecipientPanelProps = {
   onStudentRemove: (studentId: string) => void;
   onStudentSelect: (student: StudentListItem) => void;
   onTargetChange: (target: AdjustmentTarget) => void;
-  recentStudents: StudentListItem[];
   searchMinChars: number;
   selectedGroup: GroupListItem | null;
   selectedGroupId: string;
@@ -33,7 +32,6 @@ export function AdjustmentRecipientPanel({
   onStudentRemove,
   onStudentSelect,
   onTargetChange,
-  recentStudents,
   searchMinChars,
   selectedGroup,
   selectedGroupId,
@@ -58,7 +56,6 @@ export function AdjustmentRecipientPanel({
           onQueryChange={onStudentQueryChange}
           onStudentRemove={onStudentRemove}
           onStudentSelect={onStudentSelect}
-          recentStudents={recentStudents}
           searchMinChars={searchMinChars}
           selectedStudents={selectedStudents}
           studentQuery={studentQuery}
@@ -145,7 +142,6 @@ function StudentSelector({
   onQueryChange,
   onStudentRemove,
   onStudentSelect,
-  recentStudents,
   searchMinChars,
   selectedStudents,
   studentQuery,
@@ -155,7 +151,6 @@ function StudentSelector({
   onQueryChange: (value: string) => void;
   onStudentRemove: (studentId: string) => void;
   onStudentSelect: (student: StudentListItem) => void;
-  recentStudents: StudentListItem[];
   searchMinChars: number;
   selectedStudents: StudentListItem[];
   studentQuery: string;
@@ -196,12 +191,6 @@ function StudentSelector({
         </p>
       )}
 
-      {recentStudents.length > 0 && (
-        <RecentStudentList
-          onSelect={onStudentSelect}
-          students={recentStudents}
-        />
-      )}
     </>
   );
 }
@@ -318,32 +307,6 @@ function StudentResultList({
           <span className="text-text-muted">{student.username}</span>
         </button>
       ))}
-    </div>
-  );
-}
-
-function RecentStudentList({
-  onSelect,
-  students,
-}: {
-  onSelect: (student: StudentListItem) => void;
-  students: StudentListItem[];
-}) {
-  return (
-    <div className="mt-4">
-      <p className="text-sm font-semibold text-text-control">Recent</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {students.map((student) => (
-          <button
-            className="rounded-md border border-button-border px-3 py-2 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
-            key={student.id}
-            onClick={() => onSelect(student)}
-            type="button"
-          >
-            {student.displayName}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

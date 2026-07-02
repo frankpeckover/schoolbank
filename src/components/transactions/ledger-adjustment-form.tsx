@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   createGroupLedgerAdjustment,
   createLedgerAdjustments,
@@ -19,6 +19,12 @@ type LedgerAdjustmentFormProps = {
   currencyName: string;
   onCreated: (message: string) => void;
   onError: (message: string | null) => void;
+  preferredDirection?: AdjustmentDirection;
+  preferredGroupId?: string;
+  preferredGroupSelectionVersion?: number;
+  preferredStudent?: StudentListItem | null;
+  preferredStudents?: StudentListItem[];
+  preferredStudentSelectionVersion?: number;
 };
 
 const amountPresets = [1, 5, 10, 25, 50];
@@ -32,7 +38,6 @@ const reasonPresets = [
 ];
 const studentSearchDebounceMs = 250;
 const studentSearchMinChars = 2;
-const recentStudentLimit = 6;
 const emptyStudentResults: StudentListItem[] = [];
 const emptyGroupResults: GroupListItem[] = [];
 type AdjustmentStep = "recipient" | "amount" | "reason";
@@ -41,6 +46,12 @@ export function LedgerAdjustmentForm({
   currencyName,
   onCreated,
   onError,
+  preferredDirection = "add",
+  preferredGroupId = "",
+  preferredGroupSelectionVersion = 0,
+  preferredStudent = null,
+  preferredStudents = [],
+  preferredStudentSelectionVersion = 0,
 }: LedgerAdjustmentFormProps) {
   const [amount, setAmount] = useState("");
   const [direction, setDirection] = useState<AdjustmentDirection>("add");
@@ -56,7 +67,6 @@ export function LedgerAdjustmentForm({
   const [selectedStudents, setSelectedStudents] = useState<StudentListItem[]>(
     [],
   );
-  const [recentStudents, setRecentStudents] = useState<StudentListItem[]>([]);
   const [isLoadingGroups, setIsLoadingGroups] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -111,6 +121,46 @@ export function LedgerAdjustmentForm({
   }, [onError]);
 
   useEffect(() => {
+    if (!preferredGroupId) {
+      return;
+    }
+
+    setDirection(preferredDirection);
+    setTarget("group");
+    setSelectedGroupId(preferredGroupId);
+    setSelectedStudents([]);
+    setStudentQuery("");
+    setStudentResults(emptyStudentResults);
+    setStep("amount");
+  }, [preferredDirection, preferredGroupId, preferredGroupSelectionVersion]);
+
+  useEffect(() => {
+    const nextStudents =
+      preferredStudents.length > 0
+        ? preferredStudents
+        : preferredStudent
+          ? [preferredStudent]
+          : [];
+
+    if (nextStudents.length === 0) {
+      return;
+    }
+
+    setDirection(preferredDirection);
+    setTarget("student");
+    setSelectedStudents(nextStudents);
+    setSelectedGroupId("");
+    setStudentQuery("");
+    setStudentResults(emptyStudentResults);
+    setStep("amount");
+  }, [
+    preferredDirection,
+    preferredStudent,
+    preferredStudents,
+    preferredStudentSelectionVersion,
+  ]);
+
+  useEffect(() => {
     let isActive = true;
 
     if (studentQuery.trim().length < studentSearchMinChars) {
@@ -147,16 +197,6 @@ export function LedgerAdjustmentForm({
     };
   }, [studentQuery, onError]);
 
-  const visibleRecentStudents = useMemo(
-    () =>
-      recentStudents.filter((student) =>
-        selectedStudents.every(
-          (selectedStudent) => selectedStudent.id !== student.id,
-        ),
-      ),
-    [recentStudents, selectedStudents],
-  );
-
   async function handleSubmit() {
     if (!canSubmit) {
       onError("Select a recipient, amount, and reason.");
@@ -192,21 +232,6 @@ export function LedgerAdjustmentForm({
       reason,
       recipientLabel,
     });
-
-    if (target === "student") {
-      setRecentStudents((current) =>
-        [
-          ...selectedStudents,
-          ...current.filter(
-            (student) =>
-              !selectedStudents.some(
-                (selectedStudent) => selectedStudent.id === student.id,
-              ),
-          ),
-        ]
-          .slice(0, recentStudentLimit),
-      );
-    }
 
     setAmount("");
     setDirection("add");
@@ -304,7 +329,6 @@ export function LedgerAdjustmentForm({
             onStudentRemove={removeSelectedStudent}
             onStudentSelect={selectStudent}
             onTargetChange={handleTargetChange}
-            recentStudents={visibleRecentStudents}
             searchMinChars={studentSearchMinChars}
             selectedGroup={selectedGroup}
             selectedGroupId={selectedGroupId}

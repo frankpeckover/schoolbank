@@ -1,110 +1,74 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
-import { ShopRequestsPanel } from "@/components/shop/shop-requests-panel";
+import { useEffect, useMemo, useState } from "react";
+import { StudentBalanceCard } from "@/components/student-balance-card";
 import { LedgerAdjustmentForm } from "@/components/transactions/ledger-adjustment-form";
+import { UsersIcon, XIcon } from "@/components/ui/icons";
 import {
-  ArrowDownIcon,
-  ArrowUpIcon,
-  WalletIcon,
-} from "@/components/ui/icons";
-import { getTeacherDashboardSummary, listStudentBalances } from "@/lib/actions";
-import { formatCurrencyAmount } from "@/lib/formatters";
-import type {
-  TeacherDashboardSummary,
-  TeacherIssuedPeriodTotals,
-} from "@/services/teacher-dashboard-service";
+  getCurrentTeacherClass,
+  listGroups,
+  listStudentBalances,
+} from "@/lib/actions";
+import type { AdjustmentDirection } from "@/components/transactions/ledger-adjustment-types";
+import type { GroupListItem } from "@/services/group-service";
+import type { CurrentClass } from "@/services/timetable-service";
 import type { StudentBalanceItem } from "@/services/transaction-service";
+import type { StudentListItem } from "@/services/user-service";
 
 type TeacherDashboardPanelProps = {
   currencyName: string;
   schoolName: string;
 };
 
+type AdjustmentTargetSelection =
+  | {
+      direction: AdjustmentDirection;
+      group: GroupListItem;
+      kind: "group";
+      version: number;
+    }
+  | {
+      direction: AdjustmentDirection;
+      kind: "students";
+      students: StudentListItem[];
+      version: number;
+    };
+
 export function TeacherDashboardPanel({
   currencyName,
-  schoolName,
 }: TeacherDashboardPanelProps) {
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-
-  return (
-    <>
-      <section className="dashboard-grid motion-panel mt-5">
-        <section className="dashboard-unit-2 section-highlight theme-panel p-4 sm:p-5">
-          <div className="flex h-full min-h-52 flex-col">
-            <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-brand-soft text-brand">
-                <WalletIcon className="h-5 w-5" />
-              </span>
-              <div className="min-w-0">
-                <h2 className="text-xl font-semibold">
-                  Record {currencyName}
-                </h2>
-              </div>
-            </div>
-
-            <LedgerAdjustmentForm
-              currencyName={currencyName}
-              onCreated={setMessage}
-              onError={setError}
-            />
-
-            {message && (
-              <p className="mt-4 rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
-                {message}
-              </p>
-            )}
-            {error && (
-              <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-                {error}
-              </p>
-            )}
-          </div>
-        </section>
-
-        <TeacherActivityPanel
-          currencyName={currencyName}
-          schoolName={schoolName}
-        />
-      </section>
-
-      <ShopRequestsPanel currencyName={currencyName} />
-    </>
+  const [currentClass, setCurrentClass] = useState<CurrentClass | null>(null);
+  const [studentBalances, setStudentBalances] = useState<StudentBalanceItem[]>(
+    [],
   );
-}
-
-function TeacherActivityPanel({
-  currencyName,
-  schoolName,
-}: {
-  currencyName: string;
-  schoolName: string;
-}) {
-  const [balances, setBalances] = useState<StudentBalanceItem[]>([]);
-  const [summary, setSummary] = useState<TeacherDashboardSummary | null>(null);
+  const [groups, setGroups] = useState<GroupListItem[]>([]);
+  const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selection, setSelection] =
+    useState<AdjustmentTargetSelection | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
-    async function loadActivity() {
+    async function loadDashboard() {
       try {
-        const [loadedBalances, loadedSummary] = await Promise.all([
-          listStudentBalances(),
-          getTeacherDashboardSummary(),
-        ]);
+        const [loadedCurrentClass, loadedBalances, loadedGroups] =
+          await Promise.all([
+            getCurrentTeacherClass(),
+            listStudentBalances(),
+            listGroups(false),
+          ]);
 
         if (isMounted) {
-          setBalances(loadedBalances.filter((student) => student.isActive));
-          setSummary(loadedSummary);
+          setCurrentClass(loadedCurrentClass);
+          setStudentBalances(loadedBalances.filter((student) => student.isActive));
+          setGroups(loadedGroups.filter((group) => group.isActive));
           setError(null);
         }
       } catch {
         if (isMounted) {
-          setError("Could not load teacher activity.");
+          setError("Could not load teacher dashboard.");
         }
       } finally {
         if (isMounted) {
@@ -113,156 +77,375 @@ function TeacherActivityPanel({
       }
     }
 
-    loadActivity();
+    loadDashboard();
 
     return () => {
       isMounted = false;
     };
   }, []);
 
-  const totalBalance = balances.reduce(
-    (total, student) => total + student.balance,
-    0,
+  const visibleStudents = useMemo(
+    () => getVisibleStudents(search, currentClass, studentBalances),
+    [currentClass, search, studentBalances],
   );
+  const visibleGroups = useMemo(
+    () => getVisibleGroups(search, groups),
+    [groups, search],
+  );
+  const isDefaultingToCurrentClass = search.trim().length === 0;
+
+  function handleStudentsSelected(
+    students: StudentListItem[],
+    direction: AdjustmentDirection,
+  ) {
+    setSelection({
+      direction,
+      kind: "students",
+      students,
+      version: Date.now(),
+    });
+  }
+
+  function handleGroupSelected(
+    group: GroupListItem,
+    direction: AdjustmentDirection,
+  ) {
+    setSelection({
+      direction,
+      group,
+      kind: "group",
+      version: Date.now(),
+    });
+  }
 
   return (
-    <section
-      aria-label={`${schoolName} teacher activity`}
-      className="dashboard-unit-2 theme-panel p-4"
-    >
-      <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-panel-soft text-text-muted">
-          <WalletIcon />
-        </span>
-        <div className="min-w-0">
-          <h3 className="text-base font-semibold">Today&apos;s Activity</h3>
-        </div>
-      </div>
+    <>
+      <section className="motion-panel mt-5">
+        <label
+          className="text-sm font-semibold text-text-control"
+          htmlFor="teacherDashboardSearch"
+        >
+          Search students or groups
+        </label>
+        <input
+          className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition placeholder:text-text-muted focus:ring-2"
+          id="teacherDashboardSearch"
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search a student, group, or use semicolons: Alex; Sam; Priya"
+          value={search}
+        />
 
-      {isLoading && (
-        <p className="mt-4 text-sm text-text-muted">Loading activity...</p>
-      )}
-      {error && (
-        <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-          {error}
-        </p>
-      )}
-      {!isLoading && !error && (
-        <div className="mt-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-            <ActivityMetric
-              label="Active Students"
-              value={String(balances.length)}
-            />
-            <ActivityMetric
-              label="In Wallets"
-              value={formatCurrencyAmount(totalBalance, currencyName)}
-            />
+        {isLoading && (
+          <p className="mt-4 text-sm text-text-muted">Loading students...</p>
+        )}
+        {error && (
+          <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
+            {error}
+          </p>
+        )}
+
+        {!isLoading && !error && (
+          <div className="mt-4">
+            {isDefaultingToCurrentClass && !currentClass && (
+              <p className="text-sm text-text-muted">
+                No class is timetabled right now. Search for students or groups
+                above.
+              </p>
+            )}
+
+            {visibleStudents.length > 0 && (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {visibleStudents.map((student) => (
+                  <StudentBalanceCard
+                    currencyName={currencyName}
+                    key={student.id}
+                    onAdd={() =>
+                      handleStudentsSelected([toStudentListItem(student)], "add")
+                    }
+                    onRemove={() =>
+                      handleStudentsSelected(
+                        [toStudentListItem(student)],
+                        "remove",
+                      )
+                    }
+                    student={student}
+                  />
+                ))}
+              </div>
+            )}
+
+            {visibleStudents.length > 1 && hasSemicolonSearch(search) && (
+              <div className="mt-3 flex gap-2">
+                <button
+                  className="rounded-md border border-success bg-success px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-success-hover"
+                  onClick={() =>
+                    handleStudentsSelected(
+                      visibleStudents.map(toStudentListItem),
+                      "add",
+                    )
+                  }
+                  type="button"
+                >
+                  Add to all shown
+                </button>
+                <button
+                  className="rounded-md border border-danger bg-danger px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
+                  onClick={() =>
+                    handleStudentsSelected(
+                      visibleStudents.map(toStudentListItem),
+                      "remove",
+                    )
+                  }
+                  type="button"
+                >
+                  Take from all shown
+                </button>
+              </div>
+            )}
+
+            {visibleGroups.length > 0 && (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {visibleGroups.map((group) => (
+                  <GroupCreditCard
+                    group={group}
+                    key={group.id}
+                    onAdd={() => handleGroupSelected(group, "add")}
+                    onRemove={() => handleGroupSelected(group, "remove")}
+                  />
+                ))}
+              </div>
+            )}
+
+            {visibleStudents.length === 0 &&
+              visibleGroups.length === 0 &&
+              !isDefaultingToCurrentClass && (
+                <p className="text-sm text-text-muted">
+                  No matching students or groups.
+                </p>
+              )}
           </div>
+        )}
+      </section>
 
-          {summary && (
-            <>
-              <ActivityPeriod
-                currencyName={currencyName}
-                label="Today"
-                totals={summary.issuedTotals.today}
-              />
-              <ActivityPeriod
-                currencyName={currencyName}
-                label="This Week"
-                totals={summary.issuedTotals.thisWeek}
-              />
-              <ActivityPeriod
-                currencyName={currencyName}
-                label="This Year"
-                totals={summary.issuedTotals.thisYear}
-              />
-            </>
-          )}
-        </div>
+      {selection && (
+        <QuickAdjustmentModal
+          currencyName={currencyName}
+          onClose={() => setSelection(null)}
+          selection={selection}
+        />
       )}
-    </section>
+    </>
   );
 }
 
-function ActivityMetric({
-  label,
-  value,
+function GroupCreditCard({
+  group,
+  onAdd,
+  onRemove,
 }: {
-  label: string;
-  value: string;
+  group: GroupListItem;
+  onAdd: () => void;
+  onRemove: () => void;
 }) {
   return (
-    <div className="rounded-md border border-border-subtle bg-panel-soft px-3 py-3">
-      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
-        {label}
-      </p>
-      <p className="mt-2 break-words text-lg font-semibold text-foreground">
-        {value}
-      </p>
-    </div>
+    <article className="theme-card p-3">
+      <div className="flex items-center gap-3">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent-soft text-accent">
+          <UsersIcon />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-sm font-semibold text-foreground">
+            {group.name}
+          </h3>
+          <p className="mt-0.5 truncate text-xs font-medium text-text-muted">
+            {group.memberCount} students
+          </p>
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button
+          className="rounded-md border border-success bg-success px-3 py-2 text-base font-semibold text-white shadow-sm transition hover:bg-success-hover"
+          onClick={onAdd}
+          type="button"
+        >
+          +
+        </button>
+        <button
+          className="rounded-md border border-danger bg-danger px-3 py-2 text-base font-semibold text-white shadow-sm transition hover:brightness-95"
+          onClick={onRemove}
+          type="button"
+        >
+          -
+        </button>
+      </div>
+    </article>
   );
 }
 
-function ActivityPeriod({
+function QuickAdjustmentModal({
   currencyName,
-  label,
-  totals,
+  onClose,
+  selection,
 }: {
   currencyName: string;
-  label: string;
-  totals: TeacherIssuedPeriodTotals;
+  onClose: () => void;
+  selection: AdjustmentTargetSelection;
 }) {
+  const [error, setError] = useState<string | null>(null);
+
+  function handleCreated() {
+    onClose();
+  }
+
+  const targetName =
+    selection.kind === "group"
+      ? selection.group.name
+      : `${selection.students.length} student${
+          selection.students.length === 1 ? "" : "s"
+        }`;
+
   return (
-    <div className="mt-4 border-t border-border-subtle pt-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
-        {label}
-      </p>
-      <div className="mt-3 grid gap-2">
-        <ActivityAmount
-          amount={totals.given}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+      <div className="theme-panel motion-pop max-h-[90vh] w-full max-w-xl overflow-y-auto p-5 shadow-lg">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="truncate text-lg font-semibold">
+              {selection.direction === "add" ? "Add" : "Take"} {currencyName}
+            </h3>
+            <p className="mt-1 truncate text-sm text-text-muted">
+              {targetName}
+            </p>
+          </div>
+          <button
+            className="rounded-md border border-button-border p-2 text-text-control transition hover:bg-panel-soft"
+            onClick={onClose}
+            type="button"
+          >
+            <XIcon />
+          </button>
+        </div>
+
+        <LedgerAdjustmentForm
           currencyName={currencyName}
-          icon={<ArrowUpIcon />}
-          label="Given"
-          tone="positive"
+          onCreated={handleCreated}
+          onError={setError}
+          preferredDirection={selection.direction}
+          preferredGroupId={
+            selection.kind === "group" ? selection.group.id : undefined
+          }
+          preferredGroupSelectionVersion={selection.version}
+          preferredStudents={
+            selection.kind === "students" ? selection.students : undefined
+          }
+          preferredStudentSelectionVersion={selection.version}
         />
-        <ActivityAmount
-          amount={totals.removed}
-          currencyName={currencyName}
-          icon={<ArrowDownIcon />}
-          label="Removed"
-          tone="negative"
-        />
+
+        {error && (
+          <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
+            {error}
+          </p>
+        )}
       </div>
     </div>
   );
 }
 
-function ActivityAmount({
-  amount,
-  currencyName,
-  icon,
-  label,
-  tone,
-}: {
-  amount: number;
-  currencyName: string;
-  icon: ReactNode;
-  label: string;
-  tone: "negative" | "positive";
-}) {
-  const toneClassName =
-    tone === "positive" ? "text-success" : "text-danger-strong";
+function getVisibleStudents(
+  search: string,
+  currentClass: CurrentClass | null,
+  studentBalances: StudentBalanceItem[],
+) {
+  const trimmedSearch = search.trim();
 
-  return (
-    <div className="flex min-w-0 items-center justify-between gap-3">
-      <div className="flex min-w-0 items-center gap-2 text-sm text-text-muted">
-        <span className={`shrink-0 ${toneClassName}`}>{icon}</span>
-        <span className="truncate">{label}</span>
-      </div>
-      <span className={`shrink-0 text-sm font-semibold ${toneClassName}`}>
-        {formatCurrencyAmount(amount, currencyName)}
-      </span>
-    </div>
-  );
+  if (!trimmedSearch) {
+    return currentClass?.students ?? [];
+  }
+
+  const terms = splitSearchTerms(trimmedSearch);
+
+  if (terms.length > 1) {
+    return getStudentsMatchingAnyTerm(studentBalances, terms);
+  }
+
+  return getStudentsMatchingTerm(studentBalances, terms[0] ?? "");
+}
+
+function getVisibleGroups(search: string, groups: GroupListItem[]) {
+  const trimmedSearch = search.trim();
+
+  if (!trimmedSearch || hasSemicolonSearch(trimmedSearch)) {
+    return [];
+  }
+
+  const query = normaliseSearchValue(trimmedSearch);
+
+  return groups
+    .filter((group) => normaliseSearchValue(group.name).includes(query))
+    .slice(0, 8);
+}
+
+function getStudentsMatchingAnyTerm(
+  students: StudentBalanceItem[],
+  terms: string[],
+) {
+  const matchedStudents = new Map<string, StudentBalanceItem>();
+
+  for (const term of terms) {
+    for (const student of getStudentsMatchingTerm(students, term)) {
+      matchedStudents.set(student.id, student);
+    }
+  }
+
+  return Array.from(matchedStudents.values());
+}
+
+function getStudentsMatchingTerm(
+  students: StudentBalanceItem[],
+  term: string,
+) {
+  const query = normaliseSearchValue(term);
+
+  if (!query) {
+    return [];
+  }
+
+  return students
+    .filter((student) =>
+      [
+        student.displayName,
+        student.firstName,
+        student.lastName,
+        student.username,
+        student.email,
+      ].some((value) => normaliseSearchValue(value).includes(query)),
+    )
+    .slice(0, 12);
+}
+
+function splitSearchTerms(search: string) {
+  return search
+    .split(";")
+    .map((term) => term.trim())
+    .filter(Boolean);
+}
+
+function hasSemicolonSearch(search: string) {
+  return search.includes(";");
+}
+
+function normaliseSearchValue(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function toStudentListItem(
+  student: CurrentClass["students"][number] | StudentBalanceItem,
+): StudentListItem {
+  return {
+    id: student.id,
+    firstName: student.firstName,
+    lastName: student.lastName,
+    displayName: student.displayName,
+    profileImageUrl: student.profileImageUrl,
+    username: student.username,
+  };
 }

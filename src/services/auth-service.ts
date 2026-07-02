@@ -9,6 +9,7 @@ type UserRow = {
   username: string;
   first_name: string;
   last_name: string;
+  profile_image_url: string;
   role: Role;
   password_hash: string;
 };
@@ -42,6 +43,7 @@ export class AuthService {
             users.username,
             users.first_name,
             users.last_name,
+            users.profile_image_url,
             roles.role_key as role,
             users.password_hash
           from users
@@ -71,6 +73,7 @@ export class AuthService {
           lastName: user.last_name,
           username: user.username,
           displayName: formatDisplayName(user.first_name, user.last_name),
+          profileImageUrl: user.profile_image_url,
           role: user.role,
         },
       };

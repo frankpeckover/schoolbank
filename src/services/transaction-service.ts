@@ -50,6 +50,7 @@ export type StudentBalanceItem = {
   isActive: boolean;
   lastActivityAt: string | null;
   lastName: string;
+  profileImageUrl: string;
   username: string;
 };
 
@@ -86,6 +87,7 @@ type StudentBalanceRow = {
   is_active: boolean;
   last_activity_at: Date | null;
   last_name: string;
+  profile_image_url: string;
   username: string;
 };
 
@@ -146,6 +148,7 @@ export class TransactionService {
         users.id,
         users.first_name,
         users.last_name,
+        users.profile_image_url,
         users.username,
         users.email,
         users.is_active,
@@ -166,6 +169,7 @@ export class TransactionService {
         users.id,
         users.first_name,
         users.last_name,
+        users.profile_image_url,
         users.username,
         users.email,
         users.is_active
@@ -688,6 +692,7 @@ function mapStudentBalanceRow(row: StudentBalanceRow): StudentBalanceItem {
       ? row.last_activity_at.toISOString()
       : null,
     lastName: row.last_name,
+    profileImageUrl: row.profile_image_url,
     username: row.username,
   };
 }

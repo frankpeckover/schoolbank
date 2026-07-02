@@ -96,24 +96,18 @@ export function AdminDashboardPanel({
     <>
       <div className="dashboard-grid mt-5">
         <section className="dashboard-unit-2 section-highlight theme-panel min-w-0 p-4">
-          <PageHeader
-            icon={<WalletIcon />}
-            title="Admin Overview"
-            titleSize="base"
-          />
-
           {isLoading && (
-            <p className="mt-4 text-sm text-text-muted">Loading overview...</p>
+            <p className="text-sm text-text-muted">Loading overview...</p>
           )}
           {error && (
-            <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
+            <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
               {error}
             </p>
           )}
 
           {summary && (
             <>
-              <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <div className="grid gap-3 md:grid-cols-3">
                 <MetricCard
                   label="Ledger Balance"
                   value={formatWholeNumber(summary.ledgerBalance)}

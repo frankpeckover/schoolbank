@@ -37,6 +37,7 @@ const adminAuditActionPrefixes = [
   "school_info.",
   "shop_item.",
   "student_group.",
+  "timetable_entry.",
   "user.",
 ];
 

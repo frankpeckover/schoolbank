@@ -1,5 +1,6 @@
 import { IconButton } from "@/components/ui/icon-button";
 import { PencilIcon } from "@/components/ui/icons";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatDateTime } from "@/lib/formatters";
 import type { UserListItem } from "@/services/user-service";
 
@@ -32,7 +33,9 @@ export function UsersTable({ onEdit, users }: UsersTableProps) {
         <tbody>
           {users.map((user) => (
             <tr className="border-b border-border-subtle" key={user.id}>
-              <td className="py-3 pr-4 font-semibold">{user.displayName}</td>
+              <td className="py-3 pr-4">
+                <UserIdentity user={user} />
+              </td>
               <td className="py-3 pr-4 text-text-muted">{user.username}</td>
               <td className="py-3 pr-4 text-text-muted">{user.email}</td>
               <td className="py-3 pr-4 capitalize text-text-muted">{user.role}</td>
@@ -65,9 +68,15 @@ function UserCard({
   return (
     <article className="theme-card p-3">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="truncate text-base font-semibold">{user.displayName}</h3>
-          <p className="truncate text-sm text-text-muted">{user.username}</p>
+        <div className="flex min-w-0 items-center gap-3">
+          <UserAvatar
+            displayName={user.displayName}
+            imageUrl={user.profileImageUrl}
+          />
+          <div className="min-w-0">
+            <h3 className="truncate text-base font-semibold">{user.displayName}</h3>
+            <p className="truncate text-sm text-text-muted">{user.username}</p>
+          </div>
         </div>
         <IconButton label={`Edit ${user.displayName}`} onClick={() => onEdit(user)}>
           <PencilIcon />
@@ -84,6 +93,18 @@ function UserCard({
         </div>
       </div>
     </article>
+  );
+}
+
+function UserIdentity({ user }: { user: UserListItem }) {
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      <UserAvatar
+        displayName={user.displayName}
+        imageUrl={user.profileImageUrl}
+      />
+      <span className="truncate font-semibold">{user.displayName}</span>
+    </div>
   );
 }
 
