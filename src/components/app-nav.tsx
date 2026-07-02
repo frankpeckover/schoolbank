@@ -155,8 +155,8 @@ export function HeaderNavMenu({
             aria-label="Open menu"
             className={`inline-flex h-10 items-center justify-center gap-1 rounded-md px-2 text-sm font-semibold transition ${
               isOverflowActive
-                ? "bg-brand-soft text-brand"
-                : "text-text-control hover:bg-panel-soft"
+                ? "bg-brand text-white shadow-sm"
+                : "border border-transparent text-text-control hover:border-brand-soft-strong hover:bg-brand-soft hover:text-brand-ink hover:shadow-sm"
             }`}
             onClick={() =>
               setIsOverflowMenuOpen((currentValue) => !currentValue)
@@ -197,7 +197,7 @@ export function HeaderNavMenu({
       <button
         aria-expanded={isMobileMenuOpen}
         aria-label="Open menu"
-        className="inline-flex h-10 items-center justify-center gap-1 rounded-md border border-border-subtle bg-panel-soft px-2 text-text-control transition hover:bg-surface-hover lg:hidden"
+        className="inline-flex h-10 items-center justify-center gap-1 rounded-md border border-border-subtle bg-panel-soft px-2 text-text-control transition hover:border-brand-soft-strong hover:bg-brand-soft hover:text-brand-ink hover:shadow-sm lg:hidden"
         onClick={() =>
           setIsMobileMenuOpen((currentValue) => !currentValue)
         }
@@ -250,8 +250,8 @@ function DesktopNavButton({
       aria-current={isActive ? "page" : undefined}
       className={`inline-flex h-10 items-center justify-center rounded-md px-3 text-sm font-semibold transition ${
         isActive
-          ? "bg-brand-soft text-brand"
-          : "text-text-control hover:bg-panel-soft"
+          ? "bg-brand text-white shadow-sm"
+          : "border border-transparent text-text-control hover:border-brand-soft-strong hover:bg-brand-soft hover:text-brand-ink hover:shadow-sm"
       }`}
       onClick={() => onItemChange(item)}
       type="button"
@@ -283,8 +283,8 @@ function MenuItemButton({
       aria-current={isActive ? "page" : undefined}
       className={`block w-full rounded-md px-3 py-3 text-left text-sm font-semibold transition ${
         isActive
-          ? "bg-brand-soft text-brand"
-          : "text-text-control hover:bg-panel-soft"
+          ? "bg-brand text-white shadow-sm"
+          : "text-text-control hover:bg-brand-soft hover:text-brand-ink"
       }`}
       onClick={() => onItemChange(item)}
       type="button"
@@ -322,7 +322,7 @@ function AccountMenuItems({
   return (
     <>
       <button
-        className={`flex w-full items-center gap-2 px-3 py-3 text-left text-sm font-semibold text-text-control transition hover:bg-panel-soft ${
+        className={`flex w-full items-center gap-2 rounded-md px-3 py-3 text-left text-sm font-semibold text-text-control transition hover:bg-brand-soft hover:text-brand-ink ${
           hasTopBorder ? "mt-2 border-t border-border-subtle" : ""
         }`}
         onClick={onThemeToggle}
@@ -388,14 +388,14 @@ function AccountMenuItems({
         </div>
       </div>
       <button
-        className="block w-full px-3 py-3 text-left text-sm font-semibold text-text-control transition hover:bg-panel-soft"
+        className="block w-full rounded-md px-3 py-3 text-left text-sm font-semibold text-text-control transition hover:bg-brand-soft hover:text-brand-ink"
         onClick={onPasswordChange}
         type="button"
       >
         Change password
       </button>
       <button
-        className="flex w-full items-center gap-2 px-3 py-3 text-left text-sm font-semibold text-text-control transition hover:bg-panel-soft"
+        className="flex w-full items-center gap-2 rounded-md px-3 py-3 text-left text-sm font-semibold text-text-control transition hover:bg-brand-soft hover:text-brand-ink"
         onClick={onLogout}
         type="button"
       >
