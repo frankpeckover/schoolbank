@@ -137,7 +137,7 @@ function StudentWalletCard({
             Available balance
           </p>
           <p className="mt-2 flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 break-words text-brand-ink">
-            <span className="text-6xl font-semibold leading-none sm:text-7xl">
+            <span className="wallet-balance-number text-6xl leading-none sm:text-7xl">
               {balanceAmount}
             </span>
             <span className="text-lg font-semibold text-text-control sm:text-xl">

@@ -47,10 +47,10 @@
   --balance-bg: #173b40;
   --balance-muted: #cce3df;
   --wallet-highlight: var(--accent-highlight);
+  --wallet-pattern-line: rgba(47, 57, 85, 0.2);
   --wallet-card-background:
-    radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--accent-primary) 18%, transparent) 0 5rem, transparent 5.1rem),
-    radial-gradient(circle at 12% 88%, color-mix(in srgb, var(--accent-secondary) 14%, transparent) 0 6.5rem, transparent 6.6rem),
-    linear-gradient(135deg, #f3f8ff 0%, #edf8f4 52%, #f8fafc 100%);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.68) 0%, rgba(255, 255, 255, 0.18) 52%, transparent 100%),
+    linear-gradient(145deg, #eff6fd 0%, #e8f4fb 48%, #edf8f3 100%);
   --progress-track: #d6ddd8;
   --activity-meta: #69746d;
   --shell-gradient-accent: color-mix(in srgb, var(--accent-primary) 10%, transparent);
@@ -107,10 +107,10 @@ html[data-theme="dark"] {
   --balance-bg: #0f292c;
   --balance-muted: #a9d8d1;
   --wallet-highlight: color-mix(in srgb, var(--accent-highlight) 86%, white);
+  --wallet-pattern-line: rgba(188, 215, 223, 0.18);
   --wallet-card-background:
-    radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--accent-primary) 30%, transparent) 0 5rem, transparent 5.1rem),
-    radial-gradient(circle at 12% 88%, color-mix(in srgb, var(--accent-secondary) 24%, transparent) 0 6.5rem, transparent 6.6rem),
-    linear-gradient(135deg, #1d292f 0%, #172521 52%, #18211e 100%);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 52%, transparent 100%),
+    linear-gradient(145deg, #1c2a35 0%, #172830 48%, #172b25 100%);
   --progress-track: #46534d;
   --activity-meta: #b4bfb8;
   --shell-gradient-accent: color-mix(in srgb, var(--accent-primary) 14%, transparent);
@@ -241,6 +241,37 @@ button:not(:disabled):active {
 
 .wallet-card {
   background: var(--wallet-card-background);
+  overflow: hidden;
+  position: relative;
+}
+
+.wallet-card::before,
+.wallet-card::after {
+  border: 1.5px solid var(--wallet-pattern-line);
+  border-radius: 9999px;
+  content: "";
+  pointer-events: none;
+  position: absolute;
+}
+
+.wallet-card::before {
+  height: 8rem;
+  right: -3.25rem;
+  top: -3.5rem;
+  width: 8rem;
+}
+
+.wallet-card::after {
+  bottom: -4.75rem;
+  height: 11rem;
+  left: -4.5rem;
+  width: 11rem;
+}
+
+.wallet-balance-number {
+  font-family: Sora, Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0;
 }
 
 .reward-shine {
