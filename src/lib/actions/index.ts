@@ -38,12 +38,6 @@ export {
   getTeacherDashboardSummary,
 } from "@/lib/actions/teacher-dashboard-actions";
 export {
-  createTermDeposit,
-  getTermDepositSettings,
-  listStudentTermDeposits,
-  updateTermDepositSettings,
-} from "@/lib/actions/term-deposit-actions";
-export {
   approveShopRequest,
   denyShopRequest,
   listPendingShopRequests,

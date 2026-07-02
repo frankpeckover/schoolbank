@@ -7,7 +7,7 @@
 --   4. Run this whole file.
 --
 -- This creates the app tables, default roles/permissions, one school_info row,
--- default term deposit settings, and the initial admin user.
+-- and the initial admin user.
 --
 -- Initial login after setup:
 --   username: admin
@@ -159,8 +159,6 @@ create table if not exists ledger_entries (
       'shop_hold',
       'shop_purchase',
       'shop_refund',
-      'term_deposit_hold',
-      'term_deposit_payout',
       'manual_adjustment',
       'void_reversal'
     )
@@ -178,45 +176,6 @@ create table if not exists student_goals (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint student_goals_target_positive check (target_amount > 0)
-);
-
-create table if not exists term_deposit_settings (
-  id integer primary key default 1 check (id = 1),
-  is_enabled boolean not null default false,
-  minimum_amount integer not null default 50,
-  maximum_amount integer not null default 0,
-  term_days integer not null default 7,
-  interest_rate numeric(6, 2) not null default 5,
-  maximum_active_deposits integer not null default 1,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  constraint term_deposit_settings_minimum_positive check (minimum_amount > 0),
-  constraint term_deposit_settings_maximum_not_negative check (maximum_amount >= 0),
-  constraint term_deposit_settings_term_positive check (term_days > 0),
-  constraint term_deposit_settings_rate_not_negative check (interest_rate >= 0),
-  constraint term_deposit_settings_active_positive check (maximum_active_deposits > 0)
-);
-
-create table if not exists student_term_deposits (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references users(id) on delete cascade,
-  principal_amount integer not null,
-  interest_rate numeric(6, 2) not null,
-  interest_amount integer not null,
-  maturity_amount integer not null,
-  status text not null default 'active',
-  starts_at timestamptz not null default now(),
-  matures_at timestamptz not null,
-  paid_out_at timestamptz,
-  hold_ledger_entry_id uuid references ledger_entries(id) on delete restrict,
-  payout_ledger_entry_id uuid references ledger_entries(id) on delete restrict,
-  created_at timestamptz not null default now(),
-  constraint student_term_deposits_principal_positive check (principal_amount > 0),
-  constraint student_term_deposits_interest_not_negative check (interest_amount >= 0),
-  constraint student_term_deposits_maturity_positive check (maturity_amount > 0),
-  constraint student_term_deposits_status_check check (
-    status in ('active', 'paid_out', 'cancelled')
-  )
 );
 
 create table if not exists audit_log (
@@ -279,9 +238,6 @@ create unique index if not exists ledger_entries_source_unique_idx
   where reversal_of_ledger_entry_id is null
     and related_entity_type = 'shop_purchase';
 create index if not exists student_goals_user_idx on student_goals(user_id);
-create index if not exists student_term_deposits_user_idx on student_term_deposits(user_id);
-create index if not exists student_term_deposits_status_idx on student_term_deposits(status);
-create index if not exists student_term_deposits_matures_idx on student_term_deposits(matures_at);
 create index if not exists audit_log_created_at_idx on audit_log(created_at);
 create index if not exists audit_log_actor_idx on audit_log(actor_user_id);
 create index if not exists audit_log_entity_idx on audit_log(entity_type, entity_id);
@@ -294,10 +250,6 @@ create index if not exists user_sessions_expires_idx on user_sessions(expires_at
 
 insert into school_info (id, name, currency_name)
 values (1, 'SchoolBank School', 'credits')
-on conflict (id) do nothing;
-
-insert into term_deposit_settings (id)
-values (1)
 on conflict (id) do nothing;
 
 insert into roles (role_key, name, description, is_system)

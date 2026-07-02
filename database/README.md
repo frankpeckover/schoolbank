@@ -20,7 +20,6 @@ Creates one school database with:
 - the current app tables
 - default roles and permissions
 - one `school_info` row
-- default term deposit settings
 - the initial admin user
 
 ```bash

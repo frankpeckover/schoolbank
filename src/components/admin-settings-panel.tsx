@@ -14,7 +14,6 @@ import {
 } from "@/lib/actions";
 import { appConfig } from "@/lib/app-config";
 import { defaultCurrencyName } from "@/lib/school-defaults";
-import { TermDepositSettingsForm } from "@/components/admin-settings/term-deposit-settings-form";
 import { FileUpIcon, UsersIcon, WalletIcon } from "@/components/ui/icons";
 import { SchoolLogo } from "@/components/ui/school-logo";
 import type { SchoolInfo } from "@/services/school-service";
@@ -213,8 +212,6 @@ export function AdminSettingsPanel({
           </button>
         </div>
       </form>
-
-      <TermDepositSettingsForm />
     </section>
   );
 }

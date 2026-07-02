@@ -670,8 +670,6 @@ function formatLedgerType(type: LedgerEntryType) {
     shop_hold: "Shop hold",
     shop_purchase: "Shop purchase",
     shop_refund: "Shop refund",
-    term_deposit_hold: "Term deposit",
-    term_deposit_payout: "Term deposit payout",
     void_reversal: "Void reversal",
   };
 
@@ -717,10 +715,6 @@ function formatSource(row: TransactionLogRow) {
 
   if (row.student_group_name) {
     return `Group: ${row.student_group_name}`;
-  }
-
-  if (row.related_entity_type === "term_deposit") {
-    return "Term deposit";
   }
 
   if (row.created_by_name) {

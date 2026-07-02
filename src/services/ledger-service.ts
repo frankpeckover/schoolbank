@@ -6,8 +6,6 @@ export type LedgerEntryType =
   | "shop_hold"
   | "shop_purchase"
   | "shop_refund"
-  | "term_deposit_hold"
-  | "term_deposit_payout"
   | "manual_adjustment"
   | "void_reversal";
 
