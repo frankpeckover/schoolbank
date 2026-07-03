@@ -6,8 +6,8 @@ import { downloadCsv } from "@/lib/client-csv";
 import { formatDateTime } from "@/lib/formatters";
 import type { AuditLogItem } from "@/services/audit-service";
 import { IconButton } from "@/components/ui/icon-button";
-import { EyeIcon, FileDownIcon, FilterIcon, ListIcon } from "@/components/ui/icons";
-import { PageHeader } from "@/components/ui/page-header";
+import { EyeIcon, FileDownIcon, FilterIcon } from "@/components/ui/icons";
+import { PanelToolbar } from "@/components/ui/panel-toolbar";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
 
 type AuditFilters = {
@@ -70,13 +70,14 @@ export function AdminAuditLogPanel() {
 
   return (
     <section className="theme-panel motion-panel mt-5 min-w-0 p-5">
-      <PageHeader
+      <PanelToolbar
         actions={
           <>
             <IconButton
               ariaExpanded={areFiltersOpen}
               label={areFiltersOpen ? "Hide filters" : "Show filters"}
               onClick={() => setAreFiltersOpen((isOpen) => !isOpen)}
+              text="Filters"
             >
               <FilterIcon />
             </IconButton>
@@ -89,15 +90,19 @@ export function AdminAuditLogPanel() {
 
                 downloadAuditLog(filteredEntries);
               }}
+              text="Export"
             >
               <FileDownIcon />
             </IconButton>
           </>
         }
-        icon={<ListIcon />}
-        iconTone="neutral"
-        title="Audit Log"
-      />
+      >
+        {!isLoading && !error && filteredEntries.length > 0 && (
+          <p className="text-sm font-semibold text-text-muted">
+            Showing {visibleEntries.length} of {filteredEntries.length} audit events.
+          </p>
+        )}
+      </PanelToolbar>
 
       {areFiltersOpen && (
         <AuditFilterPanel filters={filters} onFiltersChange={setFilters} />
@@ -118,11 +123,6 @@ export function AdminAuditLogPanel() {
         {!isLoading && !error && entries.length > 0 && filteredEntries.length === 0 && (
           <p className="text-sm text-text-muted">
             No audit events match these filters.
-          </p>
-        )}
-        {!isLoading && !error && filteredEntries.length > 0 && (
-          <p className="mb-3 text-sm font-semibold text-text-muted">
-            Showing {visibleEntries.length} of {filteredEntries.length} audit events.
           </p>
         )}
         {!isLoading && !error && filteredEntries.length > 0 && (

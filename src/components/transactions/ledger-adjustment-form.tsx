@@ -469,7 +469,7 @@ function DirectionToggle({
         <button
           className={`px-4 py-3 text-sm font-semibold transition ${
             direction === "add"
-              ? "bg-brand text-white"
+              ? "bg-success text-white"
               : "bg-surface text-text-control hover:bg-panel-soft"
           }`}
           onClick={() => onChange("add")}

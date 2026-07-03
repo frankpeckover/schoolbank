@@ -8,6 +8,7 @@ import { AdminGroupsPanel } from "@/components/admin-groups-panel";
 import { AdminSettingsPanel } from "@/components/admin-settings-panel";
 import { AdminTimetablePanel } from "@/components/admin-timetable-panel";
 import { AdminUsersPanel } from "@/components/admin-users-panel";
+import { CreditAnalyticsPanel } from "@/components/credit-analytics-panel";
 import {
   HeaderNavMenu,
   type NavigationItem,
@@ -135,10 +136,9 @@ export function DashboardShell({
           />
         )}
 
-        {isAdmin(user) && activeNavItem === "Students" && (
-          <TeacherDashboardPanel
+        {!isStudent(user) && activeNavItem === "Analytics" && (
+          <CreditAnalyticsPanel
             currencyName={schoolInfo.currencyName}
-            schoolName={schoolName}
           />
         )}
 

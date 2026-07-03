@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  MinusIcon,
+} from "@/components/ui/icons";
 import { UserAvatar } from "@/components/ui/user-avatar";
 
 export type StudentBalanceCardStudent = {
@@ -7,6 +12,7 @@ export type StudentBalanceCardStudent = {
   displayName: string;
   id: string;
   profileImageUrl?: string;
+  recentChange?: number;
   username: string;
 };
 
@@ -37,9 +43,7 @@ export function StudentBalanceCard({
           <h3 className="truncate text-sm font-semibold text-foreground">
             {student.displayName}
           </h3>
-          <p className="mt-0.5 truncate text-xs font-medium text-text-muted">
-            {hasActions ? "Quick adjustment" : "Current balance"}
-          </p>
+          <RecentTrend amount={student.recentChange ?? 0} />
         </div>
       </div>
 
@@ -69,6 +73,32 @@ export function StudentBalanceCard({
         )}
       </div>
     </article>
+  );
+}
+
+function RecentTrend({ amount }: { amount: number }) {
+  const isPositive = amount > 0;
+  const isNegative = amount < 0;
+  const Icon = isPositive ? ArrowUpIcon : isNegative ? ArrowDownIcon : MinusIcon;
+  const textClassName = isPositive
+    ? "text-success"
+    : isNegative
+      ? "text-danger"
+      : "text-text-muted";
+  const trendLabel = isPositive
+    ? "Trending up over the last 7 days"
+    : isNegative
+      ? "Trending down over the last 7 days"
+      : "No recent movement over the last 7 days";
+
+  return (
+    <p
+      className={`mt-0.5 flex items-center gap-1 truncate text-xs font-medium ${textClassName}`}
+      title={trendLabel}
+    >
+      <span className="text-text-muted">Recent:</span>
+      <Icon className="h-3 w-3 shrink-0" />
+    </p>
   );
 }
 

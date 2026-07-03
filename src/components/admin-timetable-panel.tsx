@@ -10,9 +10,10 @@ import {
   setTimetableEntryActive,
 } from "@/lib/actions";
 import { TimetableImportModal } from "@/components/admin-timetable/timetable-import-modal";
-import { ClockIcon, FileUpIcon, PlusIcon, XIcon } from "@/components/ui/icons";
+import { FileUpIcon, FilterIcon, PlusIcon, XIcon } from "@/components/ui/icons";
 import { IconButton } from "@/components/ui/icon-button";
-import { PageHeader } from "@/components/ui/page-header";
+import { PanelToolbar } from "@/components/ui/panel-toolbar";
+import { StatusBadge } from "@/components/ui/status-badge";
 import type { GroupListItem } from "@/services/group-service";
 import type {
   CreateTimetableEntryInput,
@@ -39,12 +40,31 @@ const emptyEntryForm: CreateTimetableEntryInput = {
   teacherUserId: "",
 };
 
+type TimetableStatusFilter = "" | "active" | "archived";
+
+type TimetableFiltersState = {
+  dayOfWeek: string;
+  groupId: string;
+  status: TimetableStatusFilter;
+  teacherUserId: string;
+};
+
+const emptyTimetableFilters: TimetableFiltersState = {
+  dayOfWeek: "",
+  groupId: "",
+  status: "",
+  teacherUserId: "",
+};
+
 export function AdminTimetablePanel() {
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const [teachers, setTeachers] = useState<TimetableTeacher[]>([]);
   const [groups, setGroups] = useState<GroupListItem[]>([]);
   const [form, setForm] =
     useState<CreateTimetableEntryInput>(emptyEntryForm);
+  const [filters, setFilters] =
+    useState<TimetableFiltersState>(emptyTimetableFilters);
+  const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
@@ -56,6 +76,10 @@ export function AdminTimetablePanel() {
   const activeGroups = useMemo(
     () => groups.filter((group) => group.isActive),
     [groups],
+  );
+  const filteredEntries = useMemo(
+    () => entries.filter((entry) => matchesTimetableFilters(entry, filters)),
+    [entries, filters],
   );
 
   useEffect(() => {
@@ -131,12 +155,21 @@ export function AdminTimetablePanel() {
 
   return (
     <section className="theme-panel motion-panel mt-5 p-4">
-      <PageHeader
+      <PanelToolbar
         actions={
           <>
             <IconButton
+              ariaExpanded={areFiltersOpen}
+              label={areFiltersOpen ? "Hide filters" : "Show filters"}
+              onClick={() => setAreFiltersOpen((isOpen) => !isOpen)}
+              text="Filters"
+            >
+              <FilterIcon />
+            </IconButton>
+            <IconButton
               label="Import timetable"
               onClick={() => setIsImportModalOpen(true)}
+              text="Import CSV"
             >
               <FileUpIcon />
             </IconButton>
@@ -144,28 +177,31 @@ export function AdminTimetablePanel() {
               ariaExpanded={isFormOpen}
               label="Add timetable entry"
               onClick={() => setIsFormOpen((isOpen) => !isOpen)}
+              text="New Entry"
               tone="primary"
             >
               <PlusIcon />
             </IconButton>
           </>
         }
-        icon={<ClockIcon />}
-        title="Timetable"
-        titleSize="base"
-      />
+      >
+        {!isLoading && entries.length > 0 && (
+          <p className="text-sm font-semibold text-text-muted">
+            Showing {filteredEntries.length} of {entries.length} timetable entries.
+          </p>
+        )}
+      </PanelToolbar>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-sm font-semibold text-text-control">
-          <input
-            checked={showInactive}
-            className="h-4 w-4 accent-brand"
-            onChange={(event) => setShowInactive(event.target.checked)}
-            type="checkbox"
-          />
-          Show archived
-        </label>
-      </div>
+      {areFiltersOpen && (
+        <TimetableFilters
+          filters={filters}
+          groups={groups}
+          onFiltersChange={setFilters}
+          onShowInactiveChange={setShowInactive}
+          showInactive={showInactive}
+          teachers={teachers}
+        />
+      )}
 
       {isFormOpen && (
         <TimetableEntryForm
@@ -206,16 +242,16 @@ export function AdminTimetablePanel() {
             Timetable entries will appear here after they are created.
           </p>
         )}
-        {!isLoading && entries.length > 0 && (
-          <div className="grid gap-3 lg:grid-cols-2">
-            {entries.map((entry) => (
-              <TimetableEntryCard
-                entry={entry}
-                key={entry.id}
-                onSetActive={handleSetEntryActive}
-              />
-            ))}
-          </div>
+        {!isLoading && entries.length > 0 && filteredEntries.length === 0 && (
+          <p className="text-sm text-text-muted">
+            No timetable entries match these filters.
+          </p>
+        )}
+        {!isLoading && filteredEntries.length > 0 && (
+          <TimetableEntryTable
+            entries={filteredEntries}
+            onSetActive={handleSetEntryActive}
+          />
         )}
       </div>
     </section>
@@ -367,7 +403,155 @@ function TimeField({
   );
 }
 
-function TimetableEntryCard({
+function TimetableFilters({
+  filters,
+  groups,
+  onFiltersChange,
+  onShowInactiveChange,
+  showInactive,
+  teachers,
+}: {
+  filters: TimetableFiltersState;
+  groups: GroupListItem[];
+  onFiltersChange: (filters: TimetableFiltersState) => void;
+  onShowInactiveChange: (showInactive: boolean) => void;
+  showInactive: boolean;
+  teachers: TimetableTeacher[];
+}) {
+  function updateFilter<Field extends keyof TimetableFiltersState>(
+    field: Field,
+    value: TimetableFiltersState[Field],
+  ) {
+    onFiltersChange({ ...filters, [field]: value });
+  }
+
+  return (
+    <div className="theme-subpanel mt-4 p-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <SelectField
+          label="Teacher"
+          onChange={(value) => updateFilter("teacherUserId", value)}
+          value={filters.teacherUserId}
+        >
+          <option value="">All teachers</option>
+          {teachers.map((teacher) => (
+            <option key={teacher.id} value={teacher.id}>
+              {teacher.displayName}
+            </option>
+          ))}
+        </SelectField>
+
+        <SelectField
+          label="Group"
+          onChange={(value) => updateFilter("groupId", value)}
+          value={filters.groupId}
+        >
+          <option value="">All groups</option>
+          {groups.map((group) => (
+            <option key={group.id} value={group.id}>
+              {group.name}
+            </option>
+          ))}
+        </SelectField>
+
+        <SelectField
+          label="Day"
+          onChange={(value) => updateFilter("dayOfWeek", value)}
+          value={filters.dayOfWeek}
+        >
+          <option value="">All days</option>
+          {weekDays.map((day, index) => (
+            <option key={day} value={String(index)}>
+              {day}
+            </option>
+          ))}
+        </SelectField>
+
+        <SelectField
+          label="Status"
+          onChange={(value) =>
+            updateFilter("status", value as TimetableStatusFilter)
+          }
+          value={filters.status}
+        >
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="archived">Archived</option>
+        </SelectField>
+      </div>
+
+      <label className="mt-4 flex items-center gap-2 text-sm font-semibold text-text-control">
+        <input
+          checked={showInactive}
+          className="h-4 w-4 accent-brand"
+          onChange={(event) => onShowInactiveChange(event.target.checked)}
+          type="checkbox"
+        />
+        Show archived
+      </label>
+    </div>
+  );
+}
+
+function TimetableEntryTable({
+  entries,
+  onSetActive,
+}: {
+  entries: TimetableEntry[];
+  onSetActive: (entryId: string, isActive: boolean) => void;
+}) {
+  return (
+    <>
+      <div className="grid gap-3 md:hidden">
+        {entries.map((entry) => (
+          <TimetableEntryMobileRow
+            entry={entry}
+            key={entry.id}
+            onSetActive={onSetActive}
+          />
+        ))}
+      </div>
+
+      <table className="hidden w-full border-collapse text-left text-sm md:table">
+        <thead>
+          <tr className="border-b border-border-subtle text-text-muted">
+            <th className="py-2 pr-4 font-semibold">Group</th>
+            <th className="py-2 pr-4 font-semibold">Teacher</th>
+            <th className="py-2 pr-4 font-semibold">Day</th>
+            <th className="py-2 pr-4 font-semibold">Time</th>
+            <th className="py-2 pr-4 font-semibold">Status</th>
+            <th className="py-2 font-semibold">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map((entry) => (
+            <tr className="border-b border-border-subtle" key={entry.id}>
+              <td className="py-3 pr-4 font-semibold">{entry.groupName}</td>
+              <td className="py-3 pr-4 text-text-muted">{entry.teacherName}</td>
+              <td className="py-3 pr-4 text-text-muted">
+                {weekDays[entry.dayOfWeek]}
+              </td>
+              <td className="py-3 pr-4 text-text-muted">
+                {formatTimeRange(entry)}
+              </td>
+              <td className="py-3 pr-4">
+                <TimetableStatusBadge isActive={entry.isActive} />
+              </td>
+              <td className="py-3">
+                <TimetableActiveButton
+                  entry={entry}
+                  onSetActive={onSetActive}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+function TimetableEntryMobileRow({
   entry,
   onSetActive,
 }: {
@@ -383,32 +567,77 @@ function TimetableEntryCard({
             {entry.teacherName}
           </p>
         </div>
-        <button
-          aria-label={entry.isActive ? "Archive timetable entry" : undefined}
-          className={`rounded-md border px-3 py-2 text-xs font-semibold transition ${
-            entry.isActive
-              ? "border-danger-button-border text-danger-strong hover:bg-danger-soft"
-              : "border-button-border text-text-control hover:bg-panel-soft"
-          }`}
-          onClick={() => onSetActive(entry.id, !entry.isActive)}
-          type="button"
-        >
-          {entry.isActive ? <XIcon /> : "Restore"}
-        </button>
+        <TimetableActiveButton entry={entry} onSetActive={onSetActive} />
       </div>
-      <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-text-muted">
-        <span className="rounded-full bg-panel-soft px-3 py-1">
-          {weekDays[entry.dayOfWeek]}
-        </span>
-        <span className="rounded-full bg-panel-soft px-3 py-1">
-          {entry.startTime} - {entry.endTime}
-        </span>
-        {!entry.isActive && (
-          <span className="rounded-full bg-danger-soft px-3 py-1 text-danger-strong">
-            Archived
-          </span>
-        )}
+      <div className="mt-3 grid gap-2 text-sm text-text-muted">
+        <p>{weekDays[entry.dayOfWeek]}</p>
+        <p>{formatTimeRange(entry)}</p>
+        <TimetableStatusBadge isActive={entry.isActive} />
       </div>
     </article>
   );
+}
+
+function TimetableActiveButton({
+  entry,
+  onSetActive,
+}: {
+  entry: TimetableEntry;
+  onSetActive: (entryId: string, isActive: boolean) => void;
+}) {
+  return (
+    <button
+      aria-label={entry.isActive ? "Archive timetable entry" : "Restore timetable entry"}
+      className={`inline-flex h-10 w-10 items-center justify-center rounded-md border text-sm font-semibold transition ${
+        entry.isActive
+          ? "border-danger-button-border text-danger-strong hover:bg-danger-soft"
+          : "border-button-border text-text-control hover:bg-panel-soft"
+      }`}
+      onClick={() => onSetActive(entry.id, !entry.isActive)}
+      title={entry.isActive ? "Archive timetable entry" : "Restore timetable entry"}
+      type="button"
+    >
+      {entry.isActive ? <XIcon /> : "R"}
+    </button>
+  );
+}
+
+function TimetableStatusBadge({ isActive }: { isActive: boolean }) {
+  return (
+    <StatusBadge
+      label={isActive ? "Active" : "Archived"}
+      tone={isActive ? "success" : "danger"}
+    />
+  );
+}
+
+function formatTimeRange(entry: TimetableEntry) {
+  return `${entry.startTime} - ${entry.endTime}`;
+}
+
+function matchesTimetableFilters(
+  entry: TimetableEntry,
+  filters: TimetableFiltersState,
+) {
+  return (
+    (!filters.teacherUserId || entry.teacherUserId === filters.teacherUserId) &&
+    (!filters.groupId || entry.groupId === filters.groupId) &&
+    (!filters.dayOfWeek || entry.dayOfWeek === Number(filters.dayOfWeek)) &&
+    matchesStatusFilter(entry, filters.status)
+  );
+}
+
+function matchesStatusFilter(
+  entry: TimetableEntry,
+  status: TimetableStatusFilter,
+) {
+  if (!status) {
+    return true;
+  }
+
+  if (status === "active") {
+    return entry.isActive;
+  }
+
+  return !entry.isActive;
 }

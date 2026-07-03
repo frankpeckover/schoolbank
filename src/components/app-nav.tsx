@@ -28,7 +28,6 @@ const defaultNavigationItems = [
 const studentNavigationItems = ["Dashboard", "Shop"] as const;
 const adminNavigationItems = [
   "Dashboard",
-  "Students",
   "Users",
   "Groups",
   "Timetable",
@@ -41,7 +40,6 @@ const adminNavigationItems = [
 ] as const;
 const adminPrimaryNavigationItems = [
   "Dashboard",
-  "Students",
   "Users",
   "Groups",
   "Timetable",

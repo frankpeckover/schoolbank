@@ -8,6 +8,7 @@ type IconButtonProps = {
   disabled?: boolean;
   label: string;
   onClick: () => void;
+  text?: string;
   tone?: IconButtonTone;
 };
 
@@ -24,19 +25,23 @@ export function IconButton({
   disabled = false,
   label,
   onClick,
+  text,
   tone = "default",
 }: IconButtonProps) {
   return (
     <button
       aria-expanded={ariaExpanded}
       aria-label={label}
-      className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${toneClassNames[tone]}`}
+      className={`inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md border text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+        text ? "w-10 sm:w-auto sm:px-4" : "w-10"
+      } ${toneClassNames[tone]}`}
       disabled={disabled}
       onClick={onClick}
       title={label}
       type="button"
     >
       {children}
+      {text && <span className="hidden sm:inline">{text}</span>}
     </button>
   );
 }

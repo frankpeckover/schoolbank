@@ -5,8 +5,8 @@ import { listErrorLog } from "@/lib/actions";
 import { formatDateTime } from "@/lib/formatters";
 import type { ErrorLogItem } from "@/services/error-log-service";
 import { IconButton } from "@/components/ui/icon-button";
-import { EyeIcon, ListIcon } from "@/components/ui/icons";
-import { PageHeader } from "@/components/ui/page-header";
+import { EyeIcon } from "@/components/ui/icons";
+import { PanelToolbar } from "@/components/ui/panel-toolbar";
 
 export function AdminErrorLogPanel() {
   const [entries, setEntries] = useState<ErrorLogItem[]>([]);
@@ -45,13 +45,15 @@ export function AdminErrorLogPanel() {
 
   return (
     <section className="theme-panel motion-panel mt-5 min-w-0 p-5">
-      <PageHeader
-        icon={<ListIcon />}
-        iconTone="neutral"
-        title="Error Log"
-      />
+      {!isLoading && !error && entries.length > 0 && (
+        <PanelToolbar>
+          <p className="text-sm font-semibold text-text-muted">
+            Showing {entries.length} most recent errors.
+          </p>
+        </PanelToolbar>
+      )}
 
-      <div className="mt-5">
+      <div className={!isLoading && !error && entries.length > 0 ? "mt-5" : ""}>
         {isLoading && (
           <p className="text-sm text-text-muted">Loading error log...</p>
         )}
@@ -64,12 +66,7 @@ export function AdminErrorLogPanel() {
           <p className="text-sm text-text-muted">No server errors recorded.</p>
         )}
         {!isLoading && !error && entries.length > 0 && (
-          <>
-            <p className="mb-3 text-sm font-semibold text-text-muted">
-              Showing {entries.length} most recent errors.
-            </p>
-            <ErrorLogList entries={entries} onDetailsClick={setViewingEntry} />
-          </>
+          <ErrorLogList entries={entries} onDetailsClick={setViewingEntry} />
         )}
       </div>
 

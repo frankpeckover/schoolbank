@@ -13,6 +13,10 @@ export {
   listErrorLog,
 } from "@/lib/actions/error-log-actions";
 export {
+  getCreditAnalyticsSummary,
+  searchCreditAnalyticsScopes,
+} from "@/lib/actions/credit-analytics-actions";
+export {
   addStudentsToGroup,
   addStudentToGroup,
   createGroup,

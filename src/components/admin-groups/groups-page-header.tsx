@@ -1,56 +1,59 @@
 import { IconButton } from "@/components/ui/icon-button";
-import { FileUpIcon, FilterIcon, PlusIcon, UsersIcon } from "@/components/ui/icons";
-import { PageHeader } from "@/components/ui/page-header";
+import { FileUpIcon, FilterIcon, PlusIcon } from "@/components/ui/icons";
+import { PanelToolbar } from "@/components/ui/panel-toolbar";
 
 type GroupsPageHeaderProps = {
   areFiltersOpen: boolean;
+  count: number;
   onFilterToggle: () => void;
   onImportClick: () => void;
   onNewGroupClick: () => void;
+  totalCount: number;
 };
 
 export function GroupsPageHeader({
   areFiltersOpen,
+  count,
   onFilterToggle,
   onImportClick,
   onNewGroupClick,
+  totalCount,
 }: GroupsPageHeaderProps) {
   return (
-    <PageHeader
+    <PanelToolbar
       actions={
         <>
-        <IconButton
-          ariaExpanded={areFiltersOpen}
-          label={areFiltersOpen ? "Hide filters" : "Show filters"}
-          onClick={onFilterToggle}
-        >
-          <FilterIcon />
-        </IconButton>
-        <button
-          aria-label="Import groups from CSV"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-button-border text-text-control transition hover:bg-panel-soft sm:w-auto sm:px-4 sm:text-sm sm:font-semibold"
-          onClick={onImportClick}
-          title="Import groups from CSV"
-          type="button"
-        >
-          <FileUpIcon />
-          <span className="hidden sm:ml-2 sm:inline">Import CSV</span>
-        </button>
-        <button
-          aria-label="New group"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-brand text-white transition hover:bg-brand-hover sm:w-auto sm:px-4 sm:text-sm sm:font-semibold"
-          onClick={onNewGroupClick}
-          title="New group"
-          type="button"
-        >
-          <PlusIcon />
-          <span className="hidden sm:ml-2 sm:inline">New Group</span>
-        </button>
+          <IconButton
+            ariaExpanded={areFiltersOpen}
+            label={areFiltersOpen ? "Hide filters" : "Show filters"}
+            onClick={onFilterToggle}
+            text="Filters"
+          >
+            <FilterIcon />
+          </IconButton>
+          <IconButton
+            label="Import groups from CSV"
+            onClick={onImportClick}
+            text="Import CSV"
+          >
+            <FileUpIcon />
+          </IconButton>
+          <IconButton
+            label="New group"
+            onClick={onNewGroupClick}
+            text="New Group"
+            tone="primary"
+          >
+            <PlusIcon />
+          </IconButton>
         </>
       }
-      icon={<UsersIcon />}
-      iconTone="neutral"
-      title="Groups"
-    />
+    >
+      {totalCount > 0 && (
+        <p className="text-sm font-semibold text-text-muted">
+          Showing {count} of {totalCount} groups.
+        </p>
+      )}
+    </PanelToolbar>
   );
 }

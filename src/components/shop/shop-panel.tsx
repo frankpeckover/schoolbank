@@ -17,7 +17,7 @@ import { ShopItemModal } from "@/components/shop/shop-item-modal";
 import { EmptyState } from "@/components/ui/empty-state";
 import { IconButton } from "@/components/ui/icon-button";
 import { FilterIcon, PlusIcon, ShoppingBagIcon, WalletIcon } from "@/components/ui/icons";
-import { PageHeader } from "@/components/ui/page-header";
+import { PanelToolbar } from "@/components/ui/panel-toolbar";
 
 type ShopPanelProps = {
   currencyName: string;
@@ -184,8 +184,10 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
       {canManage ? (
         <ShopPanelHeader
           areFiltersOpen={areFiltersOpen}
+          count={visibleItems.length}
           onFilterToggle={() => setAreFiltersOpen((isOpen) => !isOpen)}
           onNewItem={openNewItemModal}
+          totalCount={items.length}
         />
       ) : (
         <StudentShopWallet balance={balance} currencyName={currencyName} />
@@ -260,40 +262,46 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
 
 function ShopPanelHeader({
   areFiltersOpen,
+  count,
   onFilterToggle,
   onNewItem,
+  totalCount,
 }: {
   areFiltersOpen: boolean;
+  count: number;
   onFilterToggle: () => void;
   onNewItem: () => void;
+  totalCount: number;
 }) {
   return (
-    <PageHeader
+    <PanelToolbar
       actions={
         <div className="flex items-center gap-2">
           <IconButton
             ariaExpanded={areFiltersOpen}
             label={areFiltersOpen ? "Hide filters" : "Show filters"}
             onClick={onFilterToggle}
+            text="Filters"
           >
             <FilterIcon />
           </IconButton>
-          <button
-            aria-label="New item"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand text-white transition hover:bg-brand-hover"
+          <IconButton
+            label="New item"
             onClick={onNewItem}
-            title="New item"
-            type="button"
+            text="New Item"
+            tone="primary"
           >
             <PlusIcon />
-          </button>
+          </IconButton>
         </div>
       }
-      icon={<ShoppingBagIcon />}
-      iconTone="brand"
-      title="Shop"
-      titleSize="base"
-    />
+    >
+      {totalCount > 0 && (
+        <p className="text-sm font-semibold text-text-muted">
+          Showing {count} of {totalCount} items.
+        </p>
+      )}
+    </PanelToolbar>
   );
 }
 
@@ -340,7 +348,7 @@ function ShopFilters({
 }) {
   return (
     <div className="theme-subpanel mt-4 p-4">
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
         <div>
           <label className="text-sm font-semibold text-text-control" htmlFor="shopSearch">
             Search items
@@ -353,17 +361,16 @@ function ShopFilters({
             value={search}
           />
         </div>
+        <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-surface px-3 py-3 text-sm font-semibold text-text-control">
+          <input
+            checked={showArchivedItems}
+            className="h-4 w-4"
+            onChange={(event) => onShowArchivedItemsChange(event.target.checked)}
+            type="checkbox"
+          />
+          Show archived items
+        </label>
       </div>
-
-      <label className="mt-4 flex items-center gap-2 text-sm font-semibold text-text-control">
-        <input
-          checked={showArchivedItems}
-          className="h-4 w-4"
-          onChange={(event) => onShowArchivedItemsChange(event.target.checked)}
-          type="checkbox"
-        />
-        Show archived items
-      </label>
     </div>
   );
 }

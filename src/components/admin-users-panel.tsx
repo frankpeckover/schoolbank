@@ -14,7 +14,7 @@ import { UsersTable } from "@/components/admin-users/users-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { IconButton } from "@/components/ui/icon-button";
 import { FileUpIcon, FilterIcon, PlusIcon, UsersIcon } from "@/components/ui/icons";
-import { PageHeader } from "@/components/ui/page-header";
+import { PanelToolbar } from "@/components/ui/panel-toolbar";
 import type { UserListItem } from "@/services/user-service";
 
 type AdminUsersPanelProps = {
@@ -108,42 +108,43 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
       aria-label={`${schoolName} users`}
       className="theme-panel motion-panel mt-5 p-5"
     >
-      <PageHeader
+      <PanelToolbar
         actions={
           <>
-          <IconButton
-            ariaExpanded={areFiltersOpen}
-            label={areFiltersOpen ? "Hide filters" : "Show filters"}
-            onClick={() => setAreFiltersOpen((isOpen) => !isOpen)}
-          >
-            <FilterIcon />
-          </IconButton>
-          <button
-            aria-label="Import users from CSV"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border-subtle bg-panel-soft text-text-control transition hover:bg-surface-hover sm:w-auto sm:px-4 sm:text-sm sm:font-semibold"
-            onClick={() => setIsImportModalOpen(true)}
-            title="Import users from CSV"
-            type="button"
-          >
-            <FileUpIcon />
-            <span className="hidden sm:ml-2 sm:inline">Import CSV</span>
-          </button>
-          <button
-            aria-label="New user"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-brand text-white transition hover:bg-brand-hover sm:w-auto sm:px-4 sm:text-sm sm:font-semibold"
-            onClick={() => setIsCreateModalOpen(true)}
-            title="New user"
-            type="button"
-          >
-            <PlusIcon />
-            <span className="hidden sm:ml-2 sm:inline">New User</span>
-          </button>
+            <IconButton
+              ariaExpanded={areFiltersOpen}
+              label={areFiltersOpen ? "Hide filters" : "Show filters"}
+              onClick={() => setAreFiltersOpen((isOpen) => !isOpen)}
+              text="Filters"
+            >
+              <FilterIcon />
+            </IconButton>
+            <IconButton
+              label="Import users from CSV"
+              onClick={() => setIsImportModalOpen(true)}
+              text="Import CSV"
+            >
+              <FileUpIcon />
+            </IconButton>
+            <IconButton
+              label="New user"
+              onClick={() => setIsCreateModalOpen(true)}
+              text="New User"
+              tone="primary"
+            >
+              <PlusIcon />
+            </IconButton>
           </>
         }
-        icon={<UsersIcon />}
-        iconTone="neutral"
-        title="Users"
-      />
+      >
+        {!isLoading && !error && filteredUsers.length > 0 && (
+          <ListCount
+            count={visibleUsers.length}
+            label="users"
+            totalCount={filteredUsers.length}
+          />
+        )}
+      </PanelToolbar>
 
       <div>
         {areFiltersOpen && (
@@ -166,11 +167,6 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
         {message && (
           <p className="mb-4 rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
             {message}
-          </p>
-        )}
-        {!isLoading && !error && filteredUsers.length > 0 && (
-          <p className="mb-3 text-sm font-semibold text-text-muted">
-            Showing {visibleUsers.length} of {filteredUsers.length} users.
           </p>
         )}
         {!isLoading && !error && filteredUsers.length > 0 && (
@@ -217,5 +213,21 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
         />
       )}
     </section>
+  );
+}
+
+function ListCount({
+  count,
+  label,
+  totalCount,
+}: {
+  count: number;
+  label: string;
+  totalCount: number;
+}) {
+  return (
+    <p className="text-sm font-semibold text-text-muted">
+      Showing {count} of {totalCount} {label}.
+    </p>
   );
 }

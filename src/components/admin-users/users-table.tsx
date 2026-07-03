@@ -1,5 +1,6 @@
 import { IconButton } from "@/components/ui/icon-button";
 import { PencilIcon } from "@/components/ui/icons";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatDateTime } from "@/lib/formatters";
 import type { UserListItem } from "@/services/user-service";
@@ -114,12 +115,9 @@ function formatLastActivity(value: string | null) {
 
 function UserStatusBadge({ isActive }: { isActive: boolean }) {
   return (
-    <span
-      className={`rounded-sm px-2 py-1 text-xs font-semibold ${
-        isActive ? "bg-chip-bg text-chip-text" : "bg-danger-soft text-danger-strong"
-      }`}
-    >
-      {isActive ? "Active" : "Inactive"}
-    </span>
+    <StatusBadge
+      label={isActive ? "Active" : "Inactive"}
+      tone={isActive ? "success" : "danger"}
+    />
   );
 }

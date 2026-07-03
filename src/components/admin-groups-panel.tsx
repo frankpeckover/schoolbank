@@ -379,9 +379,11 @@ export function AdminGroupsPanel() {
     <section className="theme-panel motion-panel mt-5 p-5">
       <GroupsPageHeader
         areFiltersOpen={areFiltersOpen}
+        count={filteredGroups.length}
         onFilterToggle={() => setAreFiltersOpen((isOpen) => !isOpen)}
         onImportClick={() => setIsImportModalOpen(true)}
         onNewGroupClick={() => setIsCreateModalOpen(true)}
+        totalCount={groups.length}
       />
 
       <GroupListPanel

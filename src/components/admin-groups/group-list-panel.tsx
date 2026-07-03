@@ -1,5 +1,6 @@
 import { IconButton } from "@/components/ui/icon-button";
 import { EyeIcon, PencilIcon } from "@/components/ui/icons";
+import { StatusBadge } from "@/components/ui/status-badge";
 import type { GroupListItem } from "@/services/group-service";
 
 type GroupListPanelProps = {
@@ -215,17 +216,10 @@ function GroupCard({
 }
 
 function GroupStatusBadge({ group }: { group: GroupListItem }) {
-  if (group.isActive) {
-    return (
-      <span className="rounded-sm bg-success-soft px-2 py-1 text-xs font-semibold text-success">
-        Active
-      </span>
-    );
-  }
-
   return (
-    <span className="rounded-sm bg-danger-soft px-2 py-1 text-xs font-semibold text-danger-strong">
-      Archived
-    </span>
+    <StatusBadge
+      label={group.isActive ? "Active" : "Archived"}
+      tone={group.isActive ? "success" : "danger"}
+    />
   );
 }

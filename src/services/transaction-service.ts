@@ -51,6 +51,7 @@ export type StudentBalanceItem = {
   lastActivityAt: string | null;
   lastName: string;
   profileImageUrl: string;
+  recentChange: number;
   username: string;
 };
 
@@ -88,6 +89,7 @@ type StudentBalanceRow = {
   last_activity_at: Date | null;
   last_name: string;
   profile_image_url: string;
+  recent_change: number;
   username: string;
 };
 
@@ -153,6 +155,12 @@ export class TransactionService {
         users.email,
         users.is_active,
         coalesce(sum(ledger_entries.amount), 0) as balance,
+        coalesce(
+          sum(ledger_entries.amount) filter (
+            where ledger_entries.created_at >= now() - interval '7 days'
+          ),
+          0
+        ) as recent_change,
         max(ledger_entries.created_at) as last_activity_at
       from users
       join roles on roles.id = users.role_id
@@ -693,6 +701,7 @@ function mapStudentBalanceRow(row: StudentBalanceRow): StudentBalanceItem {
       : null,
     lastName: row.last_name,
     profileImageUrl: row.profile_image_url,
+    recentChange: Number(row.recent_change),
     username: row.username,
   };
 }

@@ -118,22 +118,35 @@ export function TeacherDashboardPanel({
     });
   }
 
+  function handleIssueAllShown() {
+    if (visibleStudents.length === 0) {
+      return;
+    }
+
+    handleStudentsSelected(visibleStudents.map(toStudentListItem), "add");
+  }
+
   return (
     <>
       <section className="motion-panel mt-5">
-        <label
-          className="text-sm font-semibold text-text-control"
-          htmlFor="teacherDashboardSearch"
-        >
-          Search students or groups
-        </label>
-        <input
-          className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition placeholder:text-text-muted focus:ring-2"
-          id="teacherDashboardSearch"
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search a student, group, or use semicolons: Alex; Sam; Priya"
-          value={search}
-        />
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input
+            aria-label="Search students or groups"
+            className="min-w-0 flex-1 rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition placeholder:text-text-muted focus:ring-2"
+            id="teacherDashboardSearch"
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search a student, group, or use semicolons: Alex; Sam; Priya"
+            value={search}
+          />
+          <button
+            className="shrink-0 rounded-md border border-brand bg-brand px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:border-button-border disabled:bg-panel-soft disabled:text-text-muted disabled:shadow-none"
+            disabled={visibleStudents.length === 0}
+            onClick={handleIssueAllShown}
+            type="button"
+          >
+            Issue all
+          </button>
+        </div>
 
         {isLoading && (
           <p className="mt-4 text-sm text-text-muted">Loading students...</p>
@@ -148,8 +161,17 @@ export function TeacherDashboardPanel({
           <div className="mt-4">
             {isDefaultingToCurrentClass && !currentClass && (
               <p className="text-sm text-text-muted">
-                No class is timetabled right now. Search for students or groups
-                above.
+                No class is timetabled right now. Search for students or groups.
+              </p>
+            )}
+
+            {(visibleStudents.length > 0 || visibleGroups.length > 0) && (
+              <p className="mb-3 text-sm font-semibold text-text-muted">
+                Showing {visibleStudents.length} student
+                {visibleStudents.length === 1 ? "" : "s"}
+                {visibleGroups.length > 0
+                  ? ` and ${visibleGroups.length} group${visibleGroups.length === 1 ? "" : "s"}.`
+                  : "."}
               </p>
             )}
 
@@ -174,7 +196,7 @@ export function TeacherDashboardPanel({
               </div>
             )}
 
-            {visibleStudents.length > 1 && hasSemicolonSearch(search) && (
+            {visibleStudents.length > 1 && (
               <div className="mt-3 flex gap-2">
                 <button
                   className="rounded-md border border-success bg-success px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-success-hover"

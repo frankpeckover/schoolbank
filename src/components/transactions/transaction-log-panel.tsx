@@ -30,7 +30,7 @@ import {
   ListIcon,
   XIcon,
 } from "@/components/ui/icons";
-import { PageHeader } from "@/components/ui/page-header";
+import { PanelToolbar } from "@/components/ui/panel-toolbar";
 import { TextReasonModal } from "@/components/ui/text-reason-modal";
 
 type TransactionLogPanelProps = {
@@ -42,7 +42,6 @@ type TransactionLogPanelProps = {
 export function TransactionLogPanel({
   currencyName,
   currentUser,
-  title = "Transaction Log",
 }: TransactionLogPanelProps) {
   const canViewAllTransactionsForUser = canViewAllTransactions(currentUser);
   const canVoidTransactionsForUser = canVoidTransactions(currentUser);
@@ -127,13 +126,14 @@ export function TransactionLogPanel({
 
   return (
     <section className="theme-panel motion-panel mt-5 min-w-0 p-4">
-      <PageHeader
+      <PanelToolbar
         actions={
           <>
             <IconButton
               ariaExpanded={areFiltersOpen}
               label={areFiltersOpen ? "Hide filters" : "Show filters"}
               onClick={() => setAreFiltersOpen((isOpen) => !isOpen)}
+              text="Filters"
             >
               <FilterIcon />
             </IconButton>
@@ -146,16 +146,19 @@ export function TransactionLogPanel({
 
                 downloadTransactions(filteredTransactions, currencyName);
               }}
+              text="Export"
             >
               <FileDownIcon />
             </IconButton>
           </>
         }
-        icon={<ListIcon />}
-        iconTone="neutral"
-        title={title}
-        titleSize="base"
-      />
+      >
+        {!isLoading && !error && filteredTransactions.length > 0 && (
+          <p className="text-sm font-semibold text-text-muted">
+            Showing {filteredTransactions.length} of {transactions.length} transactions.
+          </p>
+        )}
+      </PanelToolbar>
 
       <div>
         {areFiltersOpen && (
