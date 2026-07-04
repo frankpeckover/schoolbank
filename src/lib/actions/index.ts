@@ -43,11 +43,12 @@ export {
 } from "@/lib/actions/teacher-dashboard-actions";
 export {
   createTimetableEntry,
+  deleteTimetableEntry,
   getCurrentTeacherClass,
   importTimetableEntries,
   listTimetableEntries,
   listTimetableTeachers,
-  setTimetableEntryActive,
+  updateTimetableEntry,
 } from "@/lib/actions/timetable-actions";
 export {
   approveShopRequest,
@@ -81,4 +82,5 @@ export {
   searchStudents,
   setUserActive,
   updateUser,
+  uploadUserProfileImage,
 } from "@/lib/actions/user-actions";

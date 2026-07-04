@@ -2,6 +2,7 @@ import { IconButton } from "@/components/ui/icon-button";
 import {
   CheckIcon,
   EyeIcon,
+  PackageIcon,
   PencilIcon,
   ShoppingBagIcon,
   TicketIcon,
@@ -41,7 +42,7 @@ export function ShopItemCard({
       <div className="flex flex-1 flex-col p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <h3 className="truncate text-base font-semibold text-brand-ink">
+            <h3 className="truncate text-xl font-semibold text-brand-ink">
               {item.name}
             </h3>
             <p className="mt-1 line-clamp-2 min-h-10 text-sm leading-5 text-text-muted">
@@ -56,19 +57,20 @@ export function ShopItemCard({
         </div>
 
         <div className="mt-4 flex items-center justify-between gap-2">
-          <span className="text-xl font-bold text-brand-ink">
+          <span className="min-w-0 truncate text-3xl font-bold leading-none text-brand-ink">
             {item.price}
-            <span className="ml-1 text-xs font-semibold text-text-muted">
+            <span className="ml-1 text-sm font-semibold text-text-muted">
               {currencyName}
             </span>
           </span>
           <span
-            className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${
+            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
               item.quantity <= 0
-                ? "border-danger-border bg-danger-soft text-danger-strong"
-                : "border-success-border bg-success-soft text-success"
+                ? "bg-danger-soft text-danger-strong"
+                : "bg-success-soft text-success"
             }`}
           >
+            <PackageIcon className="h-3.5 w-3.5" />
             {item.quantity <= 0 ? "Sold out" : `${item.quantity} left`}
           </span>
         </div>
@@ -125,7 +127,7 @@ function ShopItemActions({
           <EyeIcon />
         </IconButton>
         <button
-          className={`inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70 ${
+          className={`inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70 ${
             requested
               ? "border border-success-border bg-success-soft text-success"
               : "bg-brand text-white shadow-sm hover:bg-brand-hover hover:shadow-md"

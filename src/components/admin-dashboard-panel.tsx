@@ -36,6 +36,9 @@ import type {
 import {
   ArrowDownIcon,
   ArrowUpIcon,
+  ClockIcon,
+  ShoppingBagIcon,
+  UserCircleIcon,
   WalletIcon,
 } from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/page-header";
@@ -109,7 +112,9 @@ export function AdminDashboardPanel({
             <>
               <div className="grid gap-3 md:grid-cols-3">
                 <MetricCard
+                  icon={<WalletIcon />}
                   label="Ledger Balance"
+                  tone="brand"
                   value={formatWholeNumber(summary.ledgerBalance)}
                 />
                 <PendingSummaryCard
@@ -227,7 +232,7 @@ function TeacherIssuerList({
                   {issuer.entryCount} entries
                 </p>
               </div>
-              <span className={`shrink-0 text-sm font-semibold ${toneClassName}`}>
+              <span className={`shrink-0 text-right text-sm font-semibold ${toneClassName}`}>
                 {formatCurrencyAmount(issuer.amount, currencyName)}
               </span>
             </li>
@@ -355,13 +360,20 @@ function PendingSummaryCard({
 }) {
   return (
     <article className="theme-card flex min-h-24 flex-col p-3">
-      <p className="text-xs font-semibold uppercase text-text-muted">Pending</p>
+      <MetricCardHeader
+        icon={<ClockIcon />}
+        label="Pending"
+        tone="accent"
+      />
       <div className="mt-2 grid flex-1 gap-1">
         <CompactMetricRow
           label="Requests"
           value={pendingShopRequests}
         />
-        <CompactMetricRow label="Holds" value={pendingHolds} />
+        <CompactMetricRow
+          label="Holds"
+          value={pendingHolds}
+        />
       </div>
     </article>
   );
@@ -445,12 +457,22 @@ function formatWholeNumber(amount: number) {
   return new Intl.NumberFormat("en-AU").format(amount);
 }
 
-function MetricCard({ label, value }: { label: string; value: string }) {
+function MetricCard({
+  icon,
+  label,
+  tone,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  tone: MetricTone;
+  value: string;
+}) {
   return (
     <article className="theme-card flex min-h-24 flex-col p-3">
-      <p className="text-xs font-semibold uppercase text-text-muted">{label}</p>
+      <MetricCardHeader icon={icon} label={label} tone={tone} />
       <div className="flex flex-1 items-center justify-center text-center">
-        <p className="text-3xl font-semibold leading-none tracking-normal text-foreground">
+        <p className="text-3xl font-semibold tracking-normal text-foreground">
           {value}
         </p>
       </div>
@@ -469,35 +491,85 @@ function AccountSummaryCard({
 }) {
   return (
     <article className="theme-card flex min-h-24 flex-col p-3">
-      <p className="text-xs font-semibold uppercase text-text-muted">
-        Accounts
-      </p>
+      <MetricCardHeader
+        icon={<UserCircleIcon />}
+        label="Accounts"
+        tone="neutral"
+      />
       <div className="mt-2 grid flex-1 gap-1">
         <CompactMetricRow label="Total" value={totalAccounts} />
-        <CompactMetricRow label="Students" value={studentAccounts} />
-        <CompactMetricRow label="Disabled" value={disabledAccounts} />
+        <CompactMetricRow
+          label="Students"
+          value={studentAccounts}
+        />
+        <CompactMetricRow
+          label="Disabled"
+          value={disabledAccounts}
+        />
       </div>
     </article>
   );
 }
 
 function CompactMetricRow({
+  icon,
   label,
   value,
 }: {
+  icon?: ReactNode;
   label: string;
   value: number;
 }) {
   return (
     <div className="flex min-w-0 items-center justify-between gap-3 rounded-md bg-panel-soft px-3 py-1.5">
-      <p className="truncate text-xs font-semibold uppercase tracking-normal text-text-muted">
-        {label}
-      </p>
-      <p className="shrink-0 text-lg font-semibold leading-none tracking-normal text-foreground">
+      <div className="flex min-w-0 items-center gap-1.5">
+        {icon && <span className="shrink-0 text-text-muted">{icon}</span>}
+        <p className="truncate text-xs font-semibold uppercase tracking-normal text-text-muted">
+          {label}
+        </p>
+      </div>
+      <p className="shrink-0 text-lg font-semibold tracking-normal text-foreground">
         {formatWholeNumber(value)}
       </p>
     </div>
   );
+}
+
+type MetricTone = "accent" | "brand" | "neutral";
+
+function MetricCardHeader({
+  icon,
+  label,
+  tone,
+}: {
+  icon: ReactNode;
+  label: string;
+  tone: MetricTone;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${getMetricToneClassName(tone)}`}
+      >
+        {icon}
+      </span>
+      <p className="truncate text-xs font-semibold uppercase text-text-muted">
+        {label}
+      </p>
+    </div>
+  );
+}
+
+function getMetricToneClassName(tone: MetricTone) {
+  if (tone === "accent") {
+    return "bg-accent-soft text-accent";
+  }
+
+  if (tone === "neutral") {
+    return "bg-panel-soft text-text-muted";
+  }
+
+  return "bg-brand-soft text-brand";
 }
 
 function RecentLedgerActivity({
@@ -691,7 +763,7 @@ function RecentLedgerCard({
             {entry.studentName}
           </p>
         </div>
-        <span className={`shrink-0 text-right text-sm font-semibold ${amountClassName}`}>
+        <span className={`shrink-0 text-right font-semibold ${amountClassName}`}>
           {formatSignedCurrencyAmount(entry.amount, currencyName)}
         </span>
       </div>

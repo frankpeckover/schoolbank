@@ -44,8 +44,6 @@ export type UploadShopItemImageResult =
 
 export class ShopItemService {
   async listItems(includeInactive = false): Promise<ShopItem[]> {
-    await ensureShopItemColumns();
-
     const result = await db.query<ShopItemRow>(
       `
         select id, name, description, image_url, price, quantity, is_active
@@ -92,7 +90,6 @@ export class ShopItemService {
 
     try {
       await client.query("begin");
-      await ensureShopItemColumns(client);
 
       let itemId = input.id;
 
@@ -293,11 +290,4 @@ function mapShopItemRow(item: ShopItemRow): ShopItem {
     quantity: item.quantity,
     isActive: item.is_active,
   };
-}
-
-async function ensureShopItemColumns(client: Pick<typeof db, "query"> = db) {
-  await client.query(`
-    alter table shop_items
-      add column if not exists image_url text not null default ''
-  `);
 }

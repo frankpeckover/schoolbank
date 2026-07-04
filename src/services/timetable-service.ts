@@ -49,6 +49,10 @@ export type CreateTimetableEntryInput = {
   endTime: string;
 };
 
+export type UpdateTimetableEntryInput = CreateTimetableEntryInput & {
+  id: string;
+};
+
 type TimetableEntryRow = {
   id: string;
   teacher_user_id: string;
@@ -217,9 +221,96 @@ export class TimetableService {
     }
   }
 
-  async setEntryActive(
+  async updateEntry(
+    input: UpdateTimetableEntryInput,
+    currentUser: SessionUser,
+  ): Promise<ActionResult> {
+    if (!input.id) {
+      return {
+        ok: false,
+        message: "Timetable entry was not found.",
+      };
+    }
+
+    const validationMessage = validateTimetableEntry(input);
+
+    if (validationMessage) {
+      return {
+        ok: false,
+        message: validationMessage,
+      };
+    }
+
+    try {
+      const result = await db.query(
+        `
+          update timetable_entries
+          set teacher_user_id = $1,
+              group_id = $2,
+              day_of_week = $3,
+              start_time = $4::time,
+              end_time = $5::time,
+              updated_at = now()
+          where id = $6
+            and exists (
+              select 1
+              from users teachers
+              join roles teacher_roles on teacher_roles.id = teachers.role_id
+              where teachers.id = $1
+                and teacher_roles.role_key = 'teacher'
+                and teachers.is_active = true
+            )
+            and exists (
+              select 1
+              from student_groups
+              where student_groups.id = $2
+                and student_groups.is_active = true
+            )
+        `,
+        [
+          input.teacherUserId,
+          input.groupId,
+          input.dayOfWeek,
+          input.startTime,
+          input.endTime,
+          input.id,
+        ],
+      );
+
+      if (result.rowCount === 0) {
+        return {
+          ok: false,
+          message: "Select an active teacher and group.",
+        };
+      }
+
+      await auditService.log({
+        action: "timetable_entry.updated",
+        actorUserId: currentUser.id,
+        details: {
+          dayOfWeek: input.dayOfWeek,
+          endTime: input.endTime,
+          groupId: input.groupId,
+          startTime: input.startTime,
+          teacherUserId: input.teacherUserId,
+        },
+        entityId: input.id,
+        entityType: "timetable_entry",
+      });
+
+      return { ok: true };
+    } catch (error) {
+      console.error("Update timetable entry failed", error);
+
+      return {
+        ok: false,
+        message: getTimetableErrorMessage(error),
+      };
+    }
+  }
+
+  async deleteEntry(
     entryId: string,
-    isActive: boolean,
     currentUser: SessionUser,
   ): Promise<ActionResult> {
     if (!entryId) {
@@ -232,12 +323,10 @@ export class TimetableService {
     try {
       const result = await db.query(
         `
-          update timetable_entries
-          set is_active = $1,
-              updated_at = now()
-          where id = $2
+          delete from timetable_entries
+          where id = $1
         `,
-        [isActive, entryId],
+        [entryId],
       );
 
       if (result.rowCount === 0) {
@@ -248,9 +337,7 @@ export class TimetableService {
       }
 
       await auditService.log({
-        action: isActive
-          ? "timetable_entry.restored"
-          : "timetable_entry.archived",
+        action: "timetable_entry.deleted",
         actorUserId: currentUser.id,
         entityId: entryId,
         entityType: "timetable_entry",
@@ -258,11 +345,11 @@ export class TimetableService {
 
       return { ok: true };
     } catch (error) {
-      console.error("Set timetable entry active failed", error);
+      console.error("Delete timetable entry failed", error);
 
       return {
         ok: false,
-        message: "Could not update timetable entry.",
+        message: "Could not delete timetable entry.",
       };
     }
   }

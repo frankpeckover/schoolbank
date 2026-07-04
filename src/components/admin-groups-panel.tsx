@@ -17,6 +17,8 @@ import { GroupImportModal } from "@/components/admin-groups/group-import-modal";
 import { GroupListPanel } from "@/components/admin-groups/group-list-panel";
 import { GroupModal } from "@/components/admin-groups/group-modal";
 import { GroupsPageHeader } from "@/components/admin-groups/groups-page-header";
+import { downloadCsv } from "@/lib/client-csv";
+import { formatDateTime } from "@/lib/formatters";
 import type {
   GroupListItem,
   GroupMemberItem,
@@ -380,6 +382,7 @@ export function AdminGroupsPanel() {
       <GroupsPageHeader
         areFiltersOpen={areFiltersOpen}
         count={filteredGroups.length}
+        onExportClick={() => downloadGroups(filteredGroups)}
         onFilterToggle={() => setAreFiltersOpen((isOpen) => !isOpen)}
         onImportClick={() => setIsImportModalOpen(true)}
         onNewGroupClick={() => setIsCreateModalOpen(true)}
@@ -468,4 +471,26 @@ function matchesGroupSearch(group: GroupListItem, search: string) {
   }
 
   return `${group.name} ${group.description}`.toLowerCase().includes(query);
+}
+
+function downloadGroups(groups: GroupListItem[]) {
+  downloadCsv(
+    "groups.csv",
+    [
+      "id",
+      "name",
+      "description",
+      "member_count",
+      "status",
+      "created_at",
+    ],
+    groups.map((group) => [
+      group.id,
+      group.name,
+      group.description,
+      group.memberCount,
+      group.isActive ? "active" : "archived",
+      formatDateTime(group.createdAt),
+    ]),
+  );
 }

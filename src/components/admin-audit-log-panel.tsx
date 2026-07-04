@@ -8,6 +8,7 @@ import type { AuditLogItem } from "@/services/audit-service";
 import { IconButton } from "@/components/ui/icon-button";
 import { EyeIcon, FileDownIcon, FilterIcon } from "@/components/ui/icons";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
+import { SearchInput } from "@/components/ui/search-input";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
 
 type AuditFilters = {
@@ -157,21 +158,25 @@ function AuditFilterPanel({
   return (
     <div className="theme-subpanel mt-4 grid gap-3 p-3 md:grid-cols-2 xl:grid-cols-4">
       <AuditFilterInput
+        id="auditAction"
         label="Action"
         onChange={(value) => updateFilter("action", value)}
         value={filters.action}
       />
       <AuditFilterInput
+        id="auditActor"
         label="Actor"
         onChange={(value) => updateFilter("actor", value)}
         value={filters.actor}
       />
       <AuditFilterInput
+        id="auditRecord"
         label="Record"
         onChange={(value) => updateFilter("record", value)}
         value={filters.record}
       />
       <AuditFilterInput
+        id="auditDetails"
         label="Details"
         onChange={(value) => updateFilter("details", value)}
         value={filters.details}
@@ -181,24 +186,27 @@ function AuditFilterPanel({
 }
 
 function AuditFilterInput({
+  id,
   label,
   onChange,
   value,
 }: {
+  id: string;
   label: string;
   onChange: (value: string) => void;
   value: string;
 }) {
   return (
     <div>
-      <label className="text-sm font-semibold text-text-control">
+      <label className="text-sm font-semibold text-text-control" htmlFor={id}>
         {label}
-        <input
-          className="mt-2 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none ring-brand transition focus:ring-2"
-          onChange={(event) => onChange(event.target.value)}
-          value={value}
-        />
       </label>
+      <SearchInput
+        className="mt-2"
+        id={id}
+        onChange={onChange}
+        value={value}
+      />
     </div>
   );
 }

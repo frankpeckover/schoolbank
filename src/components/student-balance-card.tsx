@@ -38,6 +38,7 @@ export function StudentBalanceCard({
           displayName={student.displayName}
           imageUrl={student.profileImageUrl}
           size="lg"
+          tone="neutral"
         />
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-sm font-semibold text-foreground">
@@ -56,14 +57,14 @@ export function StudentBalanceCard({
         {hasActions && (
           <div className="flex shrink-0 items-center gap-1.5">
             <button
-              className="flex h-8 w-9 items-center justify-center rounded-md border border-success bg-success text-base font-semibold leading-none text-white shadow-sm transition hover:bg-success-hover"
+              className="flex h-7 w-8 items-center justify-center rounded-md border border-success bg-success text-sm font-semibold leading-none text-white shadow-sm transition hover:bg-success-hover"
               onClick={() => onAdd?.(student)}
               type="button"
             >
               +
             </button>
             <button
-              className="flex h-8 w-9 items-center justify-center rounded-md border border-danger bg-danger text-base font-semibold leading-none text-white shadow-sm transition hover:brightness-95"
+              className="flex h-7 w-8 items-center justify-center rounded-md border border-danger bg-danger text-sm font-semibold leading-none text-white shadow-sm transition hover:brightness-95"
               onClick={() => onRemove?.(student)}
               type="button"
             >

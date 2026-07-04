@@ -2,6 +2,7 @@ import type {
   AdjustmentTarget,
 } from "@/components/transactions/ledger-adjustment-types";
 import { XIcon } from "@/components/ui/icons";
+import { SearchInput } from "@/components/ui/search-input";
 import type { GroupListItem } from "@/services/group-service";
 import type { StudentListItem } from "@/services/user-service";
 
@@ -158,9 +159,9 @@ function StudentSelector({
 }) {
   return (
     <>
-      <input
-        className="mt-3 w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition focus:ring-2"
-        onChange={(event) => onQueryChange(event.target.value)}
+      <SearchInput
+        className="mt-3"
+        onChange={onQueryChange}
         placeholder="Start typing a student name"
         value={studentQuery}
       />

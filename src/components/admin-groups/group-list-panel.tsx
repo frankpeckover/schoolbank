@@ -1,5 +1,6 @@
 import { IconButton } from "@/components/ui/icon-button";
 import { EyeIcon, PencilIcon } from "@/components/ui/icons";
+import { SearchInput } from "@/components/ui/search-input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { GroupListItem } from "@/services/group-service";
 
@@ -77,10 +78,10 @@ function GroupFilters({
           <label className="text-sm font-semibold text-text-control" htmlFor="groupSearch">
             Search groups
           </label>
-          <input
-            className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition focus:ring-2"
+          <SearchInput
+            className="mt-2"
             id="groupSearch"
-            onChange={(event) => onSearchChange(event.target.value)}
+            onChange={onSearchChange}
             placeholder="Search by group name or description"
             value={search}
           />

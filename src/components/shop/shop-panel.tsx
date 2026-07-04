@@ -16,8 +16,10 @@ import { ShopItemDetailsModal } from "@/components/shop/shop-item-details-modal"
 import { ShopItemModal } from "@/components/shop/shop-item-modal";
 import { EmptyState } from "@/components/ui/empty-state";
 import { IconButton } from "@/components/ui/icon-button";
-import { FilterIcon, PlusIcon, ShoppingBagIcon, WalletIcon } from "@/components/ui/icons";
+import { FileDownIcon, FilterIcon, PlusIcon, ShoppingBagIcon, WalletIcon } from "@/components/ui/icons";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
+import { SearchInput } from "@/components/ui/search-input";
+import { downloadCsv } from "@/lib/client-csv";
 
 type ShopPanelProps = {
   currencyName: string;
@@ -186,6 +188,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
           areFiltersOpen={areFiltersOpen}
           count={visibleItems.length}
           onFilterToggle={() => setAreFiltersOpen((isOpen) => !isOpen)}
+          onItemsExport={() => downloadShopItems(visibleItems)}
           onNewItem={openNewItemModal}
           totalCount={items.length}
         />
@@ -264,12 +267,14 @@ function ShopPanelHeader({
   areFiltersOpen,
   count,
   onFilterToggle,
+  onItemsExport,
   onNewItem,
   totalCount,
 }: {
   areFiltersOpen: boolean;
   count: number;
   onFilterToggle: () => void;
+  onItemsExport: () => void;
   onNewItem: () => void;
   totalCount: number;
 }) {
@@ -284,6 +289,14 @@ function ShopPanelHeader({
             text="Filters"
           >
             <FilterIcon />
+          </IconButton>
+          <IconButton
+            disabled={count === 0}
+            label="Export shop items"
+            onClick={onItemsExport}
+            text="Export"
+          >
+            <FileDownIcon />
           </IconButton>
           <IconButton
             label="New item"
@@ -353,10 +366,10 @@ function ShopFilters({
           <label className="text-sm font-semibold text-text-control" htmlFor="shopSearch">
             Search items
           </label>
-          <input
-            className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition focus:ring-2"
+          <SearchInput
+            className="mt-2"
             id="shopSearch"
-            onChange={(event) => onSearchChange(event.target.value)}
+            onChange={onSearchChange}
             placeholder="Search by item name or description"
             value={search}
           />
@@ -415,5 +428,29 @@ function matchesShopFilters(
 
   return [item.name, item.description].some((value) =>
     value.toLowerCase().includes(query),
+  );
+}
+
+function downloadShopItems(items: ShopItem[]) {
+  downloadCsv(
+    "shop-items.csv",
+    [
+      "id",
+      "name",
+      "description",
+      "price",
+      "quantity",
+      "status",
+      "image_url",
+    ],
+    items.map((item) => [
+      item.id,
+      item.name,
+      item.description,
+      item.price,
+      item.quantity,
+      item.isActive ? "active" : "archived",
+      item.imageUrl,
+    ]),
   );
 }

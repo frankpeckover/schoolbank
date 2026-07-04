@@ -1,9 +1,9 @@
 -- SchoolBank school database setup for DBeaver or any normal SQL editor.
 --
 -- Before running this file:
---   1. Create the PostgreSQL role/user that the app will use, for example schoolbank_app.
---   2. Create the school database, for example schoolbank.
---   3. Connect DBeaver to that school database.
+--   1. Create the school database, for example schoolbank.
+--   2. Connect DBeaver to that school database as a PostgreSQL admin or owner.
+--   3. Change the setup values noted below.
 --   4. Run this whole file.
 --
 -- This creates the app tables, default roles/permissions, one school_info row,
@@ -13,11 +13,22 @@
 --   username: admin
 --   password: admin
 --
+-- Setup values:
+--   Change these before running for a real school.
+--   school_app_user/password are the database login the web app will use.
+--
+--   Search in this file for:
+--     school_app_user text := 'schoolbank_app';
+--     school_app_password text := 'change_this_password';
+--     seeded_school_name text := 'SchoolBank School';
+--     seeded_currency_name text := 'credits';
+--
 -- Defaults seeded by this file:
 --   school name: SchoolBank School
 --   currency name: credits
 --
--- Change those defaults near the bottom of this file if needed.
+-- The script is safe to run again during development. Existing operational
+-- data is left in place, while seeded lookup/config rows may be refreshed.
 begin;
 
 create extension if not exists pgcrypto;
@@ -78,9 +89,6 @@ create table if not exists users (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
-alter table users
-  add column if not exists profile_image_url text not null default '';
 
 create table if not exists accounts (
   id uuid primary key default gen_random_uuid(),
@@ -274,8 +282,16 @@ create index if not exists user_sessions_user_idx on user_sessions(user_id);
 create index if not exists user_sessions_expires_idx on user_sessions(expires_at);
 
 insert into school_info (id, name, currency_name)
-values (1, 'SchoolBank School', 'credits')
-on conflict (id) do nothing;
+select 1, setup.seeded_school_name, setup.seeded_currency_name
+from (
+  select
+    'SchoolBank School'::text as seeded_school_name,
+    'credits'::text as seeded_currency_name
+) setup
+on conflict (id) do update
+set name = excluded.name,
+    currency_name = excluded.currency_name,
+    updated_at = now();
 
 insert into roles (role_key, name, description, is_system)
 values
@@ -374,5 +390,36 @@ values (
   'scrypt:v1:7363686f6f6c62616e6b2d61646d696e:6ae5e6009523abd6d721a2cd383d621fa57471cd3614fac43f8cb74d328a6590597f91511dedb2fa3c41159bfa93ae05fafb2ad058c815432e339a82683e2cd1'
 )
 on conflict (username) do nothing;
+
+do $$
+declare
+  school_app_user text := 'schoolbank_app';
+  school_app_password text := 'change_this_password';
+begin
+  if exists (
+    select 1
+    from pg_roles
+    where rolname = school_app_user
+  ) then
+    execute format(
+      'alter role %I with login password %L nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls',
+      school_app_user,
+      school_app_password
+    );
+  else
+    execute format(
+      'create role %I with login password %L nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls',
+      school_app_user,
+      school_app_password
+    );
+  end if;
+
+  execute format('grant connect on database %I to %I', current_database(), school_app_user);
+  execute format('grant usage on schema public to %I', school_app_user);
+  execute format('grant select, insert, update, delete on all tables in schema public to %I', school_app_user);
+  execute format('grant usage, select, update on all sequences in schema public to %I', school_app_user);
+  execute format('alter default privileges in schema public grant select, insert, update, delete on tables to %I', school_app_user);
+  execute format('alter default privileges in schema public grant usage, select, update on sequences to %I', school_app_user);
+end $$;
 
 commit;

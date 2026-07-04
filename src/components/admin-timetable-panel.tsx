@@ -4,16 +4,26 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
   createTimetableEntry,
+  deleteTimetableEntry,
   listGroups,
   listTimetableEntries,
   listTimetableTeachers,
-  setTimetableEntryActive,
+  updateTimetableEntry,
 } from "@/lib/actions";
 import { TimetableImportModal } from "@/components/admin-timetable/timetable-import-modal";
-import { FileUpIcon, FilterIcon, PlusIcon, XIcon } from "@/components/ui/icons";
+import {
+  FileDownIcon,
+  FileUpIcon,
+  FilterIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+  XIcon,
+} from "@/components/ui/icons";
 import { IconButton } from "@/components/ui/icon-button";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { downloadCsv } from "@/lib/client-csv";
 import type { GroupListItem } from "@/services/group-service";
 import type {
   CreateTimetableEntryInput,
@@ -40,19 +50,15 @@ const emptyEntryForm: CreateTimetableEntryInput = {
   teacherUserId: "",
 };
 
-type TimetableStatusFilter = "" | "active" | "archived";
-
 type TimetableFiltersState = {
   dayOfWeek: string;
   groupId: string;
-  status: TimetableStatusFilter;
   teacherUserId: string;
 };
 
 const emptyTimetableFilters: TimetableFiltersState = {
   dayOfWeek: "",
   groupId: "",
-  status: "",
   teacherUserId: "",
 };
 
@@ -64,10 +70,10 @@ export function AdminTimetablePanel() {
     useState<CreateTimetableEntryInput>(emptyEntryForm);
   const [filters, setFilters] =
     useState<TimetableFiltersState>(emptyTimetableFilters);
+  const [editingEntry, setEditingEntry] = useState<TimetableEntry | null>(null);
   const [areFiltersOpen, setAreFiltersOpen] = useState(false);
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [showInactive, setShowInactive] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,14 +90,14 @@ export function AdminTimetablePanel() {
 
   useEffect(() => {
     refreshTimetable();
-  }, [showInactive]);
+  }, []);
 
   async function refreshTimetable() {
     setIsLoading(true);
 
     try {
       const [loadedEntries, loadedTeachers, loadedGroups] = await Promise.all([
-        listTimetableEntries(showInactive),
+        listTimetableEntries(false),
         listTimetableTeachers(),
         listGroups(false),
       ]);
@@ -119,24 +125,83 @@ export function AdminTimetablePanel() {
     }
 
     setForm(emptyEntryForm);
-    setIsFormOpen(false);
+    setIsCreateModalOpen(false);
     setMessage("Timetable entry created.");
     setError(null);
     setIsSaving(false);
     await refreshTimetable();
   }
 
-  async function handleSetEntryActive(entryId: string, isActive: boolean) {
-    const result = await setTimetableEntryActive(entryId, isActive);
+  async function handleUpdateEntry() {
+    if (!editingEntry) {
+      return;
+    }
+
+    setIsSaving(true);
+
+    const result = await updateTimetableEntry({
+      ...form,
+      id: editingEntry.id,
+    });
+
+    if (!result.ok) {
+      setError(result.message);
+      setIsSaving(false);
+      return;
+    }
+
+    setEditingEntry(null);
+    setForm(emptyEntryForm);
+    setMessage("Timetable entry updated.");
+    setError(null);
+    setIsSaving(false);
+    await refreshTimetable();
+  }
+
+  async function handleDeleteEntry(entry: TimetableEntry) {
+    const shouldDelete = window.confirm(
+      `Delete ${entry.groupName} with ${entry.teacherName} on ${weekDays[entry.dayOfWeek]}?`,
+    );
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    const result = await deleteTimetableEntry(entry.id);
 
     if (!result.ok) {
       setError(result.message);
       return;
     }
 
-    setMessage(isActive ? "Timetable entry restored." : "Timetable entry archived.");
+    setMessage("Timetable entry deleted.");
     setError(null);
     await refreshTimetable();
+  }
+
+  function handleEditEntry(entry: TimetableEntry) {
+    setEditingEntry(entry);
+    setForm({
+      dayOfWeek: entry.dayOfWeek,
+      endTime: entry.endTime,
+      groupId: entry.groupId,
+      startTime: entry.startTime,
+      teacherUserId: entry.teacherUserId,
+    });
+    setMessage(null);
+    setError(null);
+  }
+
+  function handleNewEntryToggle() {
+    setEditingEntry(null);
+    setForm(emptyEntryForm);
+    setIsCreateModalOpen(true);
+  }
+
+  function handleCancelForm() {
+    setEditingEntry(null);
+    setForm(emptyEntryForm);
+    setIsCreateModalOpen(false);
   }
 
   async function handleTimetableImported(
@@ -167,6 +232,14 @@ export function AdminTimetablePanel() {
               <FilterIcon />
             </IconButton>
             <IconButton
+              disabled={filteredEntries.length === 0}
+              label="Export timetable"
+              onClick={() => downloadTimetableEntries(filteredEntries)}
+              text="Export"
+            >
+              <FileDownIcon />
+            </IconButton>
+            <IconButton
               label="Import timetable"
               onClick={() => setIsImportModalOpen(true)}
               text="Import CSV"
@@ -174,9 +247,9 @@ export function AdminTimetablePanel() {
               <FileUpIcon />
             </IconButton>
             <IconButton
-              ariaExpanded={isFormOpen}
+              ariaExpanded={isCreateModalOpen}
               label="Add timetable entry"
-              onClick={() => setIsFormOpen((isOpen) => !isOpen)}
+              onClick={handleNewEntryToggle}
               text="New Entry"
               tone="primary"
             >
@@ -197,20 +270,32 @@ export function AdminTimetablePanel() {
           filters={filters}
           groups={groups}
           onFiltersChange={setFilters}
-          onShowInactiveChange={setShowInactive}
-          showInactive={showInactive}
           teachers={teachers}
         />
       )}
 
-      {isFormOpen && (
-        <TimetableEntryForm
+      {isCreateModalOpen && (
+        <TimetableEntryModal
           form={form}
           groups={activeGroups}
           isSaving={isSaving}
-          onCancel={() => setIsFormOpen(false)}
+          mode={editingEntry ? "edit" : "create"}
+          onCancel={handleCancelForm}
           onChange={setForm}
-          onSubmit={handleCreateEntry}
+          onSubmit={editingEntry ? handleUpdateEntry : handleCreateEntry}
+          teachers={teachers}
+        />
+      )}
+
+      {editingEntry && (
+        <TimetableEntryModal
+          form={form}
+          groups={activeGroups}
+          isSaving={isSaving}
+          mode="edit"
+          onCancel={handleCancelForm}
+          onChange={setForm}
+          onSubmit={handleUpdateEntry}
           teachers={teachers}
         />
       )}
@@ -250,7 +335,8 @@ export function AdminTimetablePanel() {
         {!isLoading && filteredEntries.length > 0 && (
           <TimetableEntryTable
             entries={filteredEntries}
-            onSetActive={handleSetEntryActive}
+            onDeleteEntry={handleDeleteEntry}
+            onEditEntry={handleEditEntry}
           />
         )}
       </div>
@@ -262,6 +348,7 @@ function TimetableEntryForm({
   form,
   groups,
   isSaving,
+  mode,
   onCancel,
   onChange,
   onSubmit,
@@ -270,6 +357,7 @@ function TimetableEntryForm({
   form: CreateTimetableEntryInput;
   groups: GroupListItem[];
   isSaving: boolean;
+  mode: "create" | "edit";
   onCancel: () => void;
   onChange: (form: CreateTimetableEntryInput) => void;
   onSubmit: () => void;
@@ -349,10 +437,61 @@ function TimetableEntryForm({
           disabled={isSaving}
           type="submit"
         >
-          {isSaving ? "Saving..." : "Save"}
+          {isSaving ? "Saving..." : mode === "edit" ? "Update" : "Save"}
         </button>
       </div>
     </form>
+  );
+}
+
+function TimetableEntryModal({
+  form,
+  groups,
+  isSaving,
+  mode,
+  onCancel,
+  onChange,
+  onSubmit,
+  teachers,
+}: {
+  form: CreateTimetableEntryInput;
+  groups: GroupListItem[];
+  isSaving: boolean;
+  mode: "create" | "edit";
+  onCancel: () => void;
+  onChange: (form: CreateTimetableEntryInput) => void;
+  onSubmit: () => void;
+  teachers: TimetableTeacher[];
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-6">
+      <div className="theme-panel motion-pop max-h-full w-full max-w-2xl overflow-y-auto p-5 shadow-lg">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-xl font-semibold">
+              {mode === "edit" ? "Edit Timetable Entry" : "New Timetable Entry"}
+            </h3>
+          </div>
+          <button
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-button-border text-text-control transition hover:bg-surface-hover"
+            onClick={onCancel}
+            type="button"
+          >
+            <XIcon />
+          </button>
+        </div>
+        <TimetableEntryForm
+          form={form}
+          groups={groups}
+          isSaving={isSaving}
+          mode={mode}
+          onCancel={onCancel}
+          onChange={onChange}
+          onSubmit={onSubmit}
+          teachers={teachers}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -407,15 +546,11 @@ function TimetableFilters({
   filters,
   groups,
   onFiltersChange,
-  onShowInactiveChange,
-  showInactive,
   teachers,
 }: {
   filters: TimetableFiltersState;
   groups: GroupListItem[];
   onFiltersChange: (filters: TimetableFiltersState) => void;
-  onShowInactiveChange: (showInactive: boolean) => void;
-  showInactive: boolean;
   teachers: TimetableTeacher[];
 }) {
   function updateFilter<Field extends keyof TimetableFiltersState>(
@@ -427,7 +562,7 @@ function TimetableFilters({
 
   return (
     <div className="theme-subpanel mt-4 p-4">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <SelectField
           label="Teacher"
           onChange={(value) => updateFilter("teacherUserId", value)}
@@ -466,39 +601,19 @@ function TimetableFilters({
             </option>
           ))}
         </SelectField>
-
-        <SelectField
-          label="Status"
-          onChange={(value) =>
-            updateFilter("status", value as TimetableStatusFilter)
-          }
-          value={filters.status}
-        >
-          <option value="">All statuses</option>
-          <option value="active">Active</option>
-          <option value="archived">Archived</option>
-        </SelectField>
       </div>
-
-      <label className="mt-4 flex items-center gap-2 text-sm font-semibold text-text-control">
-        <input
-          checked={showInactive}
-          className="h-4 w-4 accent-brand"
-          onChange={(event) => onShowInactiveChange(event.target.checked)}
-          type="checkbox"
-        />
-        Show archived
-      </label>
     </div>
   );
 }
 
 function TimetableEntryTable({
   entries,
-  onSetActive,
+  onDeleteEntry,
+  onEditEntry,
 }: {
   entries: TimetableEntry[];
-  onSetActive: (entryId: string, isActive: boolean) => void;
+  onDeleteEntry: (entry: TimetableEntry) => void;
+  onEditEntry: (entry: TimetableEntry) => void;
 }) {
   return (
     <>
@@ -507,7 +622,8 @@ function TimetableEntryTable({
           <TimetableEntryMobileRow
             entry={entry}
             key={entry.id}
-            onSetActive={onSetActive}
+            onDeleteEntry={onDeleteEntry}
+            onEditEntry={onEditEntry}
           />
         ))}
       </div>
@@ -538,9 +654,10 @@ function TimetableEntryTable({
                 <TimetableStatusBadge isActive={entry.isActive} />
               </td>
               <td className="py-3">
-                <TimetableActiveButton
+                <TimetableActions
                   entry={entry}
-                  onSetActive={onSetActive}
+                  onDeleteEntry={onDeleteEntry}
+                  onEditEntry={onEditEntry}
                 />
               </td>
             </tr>
@@ -553,10 +670,12 @@ function TimetableEntryTable({
 
 function TimetableEntryMobileRow({
   entry,
-  onSetActive,
+  onDeleteEntry,
+  onEditEntry,
 }: {
   entry: TimetableEntry;
-  onSetActive: (entryId: string, isActive: boolean) => void;
+  onDeleteEntry: (entry: TimetableEntry) => void;
+  onEditEntry: (entry: TimetableEntry) => void;
 }) {
   return (
     <article className="theme-card p-3">
@@ -567,7 +686,11 @@ function TimetableEntryMobileRow({
             {entry.teacherName}
           </p>
         </div>
-        <TimetableActiveButton entry={entry} onSetActive={onSetActive} />
+        <TimetableActions
+          entry={entry}
+          onDeleteEntry={onDeleteEntry}
+          onEditEntry={onEditEntry}
+        />
       </div>
       <div className="mt-3 grid gap-2 text-sm text-text-muted">
         <p>{weekDays[entry.dayOfWeek]}</p>
@@ -578,27 +701,28 @@ function TimetableEntryMobileRow({
   );
 }
 
-function TimetableActiveButton({
+function TimetableActions({
   entry,
-  onSetActive,
+  onDeleteEntry,
+  onEditEntry,
 }: {
   entry: TimetableEntry;
-  onSetActive: (entryId: string, isActive: boolean) => void;
+  onDeleteEntry: (entry: TimetableEntry) => void;
+  onEditEntry: (entry: TimetableEntry) => void;
 }) {
   return (
-    <button
-      aria-label={entry.isActive ? "Archive timetable entry" : "Restore timetable entry"}
-      className={`inline-flex h-10 w-10 items-center justify-center rounded-md border text-sm font-semibold transition ${
-        entry.isActive
-          ? "border-danger-button-border text-danger-strong hover:bg-danger-soft"
-          : "border-button-border text-text-control hover:bg-panel-soft"
-      }`}
-      onClick={() => onSetActive(entry.id, !entry.isActive)}
-      title={entry.isActive ? "Archive timetable entry" : "Restore timetable entry"}
-      type="button"
-    >
-      {entry.isActive ? <XIcon /> : "R"}
-    </button>
+    <div className="flex gap-2">
+      <IconButton label="Edit timetable entry" onClick={() => onEditEntry(entry)}>
+        <PencilIcon />
+      </IconButton>
+      <IconButton
+        label="Delete timetable entry"
+        onClick={() => onDeleteEntry(entry)}
+        tone="danger"
+      >
+        <TrashIcon />
+      </IconButton>
+    </div>
   );
 }
 
@@ -622,22 +746,30 @@ function matchesTimetableFilters(
   return (
     (!filters.teacherUserId || entry.teacherUserId === filters.teacherUserId) &&
     (!filters.groupId || entry.groupId === filters.groupId) &&
-    (!filters.dayOfWeek || entry.dayOfWeek === Number(filters.dayOfWeek)) &&
-    matchesStatusFilter(entry, filters.status)
+    (!filters.dayOfWeek || entry.dayOfWeek === Number(filters.dayOfWeek))
   );
 }
 
-function matchesStatusFilter(
-  entry: TimetableEntry,
-  status: TimetableStatusFilter,
-) {
-  if (!status) {
-    return true;
-  }
-
-  if (status === "active") {
-    return entry.isActive;
-  }
-
-  return !entry.isActive;
+function downloadTimetableEntries(entries: TimetableEntry[]) {
+  downloadCsv(
+    "timetable.csv",
+    [
+      "id",
+      "teacher",
+      "group",
+      "day",
+      "start_time",
+      "end_time",
+      "status",
+    ],
+    entries.map((entry) => [
+      entry.id,
+      entry.teacherName,
+      entry.groupName,
+      weekDays[entry.dayOfWeek],
+      entry.startTime,
+      entry.endTime,
+      entry.isActive ? "active" : "archived",
+    ]),
+  );
 }

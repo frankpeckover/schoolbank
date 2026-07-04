@@ -13,8 +13,10 @@ import { UserModal } from "@/components/admin-users/user-modal";
 import { UsersTable } from "@/components/admin-users/users-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { IconButton } from "@/components/ui/icon-button";
-import { FileUpIcon, FilterIcon, PlusIcon, UsersIcon } from "@/components/ui/icons";
+import { FileDownIcon, FileUpIcon, FilterIcon, PlusIcon, UsersIcon } from "@/components/ui/icons";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
+import { downloadCsv } from "@/lib/client-csv";
+import { formatDateTime } from "@/lib/formatters";
 import type { UserListItem } from "@/services/user-service";
 
 type AdminUsersPanelProps = {
@@ -118,6 +120,14 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
               text="Filters"
             >
               <FilterIcon />
+            </IconButton>
+            <IconButton
+              disabled={filteredUsers.length === 0}
+              label="Export users"
+              onClick={() => downloadUsers(filteredUsers)}
+              text="Export"
+            >
+              <FileDownIcon />
             </IconButton>
             <IconButton
               label="Import users from CSV"
@@ -229,5 +239,35 @@ function ListCount({
     <p className="text-sm font-semibold text-text-muted">
       Showing {count} of {totalCount} {label}.
     </p>
+  );
+}
+
+function downloadUsers(users: UserListItem[]) {
+  downloadCsv(
+    "users.csv",
+    [
+      "id",
+      "username",
+      "first_name",
+      "last_name",
+      "display_name",
+      "email",
+      "role",
+      "status",
+      "last_activity",
+      "profile_image_url",
+    ],
+    users.map((user) => [
+      user.id,
+      user.username,
+      user.firstName,
+      user.lastName,
+      user.displayName,
+      user.email,
+      user.role,
+      user.isActive ? "active" : "inactive",
+      user.lastActivityAt ? formatDateTime(user.lastActivityAt) : "",
+      user.profileImageUrl,
+    ]),
   );
 }

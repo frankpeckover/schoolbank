@@ -31,6 +31,7 @@ import {
   XIcon,
 } from "@/components/ui/icons";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
+import { SearchInput } from "@/components/ui/search-input";
 import { TextReasonModal } from "@/components/ui/text-reason-modal";
 
 type TransactionLogPanelProps = {
@@ -372,7 +373,7 @@ function TransactionMobileRow({
           {formatDateTime(transaction.createdAt)}
         </p>
         <p
-          className={`mt-1 text-sm font-semibold ${getSignedAmountTextClassName(transaction.amount)}`}
+          className={`mt-1 font-semibold ${getSignedAmountTextClassName(transaction.amount)}`}
         >
           {amountLabel}
         </p>
@@ -563,10 +564,10 @@ function FilterInput({
       <label className="text-sm font-semibold text-text-control" htmlFor={id}>
         {label}
       </label>
-      <input
-        className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none ring-brand transition focus:ring-2"
+      <SearchInput
+        className="mt-2"
         id={id}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={onChange}
         value={value}
       />
     </div>

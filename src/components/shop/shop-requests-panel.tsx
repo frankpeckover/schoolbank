@@ -15,14 +15,22 @@ import { TextReasonModal } from "@/components/ui/text-reason-modal";
 
 type ShopRequestsPanelProps = {
   className?: string;
+  compact?: boolean;
   currencyName: string;
+  maxVisibleRequests?: number;
   onRequestActioned?: () => void;
+  showViewToggle?: boolean;
+  title?: string;
 };
 
 export function ShopRequestsPanel({
   className = "mt-5",
+  compact = false,
   currencyName,
+  maxVisibleRequests,
   onRequestActioned,
+  showViewToggle = true,
+  title = "Shop Requests",
 }: ShopRequestsPanelProps) {
   const [requests, setRequests] = useState<ShopPurchaseRequest[]>([]);
   const [activeView, setActiveView] = useState<"pending" | "recent">("pending");
@@ -110,44 +118,58 @@ export function ShopRequestsPanel({
     refreshRequests();
   }
 
-  const visibleRequests =
+  const filteredRequests =
     activeView === "pending"
       ? requests.filter((request) => request.status === "pending")
       : requests.filter((request) => request.status !== "pending");
+  const visibleRequests =
+    maxVisibleRequests === undefined
+      ? filteredRequests
+      : filteredRequests.slice(0, maxVisibleRequests);
   const pendingRequestCount = requests.filter(
     (request) => request.status === "pending",
   ).length;
 
   return (
-    <section className={`theme-panel motion-panel p-4 ${className}`}>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <section
+      className={`${
+        compact
+          ? "wallet-card rounded-3xl border border-brand-soft-strong shadow-sm"
+          : "theme-panel"
+      } motion-panel p-4 ${className}`}
+    >
+      <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-panel-soft text-text-muted">
             <ShoppingBagIcon />
           </span>
           <div className="min-w-0">
-            <h3 className="text-lg font-semibold">Shop Requests</h3>
-            <p className="mt-2 inline-flex rounded-md bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent">
-              {pendingRequestCount} pending
-            </p>
+            <h3 className="text-lg font-semibold">{title}</h3>
+            {!compact && (
+              <p className="mt-2 inline-flex rounded-md bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent">
+                {pendingRequestCount} pending
+              </p>
+            )}
           </div>
         </div>
-        <div className="flex rounded-md border border-border bg-surface p-1">
-          {(["pending", "recent"] as const).map((view) => (
-            <button
-              className={`rounded-sm px-3 py-1.5 text-sm font-semibold ${
-                activeView === view
-                  ? "bg-brand text-white"
-                  : "text-text-control hover:bg-surface-hover"
-              }`}
-              key={view}
-              onClick={() => setActiveView(view)}
-              type="button"
-            >
-              {view === "pending" ? "Pending" : "Recent"}
-            </button>
-          ))}
-        </div>
+        {showViewToggle && (
+          <div className="flex rounded-md border border-border bg-surface p-1">
+            {(["pending", "recent"] as const).map((view) => (
+              <button
+                className={`rounded-sm px-3 py-1.5 text-sm font-semibold ${
+                  activeView === view
+                    ? "bg-brand text-white"
+                    : "text-text-control hover:bg-surface-hover"
+                }`}
+                key={view}
+                onClick={() => setActiveView(view)}
+                type="button"
+              >
+                {view === "pending" ? "Pending" : "Recent"}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {message && (
@@ -161,7 +183,7 @@ export function ShopRequestsPanel({
         </p>
       )}
 
-      <div className="mt-4">
+      <div className="relative z-10 mt-4">
         {isLoading && (
           <p className="text-sm text-text-muted">Loading requests...</p>
         )}
@@ -174,6 +196,7 @@ export function ShopRequestsPanel({
         )}
         {!isLoading && visibleRequests.length > 0 && (
           <ShopRequestList
+            compact={compact}
             currencyName={currencyName}
             onApprove={handleApprove}
             onDeny={setDenyingRequestId}
@@ -197,16 +220,29 @@ export function ShopRequestsPanel({
 }
 
 function ShopRequestList({
+  compact,
   currencyName,
   onApprove,
   onDeny,
   requests,
 }: {
+  compact: boolean;
   currencyName: string;
   onApprove: (purchaseId: string) => void;
   onDeny: (purchaseId: string) => void;
   requests: ShopPurchaseRequest[];
 }) {
+  if (compact) {
+    return (
+      <CompactShopRequestList
+        currencyName={currencyName}
+        onApprove={onApprove}
+        onDeny={onDeny}
+        requests={requests}
+      />
+    );
+  }
+
   return (
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
       {requests.map((request) => (
@@ -219,6 +255,128 @@ function ShopRequestList({
         />
       ))}
     </div>
+  );
+}
+
+function CompactShopRequestList({
+  currencyName,
+  onApprove,
+  onDeny,
+  requests,
+}: {
+  currencyName: string;
+  onApprove: (purchaseId: string) => void;
+  onDeny: (purchaseId: string) => void;
+  requests: ShopPurchaseRequest[];
+}) {
+  return (
+    <>
+      <div className="grid gap-2 md:hidden">
+        {requests.map((request) => (
+          <CompactShopRequestMobileRow
+            currencyName={currencyName}
+            key={request.id}
+            onApprove={onApprove}
+            onDeny={onDeny}
+            request={request}
+          />
+        ))}
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full table-fixed border-collapse text-left text-sm">
+          <colgroup>
+            <col className="w-[34%]" />
+            <col className="w-[26%]" />
+            <col className="w-[16%]" />
+            <col className="w-[14%]" />
+            <col className="w-[10%]" />
+          </colgroup>
+          <thead>
+            <tr className="border-b border-border-subtle text-text-muted">
+              <th className="py-2 pr-4 font-semibold">Request</th>
+              <th className="py-2 pr-4 font-semibold">Student</th>
+              <th className="py-2 pr-4 font-semibold">Cost</th>
+              <th className="py-2 pr-4 font-semibold">Status</th>
+              <th className="py-2 font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {requests.map((request) => (
+              <tr className="border-b border-border-subtle" key={request.id}>
+                <td className="py-2 pr-4">
+                  <p className="truncate text-sm font-semibold text-text-control">
+                    {request.itemName}
+                  </p>
+                  <p className="mt-1 truncate text-xs text-text-muted">
+                    {formatDateTime(request.purchasedAt)}
+                  </p>
+                </td>
+                <td className="py-2 pr-4">
+                  <p className="truncate text-sm font-semibold text-text-control">
+                    {request.studentName}
+                  </p>
+                  <p className="truncate text-xs text-text-muted">
+                    {request.studentUsername}
+                  </p>
+                </td>
+                <td className="py-2 pr-4">
+                  <span className="text-sm font-semibold">
+                    {formatCurrencyAmount(request.price, currencyName)}
+                  </span>
+                </td>
+                <td className="py-2 pr-4">
+                  <ShopRequestStatusBadge request={request} />
+                </td>
+                <td className="py-2">
+                  <ShopRequestActions
+                    onApprove={onApprove}
+                    onDeny={onDeny}
+                    request={request}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+function CompactShopRequestMobileRow({
+  currencyName,
+  onApprove,
+  onDeny,
+  request,
+}: {
+  currencyName: string;
+  onApprove: (purchaseId: string) => void;
+  onDeny: (purchaseId: string) => void;
+  request: ShopPurchaseRequest;
+}) {
+  return (
+    <article className="theme-card flex items-center justify-between gap-3 p-3">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold">{request.itemName}</p>
+        <p className="mt-1 truncate text-xs text-text-muted">
+          {formatDateTime(request.purchasedAt)}
+        </p>
+        <p className="mt-1 truncate text-xs text-text-muted">
+          {request.studentName}
+        </p>
+        <p className="mt-1">
+          <span className="text-sm font-semibold">
+            {formatCurrencyAmount(request.price, currencyName)}
+          </span>
+        </p>
+      </div>
+      <ShopRequestActions
+        onApprove={onApprove}
+        onDeny={onDeny}
+        request={request}
+      />
+    </article>
   );
 }
 
@@ -255,7 +413,7 @@ function ShopRequestCard({
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <ShopRequestStatusBadge request={request} />
-        <span className="text-sm font-semibold text-text-muted">
+        <span className="shrink-0 text-right text-sm font-semibold">
           {formatCurrencyAmount(request.price, currencyName)}
         </span>
       </div>

@@ -5,22 +5,36 @@ import {
   type UserModalMode,
 } from "@/components/admin-users/user-modal-types";
 import { userRoles } from "@/components/admin-users/user-management-types";
+import { PlusIcon } from "@/components/ui/icons";
+import { UserAvatar } from "@/components/ui/user-avatar";
 
 type UserFormFieldsProps = {
   form: UserFormState;
+  imageFileName: string;
   mode: UserModalMode;
   onChange: UserFormFieldChange;
+  onProfileImageChange: (file: File | null) => void;
 };
+
+const profileImageHelpText = "PNG, JPG, WebP, or GIF. Max 2 MB.";
 
 export function UserFormFields({
   form,
+  imageFileName,
   mode,
   onChange,
+  onProfileImageChange,
 }: UserFormFieldsProps) {
   return (
     <>
       <NameFields form={form} onChange={onChange} />
-      <AccountFields form={form} mode={mode} onChange={onChange} />
+      <AccountFields
+        form={form}
+        imageFileName={imageFileName}
+        mode={mode}
+        onChange={onChange}
+        onProfileImageChange={onProfileImageChange}
+      />
     </>
   );
 }
@@ -52,12 +66,16 @@ function NameFields({
 
 function AccountFields({
   form,
+  imageFileName,
   mode,
   onChange,
+  onProfileImageChange,
 }: {
   form: UserFormState;
+  imageFileName: string;
   mode: UserModalMode;
   onChange: UserFormFieldChange;
+  onProfileImageChange: (file: File | null) => void;
 }) {
   return (
     <>
@@ -94,11 +112,11 @@ function AccountFields({
         type="email"
         value={form.email}
       />
-      <TextField
-        id="profileImageUrl"
-        label="Profile Image URL"
-        onChange={(value) => onChange("profileImageUrl", value)}
-        value={form.profileImageUrl}
+      <ProfileImageUploadField
+        currentImageUrl={form.profileImageUrl}
+        displayName={`${form.firstName} ${form.lastName}`.trim() || form.username}
+        fileName={imageFileName}
+        onChange={onProfileImageChange}
       />
 
       {mode === "create" ? (
@@ -121,6 +139,53 @@ function AccountFields({
         </label>
       )}
     </>
+  );
+}
+
+function ProfileImageUploadField({
+  currentImageUrl,
+  displayName,
+  fileName,
+  onChange,
+}: {
+  currentImageUrl: string;
+  displayName: string;
+  fileName: string;
+  onChange: (file: File | null) => void;
+}) {
+  return (
+    <div>
+      <span className="text-sm font-semibold text-text-control">
+        Profile Image
+      </span>
+      <div className="theme-subpanel mt-2 flex items-center gap-3 p-3">
+        <UserAvatar
+          displayName={displayName || "User"}
+          imageUrl={currentImageUrl}
+          size="lg"
+          tone="neutral"
+        />
+        <div className="min-w-0 flex-1">
+          <input
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="hidden"
+            id="profileImage"
+            onChange={(event) => onChange(event.target.files?.[0] ?? null)}
+            type="file"
+          />
+          <label
+            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-button-border bg-surface text-text-control transition hover:bg-panel-soft"
+            htmlFor="profileImage"
+            title="Upload profile image"
+          >
+            <PlusIcon />
+          </label>
+          <p className="mt-2 truncate text-sm text-text-muted">
+            {fileName || profileImageHelpText}
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 

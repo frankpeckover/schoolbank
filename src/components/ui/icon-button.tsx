@@ -32,8 +32,8 @@ export function IconButton({
     <button
       aria-expanded={ariaExpanded}
       aria-label={label}
-      className={`inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md border text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-        text ? "w-10 sm:w-auto sm:px-4" : "w-10"
+      className={`inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-md border text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+        text ? "w-9 sm:w-auto sm:px-3" : "w-9"
       } ${toneClassNames[tone]}`}
       disabled={disabled}
       onClick={onClick}

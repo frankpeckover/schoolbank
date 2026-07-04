@@ -6,6 +6,7 @@ type UserAvatarProps = {
   displayName: string;
   imageUrl?: string | null;
   size?: "sm" | "md" | "lg";
+  tone?: "brand" | "neutral";
 };
 
 const sizeClasses = {
@@ -18,14 +19,19 @@ export function UserAvatar({
   displayName,
   imageUrl,
   size = "md",
+  tone = "brand",
 }: UserAvatarProps) {
   const [didImageFail, setDidImageFail] = useState(false);
   const cleanedImageUrl = imageUrl?.trim();
   const shouldShowImage = Boolean(cleanedImageUrl && !didImageFail);
+  const toneClassName =
+    tone === "neutral"
+      ? "bg-panel-soft text-text-control"
+      : "bg-brand-soft text-brand";
 
   return (
     <span
-      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-soft font-semibold text-brand ${sizeClasses[size]}`}
+      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold ${toneClassName} ${sizeClasses[size]}`}
       title={displayName}
     >
       {shouldShowImage ? (

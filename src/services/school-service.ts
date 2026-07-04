@@ -61,8 +61,6 @@ const allowedLogoTypes = new Map([
 
 export class SchoolService {
   async getSchoolInfo(): Promise<SchoolInfo> {
-    await ensureSchoolInfoColumns();
-
     const result = await db.query<SchoolInfoRow>(`
       select
         name,
@@ -122,7 +120,6 @@ export class SchoolService {
 
     try {
       await client.query("begin");
-      await ensureSchoolInfoColumns(client);
 
       await client.query(
         `
@@ -250,14 +247,4 @@ export class SchoolService {
       timezone: row.timezone,
     };
   }
-}
-
-async function ensureSchoolInfoColumns(client: Pick<typeof db, "query"> = db) {
-  await client.query(`
-    alter table school_info
-      add column if not exists contact_email text not null default '',
-      add column if not exists phone text not null default '',
-      add column if not exists website text not null default '',
-      add column if not exists timezone text not null default ''
-  `);
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import {
   Bar,
   BarChart,
@@ -12,6 +13,13 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import {
+  ClockIcon,
+  ShoppingBagIcon,
+  UsersIcon,
+  WalletIcon,
+} from "@/components/ui/icons";
+import { SearchInput } from "@/components/ui/search-input";
 import {
   getCreditAnalyticsSummary,
   searchCreditAnalyticsScopes,
@@ -70,7 +78,6 @@ const analyticsWindowOptions: AnalyticsWindowOption[] = [
 ];
 const scopeSearchDebounceMs = 250;
 const chartStrokeWidth = 2;
-const chartPointRadius = 3;
 const activeChartPointRadius = 5;
 const maximumAxisTickCount = 5;
 
@@ -254,7 +261,9 @@ function AnalyticsMetricGrid({
   return (
     <section className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <AnalyticsMetricCard
+        icon={<UsersIcon />}
         label={`Active in last ${selectedWindowDays} days`}
+        tone="brand"
         value={
           summary
             ? `${summary.studentsWithRecentActivity} of ${summary.activeStudentCount}`
@@ -262,7 +271,9 @@ function AnalyticsMetricGrid({
         }
       />
       <AnalyticsMetricCard
+        icon={<ShoppingBagIcon />}
         label="Active shop requests"
+        tone="accent"
         value={
           summary
             ? `${summary.activeShopRequests}`
@@ -270,7 +281,9 @@ function AnalyticsMetricGrid({
         }
       />
       <AnalyticsMetricCard
+        icon={<WalletIcon />}
         label="Total credits"
+        tone="success"
         value={
           summary
             ? formatCurrencyAmount(summary.totalHeld, currencyName)
@@ -278,7 +291,9 @@ function AnalyticsMetricGrid({
         }
       />
       <AnalyticsMetricCard
+        icon={<ClockIcon />}
         label="Pending holds"
+        tone="neutral"
         value={
           summary
             ? formatCurrencyAmount(summary.pendingHolds, currencyName)
@@ -297,7 +312,7 @@ function AnalyticsWindowSelector({
   selectedWindowDays: number;
 }) {
   return (
-    <div className="grid h-12 grid-cols-4 overflow-hidden rounded-md border border-border bg-surface shadow-sm lg:w-52">
+    <div className="grid h-[46px] grid-cols-4 overflow-hidden rounded-md border border-border bg-surface lg:w-52">
       {analyticsWindowOptions.map((option) => (
         <button
           aria-label={`Show ${option.days} days`}
@@ -319,22 +334,53 @@ function AnalyticsWindowSelector({
 }
 
 function AnalyticsMetricCard({
+  icon,
   label,
+  tone,
   value,
 }: {
+  icon: ReactNode;
   label: string;
+  tone: AnalyticsMetricTone;
   value: string;
 }) {
   return (
     <article className="theme-card min-w-0 p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-kicker">
-        {label}
-      </p>
-      <p className="mt-2 truncate font-number text-2xl font-semibold text-foreground">
-        {value}
-      </p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-kicker">
+            {label}
+          </p>
+          <p className="mt-2 truncate text-2xl font-semibold text-foreground">
+            {value}
+          </p>
+        </div>
+        <span
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${getAnalyticsMetricToneClassName(tone)}`}
+        >
+          {icon}
+        </span>
+      </div>
     </article>
   );
+}
+
+type AnalyticsMetricTone = "accent" | "brand" | "neutral" | "success";
+
+function getAnalyticsMetricToneClassName(tone: AnalyticsMetricTone) {
+  if (tone === "accent") {
+    return "bg-accent-soft text-accent";
+  }
+
+  if (tone === "success") {
+    return "bg-success-soft text-success";
+  }
+
+  if (tone === "neutral") {
+    return "bg-panel-soft text-text-muted";
+  }
+
+  return "bg-brand-soft text-brand";
 }
 
 function getLoadingMetricValue(isLoading: boolean) {
@@ -413,10 +459,9 @@ function AnalyticsScopePicker({
 }) {
   return (
     <div className="relative">
-      <input
+      <SearchInput
         aria-label="Search analytics scope"
-        className="w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition placeholder:text-text-muted focus:ring-2"
-        onChange={(event) => onScopeQueryChange(event.target.value)}
+        onChange={onScopeQueryChange}
         placeholder="Search a student or group"
         value={query}
       />
@@ -545,12 +590,7 @@ function BalanceHistoryChart({
               strokeWidth: chartStrokeWidth,
             }}
             dataKey={valueKey}
-            dot={{
-              fill: "var(--surface)",
-              r: chartPointRadius,
-              stroke: "var(--brand)",
-              strokeWidth: chartStrokeWidth,
-            }}
+            dot={false}
             stroke="var(--brand)"
             strokeWidth={chartStrokeWidth}
             type="monotone"

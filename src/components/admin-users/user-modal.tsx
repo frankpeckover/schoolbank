@@ -6,6 +6,7 @@ import {
   listUserGroups,
   resetUserPassword,
   updateUser,
+  uploadUserProfileImage,
 } from "@/lib/actions";
 import { PasswordResetSection } from "@/components/admin-users/password-reset-section";
 import { StudentGroupsSection } from "@/components/admin-users/student-groups-section";
@@ -32,6 +33,7 @@ export function UserModal({
     getInitialFormState(mode, user),
   );
   const [newPassword, setNewPassword] = useState("");
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [userGroups, setUserGroups] = useState<UserGroupItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -89,10 +91,32 @@ export function UserModal({
     setError(null);
     setMessage(null);
 
+    let profileImageUrl = form.profileImageUrl;
+
+    if (profileImageFile) {
+      const imageFormData = new FormData();
+      imageFormData.append("image", profileImageFile);
+
+      const uploadResult = await uploadUserProfileImage(imageFormData);
+
+      if (uploadResult.ok === false) {
+        setError(uploadResult.message);
+        setIsSaving(false);
+        return;
+      }
+
+      profileImageUrl = uploadResult.imageUrl;
+    }
+
+    const formWithImage = {
+      ...form,
+      profileImageUrl,
+    };
+
     const result =
       mode === "create"
-        ? await createUser(form)
-        : await updateUser(getUpdateUserInput(form));
+        ? await createUser(formWithImage)
+        : await updateUser(getUpdateUserInput(formWithImage));
 
     if (!result.ok) {
       setError(result.message);
@@ -157,9 +181,11 @@ export function UserModal({
 
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
           <UserFormFields
+            imageFileName={profileImageFile?.name ?? ""}
             form={form}
             mode={mode}
             onChange={updateFormField}
+            onProfileImageChange={setProfileImageFile}
           />
           {mode === "edit" && form.role === "student" && (
             <StudentGroupsSection

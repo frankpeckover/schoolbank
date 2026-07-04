@@ -14,9 +14,34 @@ export function downloadCsv(
   const link = document.createElement("a");
 
   link.href = url;
-  link.download = filename;
+  link.download = addExportTimestamp(filename);
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function addExportTimestamp(filename: string) {
+  const timestamp = formatExportTimestamp(new Date());
+  const extensionIndex = filename.lastIndexOf(".");
+
+  if (extensionIndex <= 0) {
+    return `${filename}-${timestamp}`;
+  }
+
+  return `${filename.slice(0, extensionIndex)}-${timestamp}${filename.slice(extensionIndex)}`;
+}
+
+function formatExportTimestamp(date: Date) {
+  const day = padDatePart(date.getDate());
+  const month = padDatePart(date.getMonth() + 1);
+  const year = padDatePart(date.getFullYear() % 100);
+  const hours = padDatePart(date.getHours());
+  const minutes = padDatePart(date.getMinutes());
+
+  return `${day}${month}${year}${hours}${minutes}`;
+}
+
+function padDatePart(value: number) {
+  return String(value).padStart(2, "0");
 }
 
 function escapeCsvCell(value: CsvCell) {

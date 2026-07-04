@@ -122,7 +122,7 @@ function StudentWalletCard({
   const balanceAmount = Math.abs(balance);
 
   return (
-    <article className="dashboard-unit-1 wallet-card rounded-3xl border border-brand-soft-strong p-5 text-foreground shadow-sm transition hover:shadow-md sm:p-6">
+    <article className="dashboard-unit-2 wallet-card rounded-3xl border border-brand-soft-strong p-5 text-foreground shadow-sm transition hover:shadow-md sm:p-6">
       <div className="relative flex h-full min-h-52 flex-col items-center justify-center gap-4 text-center">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-text-kicker">
@@ -193,7 +193,7 @@ function BalanceTrendCard({
   const timeTicks = getTimeAxisTicks(chartPoints);
 
   return (
-    <article className="dashboard-unit-2 flex min-h-52 rounded-3xl border border-border-subtle bg-surface p-4 shadow-sm sm:p-5">
+    <article className="dashboard-unit-1 flex min-h-52 rounded-3xl border border-border-subtle bg-surface p-4 shadow-sm sm:p-5">
       <div className="flex min-h-56 w-full flex-col rounded-2xl bg-surface">
         <ChartScaleControl
           onScaleChange={setTimeScale}

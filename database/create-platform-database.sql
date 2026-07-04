@@ -1,9 +1,9 @@
 -- SchoolBank platform database setup for DBeaver or any normal SQL editor.
 --
 -- Before running this file:
---   1. Create the PostgreSQL role/user that the app will use, for example schoolbank_app.
---   2. Create the platform database, for example schoolbank_platform.
---   3. Connect DBeaver to that platform database.
+--   1. Create the platform database, for example schoolbank_platform.
+--   2. Connect DBeaver to that platform database as a PostgreSQL admin or owner.
+--   3. Change the setup values near the bottom of this file.
 --   4. Run this whole file.
 --
 -- This creates the platform lookup table and seeds one development organisation.
@@ -13,7 +13,8 @@
 --   domain: dev.schoolbank.local
 --   school database: schoolbank
 --
--- Change that seed row near the bottom of this file when needed.
+-- The platform_app_user/password values are the one database login the web app
+-- needs in .env.local to find all school database connection details.
 begin;
 
 create extension if not exists pgcrypto;
@@ -66,6 +67,37 @@ set name = excluded.name,
     database_password = excluded.database_password,
     is_active = true,
     updated_at = now();
+
+do $$
+declare
+  platform_app_user text := 'schoolbank_platform_app';
+  platform_app_password text := 'change_this_password';
+begin
+  if exists (
+    select 1
+    from pg_roles
+    where rolname = platform_app_user
+  ) then
+    execute format(
+      'alter role %I with login password %L nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls',
+      platform_app_user,
+      platform_app_password
+    );
+  else
+    execute format(
+      'create role %I with login password %L nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls',
+      platform_app_user,
+      platform_app_password
+    );
+  end if;
+
+  execute format('grant connect on database %I to %I', current_database(), platform_app_user);
+  execute format('grant usage on schema public to %I', platform_app_user);
+  execute format('grant select, insert, update, delete on all tables in schema public to %I', platform_app_user);
+  execute format('grant usage, select, update on all sequences in schema public to %I', platform_app_user);
+  execute format('alter default privileges in schema public grant select, insert, update, delete on tables to %I', platform_app_user);
+  execute format('alter default privileges in schema public grant usage, select, update on sequences to %I', platform_app_user);
+end $$;
 
 commit;
 

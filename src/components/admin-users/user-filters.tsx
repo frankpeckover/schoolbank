@@ -3,6 +3,7 @@ import {
   userRoles,
   type UserFilters,
 } from "@/components/admin-users/user-management-types";
+import { SearchInput } from "@/components/ui/search-input";
 
 type UserFiltersPanelProps = {
   filters: UserFilters;
@@ -100,10 +101,10 @@ function FilterInput({
       <label className="text-sm font-semibold text-text-control" htmlFor={id}>
         {label}
       </label>
-      <input
-        className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition focus:ring-2"
+      <SearchInput
+        className="mt-2"
         id={id}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={onChange}
         value={value}
       />
     </div>

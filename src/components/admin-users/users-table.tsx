@@ -104,7 +104,7 @@ function UserIdentity({ user }: { user: UserListItem }) {
         displayName={user.displayName}
         imageUrl={user.profileImageUrl}
       />
-      <span className="truncate font-semibold">{user.displayName}</span>
+      <span className="truncate font-semibold text-text-control">{user.displayName}</span>
     </div>
   );
 }

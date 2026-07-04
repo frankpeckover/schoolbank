@@ -1,5 +1,6 @@
 import { IconButton } from "@/components/ui/icon-button";
 import { TrashIcon } from "@/components/ui/icons";
+import { SearchInput } from "@/components/ui/search-input";
 import type {
   GroupListItem,
   GroupMemberItem,
@@ -96,11 +97,11 @@ function GroupStudentSearch({
       >
         Add student
       </label>
-      <input
-        className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition focus:ring-2"
+      <SearchInput
+        className="mt-2"
         disabled={!selectedGroup.isActive}
         id="studentSearch"
-        onChange={(event) => onQueryChange(event.target.value)}
+        onChange={onQueryChange}
         placeholder="Search by name or username"
         value={studentQuery}
       />

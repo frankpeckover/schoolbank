@@ -1,11 +1,12 @@
 import { IconButton } from "@/components/ui/icon-button";
-import { FileUpIcon, FilterIcon, PlusIcon } from "@/components/ui/icons";
+import { FileDownIcon, FileUpIcon, FilterIcon, PlusIcon } from "@/components/ui/icons";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
 
 type GroupsPageHeaderProps = {
   areFiltersOpen: boolean;
   count: number;
   onFilterToggle: () => void;
+  onExportClick: () => void;
   onImportClick: () => void;
   onNewGroupClick: () => void;
   totalCount: number;
@@ -15,6 +16,7 @@ export function GroupsPageHeader({
   areFiltersOpen,
   count,
   onFilterToggle,
+  onExportClick,
   onImportClick,
   onNewGroupClick,
   totalCount,
@@ -30,6 +32,14 @@ export function GroupsPageHeader({
             text="Filters"
           >
             <FilterIcon />
+          </IconButton>
+          <IconButton
+            disabled={count === 0}
+            label="Export groups"
+            onClick={onExportClick}
+            text="Export"
+          >
+            <FileDownIcon />
           </IconButton>
           <IconButton
             label="Import groups from CSV"

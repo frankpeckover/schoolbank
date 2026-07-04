@@ -1,42 +1,87 @@
 # SchoolBank Database Setup
 
-This folder has two DBeaver-friendly setup scripts:
+This folder has two DBeaver-friendly PostgreSQL setup scripts:
 
-- `create-school-database.sql`
 - `create-platform-database.sql`
-- `provision-school-database-user.sql`
+- `create-school-database.sql`
 
-Both scripts are normal SQL. They do not use `psql` backslash commands, so they
-can be run from DBeaver.
+Both files are plain SQL. They do not use `psql` backslash commands, so they can be run from DBeaver.
 
-Normal SQL cannot create a database and then switch into it inside the same
-script. Create the database/user first in DBeaver, connect to the target
-database, then run the relevant file.
+Normal SQL cannot create a database and then switch into it inside the same script. Create the empty database first, connect to that database, then run the relevant setup file.
+
+## Setup Order
+
+1. Create and set up the platform database once.
+2. Create and set up one school database per school.
+3. Put the platform database connection in the app `.env.local`.
+4. Put each school database connection in the platform database `organisations` table.
+
+## Platform Database
+
+The platform database is the one database the web app connects to directly from environment variables. It stores the lookup records that tell the app which school database to use for each domain/subdomain.
+
+Run:
+
+```txt
+database/create-platform-database.sql
+```
+
+In DBeaver:
+
+1. Create a database, for example `schoolbank_platform`.
+2. Connect to `schoolbank_platform` as a PostgreSQL admin or database owner.
+3. Open `create-platform-database.sql`.
+4. Change the seeded organisation and `platform_app_user` values near the bottom.
+5. Run the whole file.
+
+The script creates:
+
+- `organisations`
+- one seeded development organisation
+- the platform app PostgreSQL login
+- grants for that login
+
+The app expects these environment variables for the platform database:
+
+```txt
+PLATFORM_POSTGRES_HOST=
+PLATFORM_POSTGRES_PORT=5432
+PLATFORM_POSTGRES_DATABASE=schoolbank_platform
+PLATFORM_POSTGRES_USER=schoolbank_platform_app
+PLATFORM_POSTGRES_PASSWORD=
+SCHOOLBANK_ROOT_DOMAIN=schoolbank.com
+LOCAL_ORGANISATION_SLUG=local
+```
 
 ## School Database
 
-Creates one school database with:
+Each school gets its own separate database. The platform database points to it through an `organisations` row.
 
-- the current app tables
-- default roles and permissions
-- one `school_info` row
-- the initial admin user
+Run:
 
-```bash
+```txt
 database/create-school-database.sql
 ```
 
 In DBeaver:
 
-1. Create a database, for example `schoolbank`.
-2. Create or choose the app user, for example `schoolbank_app`.
-3. Connect to the `schoolbank` database.
-4. Run `create-school-database.sql`.
-5. Run `provision-school-database-user.sql` if this school needs its own
-   dedicated database login.
+1. Create a database, for example `schoolbank_dev`.
+2. Connect to `schoolbank_dev` as a PostgreSQL admin or database owner.
+3. Open `create-school-database.sql`.
+4. Change the seeded school values and `school_app_user` values near the bottom.
+5. Run the whole file.
 
-To change the seeded school name or currency, edit the `insert into school_info`
-statement near the bottom of the file.
+The script creates:
+
+- all current app tables
+- indexes and constraints
+- default permissions
+- default roles
+- default role permissions
+- one `school_info` row
+- the initial admin user
+- the school app PostgreSQL login
+- grants for that login
 
 Initial admin login:
 
@@ -45,23 +90,7 @@ username: admin
 password: admin
 ```
 
-## School Database User
-
-Creates or updates the PostgreSQL login used by the app for one school database,
-then grants it access to the current database's tables and sequences.
-
-```bash
-database/provision-school-database-user.sql
-```
-
-In DBeaver:
-
-1. Connect to the target school database, for example `schoolbank_dev`.
-2. Open `provision-school-database-user.sql`.
-3. Change `school_db_user` and `school_db_password` near the top.
-4. Run the whole file as a PostgreSQL admin or database owner.
-
-Use a different database login per school, for example:
+Use a different database login per school when you move beyond local development, for example:
 
 ```txt
 schoolbank_user_dev
@@ -69,50 +98,42 @@ schoolbank_user_springfield
 schoolbank_user_riverside
 ```
 
-After this, add the same username and password to the matching organisation row
-in the platform database.
-
-## Platform Database
-
-Creates the shared platform database with:
-
-- the `organisations` table
-- one first development organisation row
-
-```bash
-database/create-platform-database.sql
-```
-
-In DBeaver:
-
-1. Create a database, for example `schoolbank_platform`.
-2. Create or choose the app user, for example `schoolbank_app`.
-3. Connect to the `schoolbank_platform` database.
-4. Run `create-platform-database.sql`.
-
-To change the first seeded organisation, edit the `insert into organisations`
-statement near the bottom of the file.
-
-The app looks up an organisation by `primary_domain`. For local testing, create
-a local DNS or hosts-file entry that points your dev domain at the app server IP,
-then set that same domain as `primary_domain`.
-
-The platform database stores each organisation's school database connection
-details. The browser never sees these credentials. Add one row to
-`organisations` for each future school.
+Then add that username and password to the matching `organisations` row in the platform database.
 
 ## Useful Checks
-
-School database:
-
-```sql
-select name, address, plan_type, currency_name, logo_url from school_info;
-select username, first_name, last_name, role from users;
-select name, price, quantity, is_active from shop_items;
-```
 
 Platform database:
 
 ```sql
-select slug, primary_domain, database_name, is_active from organisations;
+select slug, name, primary_domain, database_name, database_user, is_active
+from organisations
+order by slug;
 ```
+
+School database:
+
+```sql
+select name, address, plan_type, currency_name, logo_url
+from school_info;
+
+select
+  users.username,
+  users.first_name,
+  users.last_name,
+  roles.role_key,
+  users.is_active
+from users
+join roles on roles.id = users.role_id
+order by users.username;
+
+select name, price, quantity, is_active
+from shop_items
+order by name;
+```
+
+## Notes
+
+- The browser never receives database credentials.
+- The app only needs the platform database credentials in `.env.local`.
+- School database credentials live in the platform database.
+- The setup scripts can be rerun during development, but they are not a migration system. Once real schools are using the app, schema changes should become explicit migrations.

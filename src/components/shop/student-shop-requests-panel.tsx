@@ -119,7 +119,7 @@ function StudentRequestCard({
             <p className="text-xs text-text-muted">Reward order</p>
           </div>
         </div>
-        <span className="text-sm font-semibold text-text-muted">
+        <span className="shrink-0 text-right text-sm font-semibold">
           {formatCurrencyAmount(request.price, currencyName)}
         </span>
       </div>

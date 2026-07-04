@@ -3,7 +3,10 @@
 import { requireAdmin, requireLedgerAdjuster } from "@/lib/actions/action-auth";
 import type { ImportTimetableEntriesInput } from "@/services/timetable-import-service";
 import { TimetableImportService } from "@/services/timetable-import-service";
-import type { CreateTimetableEntryInput } from "@/services/timetable-service";
+import type {
+  CreateTimetableEntryInput,
+  UpdateTimetableEntryInput,
+} from "@/services/timetable-service";
 import { TimetableService } from "@/services/timetable-service";
 
 const timetableImportService = new TimetableImportService();
@@ -31,12 +34,14 @@ export async function importTimetableEntries(
   return timetableImportService.importEntries(input, currentUser);
 }
 
-export async function setTimetableEntryActive(
-  entryId: string,
-  isActive: boolean,
-) {
+export async function updateTimetableEntry(input: UpdateTimetableEntryInput) {
   const currentUser = await requireAdmin();
-  return timetableService.setEntryActive(entryId, isActive, currentUser);
+  return timetableService.updateEntry(input, currentUser);
+}
+
+export async function deleteTimetableEntry(entryId: string) {
+  const currentUser = await requireAdmin();
+  return timetableService.deleteEntry(entryId, currentUser);
 }
 
 export async function getCurrentTeacherClass() {
