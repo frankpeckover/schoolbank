@@ -14,6 +14,21 @@ import {
   YAxis,
 } from "recharts";
 import {
+  activeChartPointRadius,
+  chartStrokeWidth,
+  findPointLabel,
+  getBalanceAxisTicks,
+  getDistributionAxisTicks,
+  getPurchaseAxisTicks,
+  getTimeAxisTicks,
+  type BalanceHistoryValueKey,
+} from "@/components/credit-analytics/analytics-chart-utils";
+import {
+  BalanceHistoryTooltip,
+  DistributionTooltip,
+  PurchaseTrendTooltip,
+} from "@/components/credit-analytics/analytics-tooltips";
+import {
   ClockIcon,
   ShoppingBagIcon,
   UsersIcon,
@@ -37,33 +52,6 @@ type CreditAnalyticsPanelProps = {
   currencyName: string;
 };
 
-type BalanceHistoryTooltipProps = {
-  active?: boolean;
-  currencyName: string;
-  payload?: {
-    payload: CreditAnalyticsBalanceHistoryPoint;
-  }[];
-  valueKey: BalanceHistoryValueKey;
-};
-
-type DistributionTooltipProps = {
-  active?: boolean;
-  payload?: {
-    payload: CreditAnalyticsBucket;
-  }[];
-};
-
-type PurchaseTrendTooltipProps = {
-  active?: boolean;
-  payload?: {
-    color: string;
-    name: string;
-    payload: CreditAnalyticsTrendPoint;
-    value: number;
-  }[];
-};
-
-type BalanceHistoryValueKey = "averageBalance" | "totalBalance";
 type AnalyticsWindowOption = {
   days: number;
   label: string;
@@ -77,9 +65,6 @@ const analyticsWindowOptions: AnalyticsWindowOption[] = [
   { days: 365, label: "1Y" },
 ];
 const scopeSearchDebounceMs = 250;
-const chartStrokeWidth = 2;
-const activeChartPointRadius = 5;
-const maximumAxisTickCount = 5;
 
 export function CreditAnalyticsPanel({
   currencyName,
@@ -814,177 +799,4 @@ function PurchaseTrendChart({
       </ResponsiveContainer>
     </div>
   );
-}
-
-function PurchaseTrendTooltip({
-  active,
-  payload,
-}: PurchaseTrendTooltipProps) {
-  const point = payload?.[0]?.payload;
-
-  if (!active || !point || !payload) {
-    return null;
-  }
-
-  return (
-    <div className="rounded-md border border-border bg-surface px-3 py-2 text-sm shadow-md">
-      <p className="font-semibold text-text-control">{point.label}</p>
-      <div className="mt-2 space-y-1">
-        {payload.map((entry) => (
-          <p className="flex items-center gap-2" key={entry.name}>
-            <span
-              className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: entry.color }}
-            />
-            <span className="text-text-muted">{entry.name}</span>
-            <span className="font-semibold text-foreground">{entry.value}</span>
-          </p>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function DistributionTooltip({
-  active,
-  payload,
-}: DistributionTooltipProps) {
-  const bucket = payload?.[0]?.payload;
-
-  if (!active || !bucket) {
-    return null;
-  }
-
-  return (
-    <div className="rounded-md border border-border bg-surface px-3 py-2 text-sm shadow-md">
-      <p className="font-semibold text-text-control">{bucket.label}</p>
-      <p className="mt-1 text-brand">
-        {bucket.count} wallet{bucket.count === 1 ? "" : "s"}
-      </p>
-    </div>
-  );
-}
-
-function BalanceHistoryTooltip({
-  active,
-  currencyName,
-  payload,
-  valueKey,
-}: BalanceHistoryTooltipProps) {
-  const point = payload?.[0]?.payload;
-
-  if (!active || !point) {
-    return null;
-  }
-
-  return (
-    <div className="rounded-md border border-border bg-surface px-3 py-2 text-sm shadow-md">
-      <p className="font-semibold text-text-control">{point.label}</p>
-      <p className="mt-1 text-brand">
-        {formatCurrencyAmount(point[valueKey], currencyName)}
-      </p>
-    </div>
-  );
-}
-
-function getBalanceAxisTicks(
-  points: CreditAnalyticsBalanceHistoryPoint[],
-  valueKey: BalanceHistoryValueKey,
-) {
-  const maximumBalance = Math.max(
-    ...points.map((point) => point[valueKey]),
-    0,
-  );
-  const interval = getNiceTickInterval(maximumBalance);
-  const axisMaximum = Math.max(interval, Math.ceil(maximumBalance / interval) * interval);
-  const ticks: number[] = [];
-
-  for (let tick = 0; tick <= axisMaximum; tick += interval) {
-    ticks.push(tick);
-  }
-
-  return ticks;
-}
-
-function getNiceTickInterval(maximumValue: number) {
-  if (maximumValue <= 0) {
-    return 1;
-  }
-
-  const roughInterval = maximumValue / (maximumAxisTickCount - 1);
-  const magnitude = 10 ** Math.floor(Math.log10(roughInterval));
-  const normalizedInterval = roughInterval / magnitude;
-
-  if (normalizedInterval <= 1) {
-    return magnitude;
-  }
-
-  if (normalizedInterval <= 2) {
-    return 2 * magnitude;
-  }
-
-  if (normalizedInterval <= 5) {
-    return 5 * magnitude;
-  }
-
-  return 10 * magnitude;
-}
-
-function getDistributionAxisTicks(buckets: CreditAnalyticsBucket[]) {
-  const maximumCount = Math.max(...buckets.map((bucket) => bucket.count), 0);
-  const interval = getNiceTickInterval(maximumCount);
-  const axisMaximum = Math.max(interval, Math.ceil(maximumCount / interval) * interval);
-  const ticks: number[] = [];
-
-  for (let tick = 0; tick <= axisMaximum; tick += interval) {
-    ticks.push(tick);
-  }
-
-  return ticks;
-}
-
-function getPurchaseAxisTicks(trend: CreditAnalyticsTrendPoint[]) {
-  const maximumCount = Math.max(
-    ...trend.flatMap((point) => [
-      point.approvedPurchases,
-      point.deniedPurchases,
-      point.pendingPurchases,
-    ]),
-    0,
-  );
-  const interval = getNiceTickInterval(maximumCount);
-  const axisMaximum = Math.max(interval, Math.ceil(maximumCount / interval) * interval);
-  const ticks: number[] = [];
-
-  for (let tick = 0; tick <= axisMaximum; tick += interval) {
-    ticks.push(tick);
-  }
-
-  return ticks;
-}
-
-function getTimeAxisTicks(
-  points: Array<CreditAnalyticsBalanceHistoryPoint | CreditAnalyticsTrendPoint>,
-) {
-  if (points.length <= maximumAxisTickCount) {
-    return points.map((point) => point.timestamp);
-  }
-
-  const lastIndex = points.length - 1;
-  const tickIndexes = new Set<number>();
-
-  for (let index = 0; index < maximumAxisTickCount; index += 1) {
-    tickIndexes.add(Math.round((index * lastIndex) / (maximumAxisTickCount - 1)));
-  }
-
-  return Array.from(tickIndexes)
-    .sort((firstIndex, secondIndex) => firstIndex - secondIndex)
-    .map((index) => points[index].timestamp);
-}
-
-function findPointLabel(
-  points: Array<CreditAnalyticsBalanceHistoryPoint | CreditAnalyticsTrendPoint>,
-  timestamp: number,
-) {
-  return points.find((point) => point.timestamp === timestamp)?.label ?? "";
 }
