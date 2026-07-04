@@ -480,14 +480,76 @@ html[data-theme="dark"] .professional-shell {
 }
 
 .professional-shell table {
+  border-collapse: collapse;
   font-variant-numeric: tabular-nums;
+  line-height: 1.25;
 }
 
-.professional-shell th {
+.professional-shell table th {
   color: var(--text-label);
   font-size: 0.72rem;
   letter-spacing: 0.04em;
+  padding-bottom: 0.35rem !important;
+  padding-top: 0.35rem !important;
   text-transform: uppercase;
+}
+
+.professional-shell table td {
+  padding-bottom: 0.35rem !important;
+  padding-top: 0.35rem !important;
+  vertical-align: middle;
+}
+
+.professional-shell table td:last-child,
+.professional-shell table th:last-child {
+  white-space: nowrap;
+}
+
+.professional-shell h3 {
+  letter-spacing: 0;
+}
+
+.professional-shell .text-lg.font-semibold,
+.professional-shell .text-xl.font-semibold {
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.professional-shell .text-xs.font-semibold.uppercase {
+  letter-spacing: 0.045em;
+}
+
+.professional-shell label.text-sm.font-semibold,
+.professional-shell p.text-sm.font-semibold {
+  font-weight: 600;
+}
+
+.professional-shell .theme-card span[class*="bg-brand-soft"],
+.professional-shell .theme-card span[class*="bg-accent-soft"],
+.professional-shell .theme-panel span[class*="bg-brand-soft"],
+.professional-shell .theme-panel span[class*="bg-accent-soft"] {
+  background: var(--panel-soft);
+  color: var(--text-muted);
+}
+
+.professional-shell .motion-pop.theme-panel {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  border-radius: var(--radius-panel);
+  box-shadow: 0 20px 58px rgba(13, 18, 16, 0.22);
+}
+
+html[data-theme="dark"] .professional-shell .motion-pop.theme-panel {
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.62);
+}
+
+.professional-shell .motion-pop.theme-panel h3 {
+  color: var(--foreground);
+  font-size: 1.05rem;
+}
+
+.professional-shell .motion-pop.theme-panel label {
+  color: var(--text-control);
 }
 
 .professional-shell .theme-card:hover,

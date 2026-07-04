@@ -38,7 +38,6 @@ type BalanceTrendTooltipProps = {
   payload?: { payload: BalanceTimePoint }[];
 };
 
-const CHART_POINT_RADIUS = 4;
 const ACTIVE_CHART_POINT_RADIUS = 6;
 const CHART_STROKE_WIDTH = 3;
 const CHART_CURSOR_WIDTH = 2;
@@ -260,12 +259,7 @@ function BalanceTrendCard({
                     strokeWidth: CHART_STROKE_WIDTH,
                   }}
                   dataKey="balance"
-                  dot={{
-                    fill: "var(--surface)",
-                    r: CHART_POINT_RADIUS,
-                    stroke: "var(--brand)",
-                    strokeWidth: CHART_CURSOR_WIDTH,
-                  }}
+                  dot={false}
                   stroke="var(--brand)"
                   strokeWidth={CHART_STROKE_WIDTH}
                   type="monotone"
