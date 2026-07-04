@@ -292,6 +292,27 @@ button:not(:disabled):active {
     linear-gradient(180deg, var(--shell-gradient-surface), transparent 18rem);
 }
 
+.professional-shell.app-shell-surface {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 54%, transparent) 0, transparent 20rem),
+    var(--background);
+}
+
+.professional-shell {
+  --radius-control: 0.55rem;
+  --radius-card: 0.7rem;
+  --radius-panel: 0.9rem;
+  --professional-panel-shadow: rgba(23, 32, 28, 0.08);
+  --professional-panel-bg: color-mix(in srgb, var(--surface) 97%, var(--panel-soft));
+  --professional-card-bg: color-mix(in srgb, var(--surface) 99%, var(--panel-soft));
+}
+
+html[data-theme="dark"] .professional-shell {
+  --professional-panel-shadow: rgba(0, 0, 0, 0.42);
+  --professional-panel-bg: color-mix(in srgb, var(--surface) 92%, black);
+  --professional-card-bg: color-mix(in srgb, var(--surface) 96%, black);
+}
+
 .dashboard-grid {
   display: grid;
   gap: 1rem;
@@ -422,6 +443,56 @@ button:not(:disabled):active {
   background: var(--panel-soft);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
+}
+
+.professional-shell .theme-panel {
+  background: var(--professional-panel-bg);
+  border-color: var(--border-strong);
+  box-shadow: 0 1px 2px var(--professional-panel-shadow);
+}
+
+.professional-shell .theme-card {
+  background: var(--professional-card-bg);
+  border-color: var(--border);
+  box-shadow: none;
+}
+
+.professional-shell .theme-subpanel {
+  background: color-mix(in srgb, var(--panel-soft) 72%, var(--surface));
+  border-color: var(--border);
+}
+
+.professional-shell .wallet-card {
+  background: var(--professional-panel-bg);
+  border-color: var(--border-strong);
+  border-radius: var(--radius-panel);
+  box-shadow: 0 1px 2px var(--professional-panel-shadow);
+}
+
+.professional-shell .wallet-card::before,
+.professional-shell .wallet-card::after {
+  opacity: 0.14;
+}
+
+.professional-shell .section-highlight::before {
+  height: 2px;
+  opacity: 0.9;
+}
+
+.professional-shell table {
+  font-variant-numeric: tabular-nums;
+}
+
+.professional-shell th {
+  color: var(--text-label);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.professional-shell .theme-card:hover,
+.professional-shell .theme-panel:hover {
+  border-color: color-mix(in srgb, var(--border-strong) 82%, var(--brand));
 }
 
 @keyframes panel-enter {

@@ -157,46 +157,48 @@ export function TeacherDashboardPanel({
               title="Shop Approvals"
             />
 
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row">
-              <SearchInput
-                aria-label="Search students or groups"
-                className="min-w-0 flex-1"
-                id="teacherDashboardSearch"
-                onChange={setSearch}
-                placeholder="Search students or groups, or separate multiple searches with a semicolon"
-                value={search}
-              />
-              <button
-                className="inline-flex h-[46px] shrink-0 items-center justify-center gap-2 rounded-md border border-brand bg-brand px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:border-button-border disabled:bg-panel-soft disabled:text-text-muted disabled:shadow-none"
-                disabled={visibleStudents.length === 0}
-                onClick={handleIssueAllShown}
-                type="button"
-              >
-                <PlusIcon />
-                <span>Issue all</span>
-              </button>
-            </div>
-
-            {isDefaultingToCurrentClass && !currentClass && (
-              <p className="text-sm text-text-muted">
-                No class is timetabled right now. Search for students or groups.
-              </p>
-            )}
-
-            {(visibleStudents.length > 0 || visibleGroups.length > 0) && (
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <CountChip
-                  icon={<UsersIcon />}
-                  label={`${visibleStudents.length} student${visibleStudents.length === 1 ? "" : "s"}`}
+            <div className="theme-panel mb-4 p-4">
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <SearchInput
+                  aria-label="Search students or groups"
+                  className="min-w-0 flex-1"
+                  id="teacherDashboardSearch"
+                  onChange={setSearch}
+                  placeholder="Search students or groups, or separate multiple searches with a semicolon"
+                  value={search}
                 />
-                {visibleGroups.length > 0 && (
-                  <CountChip
-                    icon={<SparkleIcon />}
-                    label={`${visibleGroups.length} group${visibleGroups.length === 1 ? "" : "s"}`}
-                  />
-                )}
+                <button
+                  className="inline-flex h-[46px] shrink-0 items-center justify-center gap-2 rounded-md border border-brand bg-brand px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:border-button-border disabled:bg-panel-soft disabled:text-text-muted disabled:shadow-none"
+                  disabled={visibleStudents.length === 0}
+                  onClick={handleIssueAllShown}
+                  type="button"
+                >
+                  <PlusIcon />
+                  <span>Issue all</span>
+                </button>
               </div>
-            )}
+
+              {isDefaultingToCurrentClass && !currentClass && (
+                <p className="mt-3 text-sm text-text-muted">
+                  No class is timetabled right now. Search for students or groups.
+                </p>
+              )}
+
+              {(visibleStudents.length > 0 || visibleGroups.length > 0) && (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <CountChip
+                    icon={<UsersIcon />}
+                    label={`${visibleStudents.length} student${visibleStudents.length === 1 ? "" : "s"}`}
+                  />
+                  {visibleGroups.length > 0 && (
+                    <CountChip
+                      icon={<SparkleIcon />}
+                      label={`${visibleGroups.length} group${visibleGroups.length === 1 ? "" : "s"}`}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
 
             {visibleStudents.length > 0 && (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -262,7 +264,7 @@ function CountChip({
   label: string;
 }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-md bg-panel-soft px-2.5 py-1 text-xs font-semibold text-text-muted">
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-border-subtle bg-surface px-2.5 py-1 text-xs font-semibold text-text-muted">
       {icon}
       {label}
     </span>
@@ -281,7 +283,7 @@ function GroupCreditCard({
   return (
     <article className="theme-card p-3">
       <div className="flex items-center gap-3">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent-soft text-accent">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-panel-soft text-text-muted">
           <UsersIcon />
         </span>
         <div className="min-w-0 flex-1">
