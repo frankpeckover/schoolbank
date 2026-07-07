@@ -33,6 +33,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   const [showArchivedItems, setShowArchivedItems] = useState(false);
   const [balance, setBalance] = useState<number | null>(null);
   const [requestedItemIds, setRequestedItemIds] = useState<string[]>([]);
+  const [duplicatingItem, setDuplicatingItem] = useState<ShopItem | null>(null);
   const [editingItem, setEditingItem] = useState<ShopItem | null>(null);
   const [viewingItem, setViewingItem] = useState<ShopItem | null>(null);
   const [areFiltersOpen, setAreFiltersOpen] = useState(false);
@@ -126,13 +127,22 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   }, [canManage, currentUser]);
 
   function openNewItemModal() {
+    setDuplicatingItem(null);
     setEditingItem(null);
     setIsModalOpen(true);
   }
 
   function openEditItemModal(item: ShopItem) {
+    setDuplicatingItem(null);
     setEditingItem(item);
     setViewingItem(null);
+    setIsModalOpen(true);
+  }
+
+  function openDuplicateItemModal(item: ShopItem) {
+    setEditingItem(null);
+    setViewingItem(null);
+    setDuplicatingItem(item);
     setIsModalOpen(true);
   }
 
@@ -168,6 +178,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   }
 
   function handleItemSaved() {
+    setDuplicatingItem(null);
     setIsModalOpen(false);
     setMessage("Shop item saved.");
     refreshItems();
@@ -216,6 +227,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
               currencyName={currencyName}
               item={item}
               key={item.id}
+              onDuplicate={canManage ? openDuplicateItemModal : undefined}
               onEdit={openEditItemModal}
               onPurchase={handlePurchase}
               onRemove={handleRemove}
@@ -242,8 +254,22 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
 
       {isModalOpen && (
         <ShopItemModal
+          initialForm={
+            duplicatingItem
+              ? {
+                  description: duplicatingItem.description,
+                  imageUrl: duplicatingItem.imageUrl,
+                  name: `${duplicatingItem.name} Copy`,
+                  price: String(duplicatingItem.price),
+                  quantity: String(duplicatingItem.quantity),
+                }
+              : undefined
+          }
           item={editingItem}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            setDuplicatingItem(null);
+            setIsModalOpen(false);
+          }}
           onSaved={handleItemSaved}
         />
       )}

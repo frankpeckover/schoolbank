@@ -39,6 +39,7 @@ import {
   UserCircleIcon,
   WalletIcon,
 } from "@/components/ui/icons";
+import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 
 type AdminDashboardPanelProps = {
@@ -113,6 +114,7 @@ export function AdminDashboardPanel({
                   label="Ledger Balance"
                   tone="brand"
                   value={formatWholeNumber(summary.ledgerBalance)}
+                  variant="centered"
                 />
                 <PendingSummaryCard
                   pendingHolds={summary.pendingHolds}
@@ -447,29 +449,6 @@ function findChartPointLabel(points: BalanceTimePoint[], timestamp: number) {
 
 function formatWholeNumber(amount: number) {
   return new Intl.NumberFormat("en-AU").format(amount);
-}
-
-function MetricCard({
-  icon,
-  label,
-  tone,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  tone: MetricTone;
-  value: string;
-}) {
-  return (
-    <article className="theme-card flex min-h-24 flex-col p-3">
-      <MetricCardHeader icon={icon} label={label} tone={tone} />
-      <div className="flex flex-1 items-center justify-center text-center">
-        <p className="text-3xl font-semibold tracking-normal text-foreground">
-          {value}
-        </p>
-      </div>
-    </article>
-  );
 }
 
 function AccountSummaryCard({

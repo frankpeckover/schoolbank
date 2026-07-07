@@ -3,9 +3,11 @@
 import { useState, type FormEvent } from "react";
 import { saveShopItem, uploadShopItemImage } from "@/lib/actions";
 import { PackageIcon, PlusIcon } from "@/components/ui/icons";
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import type { SaveShopItemInput, ShopItem } from "@/services/shop-service";
 
 type ShopItemModalProps = {
+  initialForm?: Partial<ShopItemFormState>;
   item: ShopItem | null;
   onClose: () => void;
   onSaved: () => void;
@@ -47,12 +49,13 @@ const fieldClassNames = {
 } as const;
 
 export function ShopItemModal({
+  initialForm,
   item,
   onClose,
   onSaved,
 }: ShopItemModalProps) {
   const [form, setForm] = useState<ShopItemFormState>(() =>
-    getInitialFormState(item),
+    getInitialFormState(item, initialForm),
   );
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -165,19 +168,13 @@ function ModalHeader({
 }: Pick<ShopItemModalProps, "item" | "onClose">) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <div>
+      <div className="min-w-0">
         <h3 className="text-2xl font-semibold">
           {item ? modalCopy.editTitle : modalCopy.newTitle}
         </h3>
         <p className="mt-1 text-sm text-text-muted">{modalCopy.description}</p>
       </div>
-      <button
-        className="rounded-md border border-button-border px-3 py-2 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
-        onClick={onClose}
-        type="button"
-      >
-        {modalCopy.close}
-      </button>
+      <ModalCloseButton label={modalCopy.close} onClick={onClose} />
     </div>
   );
 }
@@ -354,7 +351,10 @@ function ModalActions({
   );
 }
 
-function getInitialFormState(item: ShopItem | null): ShopItemFormState {
+function getInitialFormState(
+  item: ShopItem | null,
+  initialForm?: Partial<ShopItemFormState>,
+): ShopItemFormState {
   return {
     id: item?.id,
     name: item?.name ?? emptyShopItemForm.name,
@@ -362,5 +362,6 @@ function getInitialFormState(item: ShopItem | null): ShopItemFormState {
     imageUrl: item?.imageUrl ?? emptyShopItemForm.imageUrl,
     price: item ? String(item.price) : emptyShopItemForm.price,
     quantity: item ? String(item.quantity) : emptyShopItemForm.quantity,
+    ...initialForm,
   };
 }

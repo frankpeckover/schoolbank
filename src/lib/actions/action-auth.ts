@@ -8,11 +8,14 @@ import {
   canViewStudentBalances,
   isStaff,
 } from "@/lib/auth/permissions";
+import { assertSameOriginRequest } from "@/lib/security/origin";
 import { SessionService } from "@/services/session-service";
 
 const sessionService = new SessionService();
 
 export async function requireUser() {
+  await assertSameOriginRequest();
+
   const currentUser = await sessionService.getCurrentUser();
 
   if (!currentUser) {

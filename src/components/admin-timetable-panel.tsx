@@ -14,6 +14,7 @@ import {
   emptyTimetableFilters,
   type TimetableFiltersState,
 } from "@/components/admin-timetable/timetable-types";
+import { AdminPageSection } from "@/components/ui/admin-page-section";
 import { IconButton } from "@/components/ui/icon-button";
 import {
   FileDownIcon,
@@ -175,6 +176,20 @@ export function AdminTimetablePanel() {
     setError(null);
   }
 
+  function handleDuplicateEntry(entry: TimetableEntry) {
+    setEditingEntry(null);
+    setForm({
+      dayOfWeek: entry.dayOfWeek,
+      endTime: entry.endTime,
+      groupId: entry.groupId,
+      startTime: entry.startTime,
+      teacherUserId: entry.teacherUserId,
+    });
+    setIsCreateModalOpen(true);
+    setMessage(null);
+    setError(null);
+  }
+
   function handleNewEntryToggle() {
     setEditingEntry(null);
     setForm(emptyEntryForm);
@@ -202,7 +217,7 @@ export function AdminTimetablePanel() {
   }
 
   return (
-    <section className="theme-panel motion-panel mt-5 p-4">
+    <AdminPageSection>
       <PanelToolbar
         actions={
           <>
@@ -319,11 +334,12 @@ export function AdminTimetablePanel() {
           <TimetableEntryTable
             entries={filteredEntries}
             onDeleteEntry={handleDeleteEntry}
+            onDuplicateEntry={handleDuplicateEntry}
             onEditEntry={handleEditEntry}
           />
         )}
       </div>
-    </section>
+    </AdminPageSection>
   );
 }
 

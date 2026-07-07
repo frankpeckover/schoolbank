@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   getStudentGoal,
   saveStudentGoal,
@@ -22,6 +22,7 @@ const progressRingRadius =
 const progressRingCircumference = 2 * Math.PI * progressRingRadius;
 const progressCompletePercent = 100;
 const emptyProgressPercent = 0;
+const progressRingAnimationDurationMs = 700;
 
 export function StudentGoalCard({
   balance,
@@ -73,6 +74,9 @@ export function StudentGoalCard({
     () => getGoalProgressPercent(balance, goal?.targetAmount ?? 0),
     [balance, goal?.targetAmount],
   );
+  const remainingGoalAmount = goal
+    ? Math.max(0, goal.targetAmount - balance)
+    : 0;
 
   async function handleSaveGoal(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -150,8 +154,9 @@ export function StudentGoalCard({
             {goal.title}
           </p>
           <p className="mt-1 text-sm font-semibold text-text-muted">
-            {formatCurrencyAmount(balance, currencyName)} of{" "}
-            {formatCurrencyAmount(goal.targetAmount, currencyName)}
+            {"You're "}
+            {formatCurrencyAmount(remainingGoalAmount, currencyName)}
+            {" away from the goal!"}
           </p>
         </div>
       )}
@@ -206,9 +211,11 @@ function GoalProgressRing({
 }: {
   progressPercent: number;
 }) {
+  const animatedProgressPercent = useAnimatedProgressPercent(progressPercent);
   const strokeOffset =
     progressRingCircumference -
-    (progressPercent / progressCompletePercent) * progressRingCircumference;
+    (animatedProgressPercent / progressCompletePercent) *
+      progressRingCircumference;
 
   return (
     <div className="relative h-40 w-40">
@@ -236,11 +243,14 @@ function GoalProgressRing({
           strokeDashoffset={strokeOffset}
           strokeLinecap="round"
           strokeWidth={progressRingStrokeWidth}
+          style={{
+            transition: `stroke-dashoffset ${progressRingAnimationDurationMs}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+          }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-3xl font-semibold text-foreground">
-          {Math.round(progressPercent)}%
+          {Math.round(animatedProgressPercent)}%
         </span>
         <span className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-text-kicker">
           saved
@@ -248,6 +258,27 @@ function GoalProgressRing({
       </div>
     </div>
   );
+}
+
+function useAnimatedProgressPercent(progressPercent: number) {
+  const [animatedProgressPercent, setAnimatedProgressPercent] = useState(
+    emptyProgressPercent,
+  );
+  const animationFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    animationFrameRef.current = requestAnimationFrame(() => {
+      setAnimatedProgressPercent(progressPercent);
+    });
+
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [progressPercent]);
+
+  return animatedProgressPercent;
 }
 
 function getGoalProgressPercent(balance: number, targetAmount: number) {

@@ -1,4 +1,5 @@
 import type { ActionResult } from "@/lib/action-results";
+import { getRequiredServerEnvInProduction } from "@/lib/server-env";
 
 type SendEmailInput = {
   html: string;
@@ -13,12 +14,15 @@ const defaultFromAddress = "SchoolBank <onboarding@resend.dev>";
 export class EmailService {
   async sendEmail(input: SendEmailInput): Promise<ActionResult> {
     const apiKey = process.env.RESEND_API_KEY;
-    const from = process.env.EMAIL_FROM ?? defaultFromAddress;
+    const from = getRequiredServerEnvInProduction(
+      "EMAIL_FROM",
+      defaultFromAddress,
+    );
 
     if (!apiKey) {
       return {
         ok: false,
-        message: "Email is not configured. Add RESEND_API_KEY to .env.local.",
+        message: "Email is not configured. Add RESEND_API_KEY to the server environment.",
       };
     }
 

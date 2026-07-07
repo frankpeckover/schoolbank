@@ -2,15 +2,23 @@
 
 import { useState, type FormEvent } from "react";
 import { createGroup } from "@/lib/actions";
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 
 type GroupModalProps = {
+  initialDescription?: string;
+  initialName?: string;
   onClose: () => void;
   onSaved: () => void;
 };
 
-export function GroupModal({ onClose, onSaved }: GroupModalProps) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+export function GroupModal({
+  initialDescription = "",
+  initialName = "",
+  onClose,
+  onSaved,
+}: GroupModalProps) {
+  const [name, setName] = useState(initialName);
+  const [description, setDescription] = useState(initialDescription);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -38,19 +46,13 @@ export function GroupModal({ onClose, onSaved }: GroupModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
       <div className="theme-panel motion-pop w-full max-w-lg p-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <h3 className="text-2xl font-semibold">New Group</h3>
             <p className="mt-1 text-sm text-text-muted">
               Create a student group for filters and reporting.
             </p>
           </div>
-          <button
-            className="rounded-md border border-button-border px-3 py-2 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
-            onClick={onClose}
-            type="button"
-          >
-            Close
-          </button>
+          <ModalCloseButton onClick={onClose} />
         </div>
 
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>

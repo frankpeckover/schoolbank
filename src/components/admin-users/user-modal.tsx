@@ -12,6 +12,7 @@ import { PasswordResetSection } from "@/components/admin-users/password-reset-se
 import { StudentGroupsSection } from "@/components/admin-users/student-groups-section";
 import { UserFormFields } from "@/components/admin-users/user-form-fields";
 import { UserModalActions } from "@/components/admin-users/user-modal-actions";
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import {
   emptyUserForm,
   type UserFormState,
@@ -24,13 +25,14 @@ import type {
 import type { UserGroupItem } from "@/services/group-service";
 
 export function UserModal({
+  initialForm,
   mode,
   onClose,
   onSaved,
   user,
 }: UserModalProps) {
   const [form, setForm] = useState<UserFormState>(() =>
-    getInitialFormState(mode, user),
+    getInitialFormState(mode, user, initialForm),
   );
   const [newPassword, setNewPassword] = useState("");
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
@@ -160,7 +162,7 @@ export function UserModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
       <div className="theme-panel motion-pop w-full max-w-lg p-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <h3 className="text-2xl font-semibold">
               {mode === "create" ? "New User" : "Edit User"}
             </h3>
@@ -170,13 +172,7 @@ export function UserModal({
                 : "Update user details and access."}
             </p>
           </div>
-          <button
-            className="rounded-md border border-button-border px-3 py-2 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
-            onClick={onClose}
-            type="button"
-          >
-            Close
-          </button>
+          <ModalCloseButton onClick={onClose} />
         </div>
 
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
@@ -228,6 +224,7 @@ export function UserModal({
 function getInitialFormState(
   mode: UserModalProps["mode"],
   user?: UserListItem,
+  initialForm?: Partial<UserFormState>,
 ): UserFormState {
   if (mode === "edit" && user) {
     return {
@@ -243,7 +240,10 @@ function getInitialFormState(
     };
   }
 
-  return emptyUserForm;
+  return {
+    ...emptyUserForm,
+    ...initialForm,
+  };
 }
 
 function getUpdateUserInput(form: UserFormState): UpdateUserInput {

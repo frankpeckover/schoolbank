@@ -15,21 +15,22 @@ type SessionUserRow = {
 const sessionCookieName = "schoolbank_session";
 const sessionTokenBytes = 32;
 const sessionLengthDays = 7;
+const idleSessionTimeoutHours = 8;
 const hoursPerDay = 24;
 const minutesPerHour = 60;
 const secondsPerMinute = 60;
 const millisecondsPerSecond = 1000;
+const sessionLengthSeconds =
+  sessionLengthDays * hoursPerDay * minutesPerHour * secondsPerMinute;
 const sessionLengthMilliseconds =
-  sessionLengthDays *
-  hoursPerDay *
-  minutesPerHour *
-  secondsPerMinute *
-  millisecondsPerSecond;
+  sessionLengthSeconds * millisecondsPerSecond;
 
 export class SessionService {
   async createSession(userId: string) {
     const token = randomBytes(sessionTokenBytes).toString("base64url");
     const expiresAt = new Date(Date.now() + sessionLengthMilliseconds);
+
+    await deleteExpiredOrIdleSessions();
 
     await db.query(
       `
@@ -43,6 +44,7 @@ export class SessionService {
     cookieStore.set(sessionCookieName, token, {
       expires: expiresAt,
       httpOnly: true,
+      maxAge: sessionLengthSeconds,
       path: "/",
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
@@ -58,6 +60,7 @@ export class SessionService {
     }
 
     try {
+      const tokenHash = hashSessionToken(token);
       const result = await db.query<SessionUserRow>(
         `
           select
@@ -72,15 +75,17 @@ export class SessionService {
           join roles on roles.id = users.role_id
           where user_sessions.token_hash = $1
             and user_sessions.expires_at > now()
+            and user_sessions.last_seen_at > now() - ($2::int * interval '1 hour')
             and users.is_active = true
             and roles.is_active = true
           limit 1
         `,
-        [hashSessionToken(token)],
+        [tokenHash, idleSessionTimeoutHours],
       );
       const user = result.rows[0];
 
       if (!user) {
+        await deleteSessionToken(tokenHash);
         return null;
       }
 
@@ -90,7 +95,7 @@ export class SessionService {
           set last_seen_at = now()
           where token_hash = $1
         `,
-        [hashSessionToken(token)],
+        [tokenHash],
       );
 
       return mapSessionUserRow(user);
@@ -120,6 +125,24 @@ export class SessionService {
 
     cookieStore.delete(sessionCookieName);
   }
+}
+
+async function deleteExpiredOrIdleSessions() {
+  await db.query(`
+    delete from user_sessions
+    where expires_at <= now()
+       or last_seen_at <= now() - ($1::int * interval '1 hour')
+  `, [idleSessionTimeoutHours]);
+}
+
+async function deleteSessionToken(tokenHash: string) {
+  await db.query(
+    `
+      delete from user_sessions
+      where token_hash = $1
+    `,
+    [tokenHash],
+  );
 }
 
 function hashSessionToken(token: string) {

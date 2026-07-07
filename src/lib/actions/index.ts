@@ -17,6 +17,9 @@ export {
   searchCreditAnalyticsScopes,
 } from "@/lib/actions/credit-analytics-actions";
 export {
+  exportSchoolData,
+} from "@/lib/actions/data-export-actions";
+export {
   addStudentsToGroup,
   addStudentToGroup,
   createGroup,
@@ -39,8 +42,17 @@ export {
   saveStudentGoal,
 } from "@/lib/actions/student-goal-actions";
 export {
+  listEnabledSsoProviders,
+  listSsoProviderSettings,
+  updateSsoProvider,
+} from "@/lib/actions/sso-actions";
+export {
   getTeacherDashboardSummary,
 } from "@/lib/actions/teacher-dashboard-actions";
+export {
+  getTransactionPresets,
+  updateTransactionPresets,
+} from "@/lib/actions/transaction-preset-actions";
 export {
   createTimetableEntry,
   deleteTimetableEntry,

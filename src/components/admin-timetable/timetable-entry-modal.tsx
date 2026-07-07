@@ -3,6 +3,7 @@ import {
   SelectField,
   TimeField,
 } from "@/components/admin-timetable/timetable-fields";
+import { ModalShell } from "@/components/ui/modal-shell";
 import { XIcon } from "@/components/ui/icons";
 import type { GroupListItem } from "@/services/group-service";
 import type {
@@ -30,34 +31,29 @@ export function TimetableEntryModal({
   teachers: TimetableTeacher[];
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-6">
-      <div className="theme-panel motion-pop max-h-full w-full max-w-2xl overflow-y-auto p-5 shadow-lg">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h3 className="text-xl font-semibold">
-              {mode === "edit" ? "Edit Timetable Entry" : "New Timetable Entry"}
-            </h3>
-          </div>
-          <button
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-button-border text-text-control transition hover:bg-surface-hover"
-            onClick={onCancel}
-            type="button"
-          >
-            <XIcon />
-          </button>
-        </div>
-        <TimetableEntryForm
-          form={form}
-          groups={groups}
-          isSaving={isSaving}
-          mode={mode}
-          onCancel={onCancel}
-          onChange={onChange}
-          onSubmit={onSubmit}
-          teachers={teachers}
-        />
-      </div>
-    </div>
+    <ModalShell
+      actions={
+        <button
+          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-button-border text-text-control transition hover:bg-surface-hover"
+          onClick={onCancel}
+          type="button"
+        >
+          <XIcon />
+        </button>
+      }
+      title={mode === "edit" ? "Edit Timetable Entry" : "New Timetable Entry"}
+    >
+      <TimetableEntryForm
+        form={form}
+        groups={groups}
+        isSaving={isSaving}
+        mode={mode}
+        onCancel={onCancel}
+        onChange={onChange}
+        onSubmit={onSubmit}
+        teachers={teachers}
+      />
+    </ModalShell>
   );
 }
 

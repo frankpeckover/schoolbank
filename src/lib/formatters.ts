@@ -6,12 +6,27 @@ export function formatDateTime(value: string) {
 }
 
 export function formatCurrencyAmount(amount: number, currencyName: string) {
-  return `${Math.abs(amount)} ${currencyName}`;
+  return `${formatAmount(amount)} ${currencyName}`;
 }
 
 export function formatSignedCurrencyAmount(
   amount: number,
   currencyName: string,
 ) {
-  return `${amount > 0 ? "+" : ""}${amount} ${currencyName}`;
+  return `${formatSignedAmount(amount)} ${currencyName}`;
+}
+
+export function formatAmount(amount: number) {
+  return new Intl.NumberFormat("en-AU", {
+    maximumFractionDigits: 0,
+  }).format(Math.abs(amount));
+}
+
+export function formatSignedAmount(amount: number) {
+  const formattedAmount = new Intl.NumberFormat("en-AU", {
+    maximumFractionDigits: 0,
+    signDisplay: "exceptZero",
+  }).format(amount);
+
+  return formattedAmount;
 }

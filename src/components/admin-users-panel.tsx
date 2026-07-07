@@ -12,12 +12,14 @@ import { UserImportModal } from "@/components/admin-users/user-import-modal";
 import { UserModal } from "@/components/admin-users/user-modal";
 import { UsersTable } from "@/components/admin-users/users-table";
 import { EmptyState } from "@/components/ui/empty-state";
+import { AdminPageSection } from "@/components/ui/admin-page-section";
 import { IconButton } from "@/components/ui/icon-button";
 import { FileDownIcon, FileUpIcon, FilterIcon, PlusIcon, UsersIcon } from "@/components/ui/icons";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
 import { downloadCsv } from "@/lib/client-csv";
 import { formatDateTime } from "@/lib/formatters";
 import type { UserListItem } from "@/services/user-service";
+import type { UserFormState } from "@/components/admin-users/user-modal-types";
 
 type AdminUsersPanelProps = {
   schoolName: string;
@@ -29,6 +31,8 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [filters, setFilters] = useState<UserFilters>(emptyFilters);
   const [showInactiveUsers, setShowInactiveUsers] = useState(false);
+  const [duplicatingUserForm, setDuplicatingUserForm] =
+    useState<Partial<UserFormState> | null>(null);
   const [editingUser, setEditingUser] = useState<UserListItem | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [areFiltersOpen, setAreFiltersOpen] = useState(false);
@@ -82,10 +86,22 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
   }, []);
 
   function handleUserSaved(messageText: string) {
+    setDuplicatingUserForm(null);
     setEditingUser(null);
     setIsCreateModalOpen(false);
     setMessage(messageText);
     refreshUsers();
+  }
+
+  function handleDuplicateUser(user: UserListItem) {
+    setEditingUser(null);
+    setDuplicatingUserForm({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      profileImageUrl: user.profileImageUrl,
+      role: user.role,
+    });
+    setIsCreateModalOpen(true);
   }
 
   function handleUsersImported(messageText: string, shouldClose = true) {
@@ -106,10 +122,7 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
   const visibleUsers = filteredUsers.slice(0, visibleUserLimit);
 
   return (
-    <section
-      aria-label={`${schoolName} users`}
-      className="theme-panel motion-panel mt-5 p-5"
-    >
+    <AdminPageSection ariaLabel={`${schoolName} users`}>
       <PanelToolbar
         actions={
           <>
@@ -181,6 +194,7 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
         )}
         {!isLoading && !error && filteredUsers.length > 0 && (
           <UsersTable
+            onDuplicate={handleDuplicateUser}
             onEdit={setEditingUser}
             users={visibleUsers}
           />
@@ -200,8 +214,12 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
 
       {isCreateModalOpen && (
         <UserModal
+          initialForm={duplicatingUserForm ?? undefined}
           mode="create"
-          onClose={() => setIsCreateModalOpen(false)}
+          onClose={() => {
+            setDuplicatingUserForm(null);
+            setIsCreateModalOpen(false);
+          }}
           onSaved={() => handleUserSaved("User created.")}
         />
       )}
@@ -222,7 +240,7 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
           user={editingUser}
         />
       )}
-    </section>
+    </AdminPageSection>
   );
 }
 

@@ -1,6 +1,7 @@
 import { IconButton } from "@/components/ui/icon-button";
 import {
   CheckIcon,
+  CopyIcon,
   EyeIcon,
   PackageIcon,
   PencilIcon,
@@ -14,6 +15,7 @@ type ShopItemCardProps = {
   canManage: boolean;
   currencyName: string;
   item: ShopItem;
+  onDuplicate?: (item: ShopItem) => void;
   onEdit: (item: ShopItem) => void;
   onPurchase: (itemId: string) => void;
   onRemove: (itemId: string) => void;
@@ -25,6 +27,7 @@ export function ShopItemCard({
   canManage,
   currencyName,
   item,
+  onDuplicate,
   onEdit,
   onPurchase,
   onRemove,
@@ -79,6 +82,7 @@ export function ShopItemCard({
           canManage={canManage}
           currencyName={currencyName}
           item={item}
+          onDuplicate={onDuplicate}
           onEdit={onEdit}
           onPurchase={onPurchase}
           onRemove={onRemove}
@@ -115,6 +119,7 @@ function ShopItemActions({
   canManage,
   item,
   onEdit,
+  onDuplicate,
   onPurchase,
   onRemove,
   onView,
@@ -157,6 +162,11 @@ function ShopItemActions({
       <IconButton label={`View ${item.name}`} onClick={() => onView(item)}>
         <EyeIcon />
       </IconButton>
+      {onDuplicate && (
+        <IconButton label={`Duplicate ${item.name}`} onClick={() => onDuplicate(item)}>
+          <CopyIcon />
+        </IconButton>
+      )}
       <IconButton label={`Edit ${item.name}`} onClick={() => onEdit(item)}>
         <PencilIcon />
       </IconButton>

@@ -1,9 +1,17 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { loginUser, requestPasswordReset } from "@/lib/actions";
+import { FormEvent, useEffect, useState } from "react";
+import {
+  listEnabledSsoProviders,
+  loginUser,
+  requestPasswordReset,
+} from "@/lib/actions";
 import { appConfig } from "@/lib/app-config";
 import { type SessionUser } from "@/lib/session";
+import type { PublicSsoProvider } from "@/lib/sso-types";
+import { AppFooter } from "@/components/ui/app-footer";
+import { GlobalMaintenanceBanner } from "@/components/ui/global-maintenance-banner";
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 
 type LoginCardProps = {
   onLogin: (user: SessionUser) => void;
@@ -15,6 +23,58 @@ export function LoginCard({ onLogin }: LoginCardProps) {
   const [error, setError] = useState<string | null>(null);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [ssoProviders, setSsoProviders] = useState<PublicSsoProvider[]>([]);
+
+  useEffect(() => {
+    const ssoStatus = new URLSearchParams(window.location.search).get("sso");
+
+    if (!ssoStatus) {
+      return;
+    }
+
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete("sso");
+    window.history.replaceState({}, "", nextUrl);
+
+    if (ssoStatus === "account_required") {
+      setMessage(
+        "You were authenticated successfully. Please ask an admin to create your account before signing in.",
+      );
+      return;
+    }
+
+    if (ssoStatus === "sso_unavailable") {
+      setError("That SSO provider is not currently enabled for this school.");
+      return;
+    }
+
+    setError(getSsoErrorMessage(ssoStatus));
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadSsoProviders() {
+      try {
+        const providers = await listEnabledSsoProviders();
+
+        if (isMounted) {
+          setSsoProviders(providers);
+        }
+      } catch {
+        if (isMounted) {
+          setSsoProviders([]);
+        }
+      }
+    }
+
+    loadSsoProviders();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -23,6 +83,7 @@ export function LoginCard({ onLogin }: LoginCardProps) {
     const result = await loginUser(username, password);
 
     if (!result.ok) {
+      setMessage(null);
       setError(result.message);
       setIsSubmitting(false);
       return;
@@ -34,8 +95,9 @@ export function LoginCard({ onLogin }: LoginCardProps) {
   }
 
   return (
-    <main className="min-h-screen bg-background px-4 py-5 text-foreground sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-2.5rem)] w-full max-w-6xl content-center gap-5 sm:gap-8 lg:grid-cols-[1fr_420px] lg:items-center">
+    <main className="flex min-h-screen flex-col bg-background text-foreground">
+      <GlobalMaintenanceBanner />
+      <div className="mx-auto grid w-full max-w-6xl flex-1 content-center gap-5 px-4 py-5 sm:gap-8 sm:px-6 lg:grid-cols-[1fr_420px] lg:items-center lg:px-8">
         <div className="max-w-2xl">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-text-kicker">
             {appConfig.name}
@@ -94,6 +156,11 @@ export function LoginCard({ onLogin }: LoginCardProps) {
                 {error}
               </p>
             )}
+            {message && (
+              <p className="rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
+                {message}
+              </p>
+            )}
 
             <button
               className="w-full rounded-md bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70"
@@ -102,6 +169,10 @@ export function LoginCard({ onLogin }: LoginCardProps) {
             >
               {isSubmitting ? "Signing in..." : "Sign in"}
             </button>
+
+            {ssoProviders.length > 0 && (
+              <SsoLoginOptions providers={ssoProviders} />
+            )}
 
             <div className="text-center">
               <button
@@ -117,10 +188,68 @@ export function LoginCard({ onLogin }: LoginCardProps) {
         </section>
       </div>
 
+      <div className="mx-auto w-full max-w-6xl px-4 pb-5 sm:px-6 lg:px-8">
+        <AppFooter />
+      </div>
+
       {isForgotPasswordOpen && (
         <ForgotPasswordModal onClose={() => setIsForgotPasswordOpen(false)} />
       )}
     </main>
+  );
+}
+
+function getSsoErrorMessage(status: string) {
+  const messages: Record<string, string> = {
+    expired_token: "SSO sign-in failed because the provider token expired.",
+    email_domain_mismatch: "SSO sign-in failed because the account email domain does not match the allowed domains in SSO settings.",
+    hosted_domain_missing: "SSO sign-in failed because Google did not return a Workspace domain.",
+    hosted_domain_mismatch: "SSO sign-in failed because the Google Workspace domain does not match this school.",
+    invalid_audience: "SSO sign-in failed because the client ID did not match.",
+    invalid_callback_values: "SSO sign-in failed because the provider callback was not valid.",
+    invalid_issuer: "SSO sign-in failed because the issuer URL did not match the provider.",
+    invalid_nonce: "SSO sign-in failed because the login session could not be verified. Try again.",
+    missing_callback_values: "SSO sign-in failed because the provider callback was incomplete.",
+    missing_email: "SSO sign-in failed because the provider did not return an email address.",
+    missing_id_token: "SSO sign-in failed because the provider did not return an ID token.",
+    missing_verified_email: "SSO sign-in failed because the provider did not return a verified email.",
+    provider_error: "The SSO provider returned an error before sign-in completed.",
+    signing_key_not_found: "SSO sign-in failed because the provider signing key could not be found.",
+    signing_keys_unavailable: "SSO sign-in failed because provider signing keys could not be loaded.",
+    state_mismatch: "SSO sign-in failed because the login session could not be matched. Try again.",
+    tenant_mismatch: "SSO sign-in failed because the Microsoft tenant did not match this school.",
+    token_exchange_failed: "SSO sign-in failed during the provider token exchange.",
+    unknown_provider: "That SSO provider is not recognised.",
+    unverified_email: "SSO sign-in failed because the provider email is not verified.",
+    unsupported_token_algorithm: "SSO sign-in failed because the provider token algorithm is not supported.",
+  };
+
+  return messages[status] ?? "SSO sign-in could not be completed.";
+}
+
+function SsoLoginOptions({ providers }: { providers: PublicSsoProvider[] }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <span className="h-px flex-1 bg-border-subtle" />
+        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-text-muted">
+          or
+        </span>
+        <span className="h-px flex-1 bg-border-subtle" />
+      </div>
+
+      <div className="grid gap-2">
+        {providers.map((provider) => (
+          <a
+            className="block w-full rounded-md border border-border bg-surface px-4 py-3 text-center text-sm font-semibold text-text-control transition hover:bg-surface-muted"
+            href={`/auth/sso/${provider.providerType}`}
+            key={provider.providerType}
+          >
+            Sign in with {provider.displayName}
+          </a>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -152,19 +281,13 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
       <div className="theme-panel motion-pop w-full max-w-md p-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <h2 className="text-2xl font-semibold">Reset password</h2>
             <p className="mt-1 text-sm text-text-muted">
               Enter your username or email and we&apos;ll send a reset link.
             </p>
           </div>
-          <button
-            className="rounded-md border border-button-border px-3 py-2 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
-            onClick={onClose}
-            type="button"
-          >
-            Close
-          </button>
+          <ModalCloseButton onClick={onClose} />
         </div>
 
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>

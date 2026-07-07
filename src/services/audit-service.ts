@@ -34,10 +34,15 @@ type AuditLogRow = {
 };
 
 const adminAuditActionPrefixes = [
+  "auth.",
+  "data_export.",
+  "finance_api.",
   "school_info.",
   "shop_item.",
+  "sso_provider.",
   "student_group.",
   "timetable_entry.",
+  "transaction_presets.",
   "user.",
 ];
 

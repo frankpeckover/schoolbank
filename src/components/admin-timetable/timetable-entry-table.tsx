@@ -1,16 +1,18 @@
 import { weekDays } from "@/components/admin-timetable/timetable-constants";
 import { IconButton } from "@/components/ui/icon-button";
-import { PencilIcon, TrashIcon } from "@/components/ui/icons";
+import { CopyIcon, PencilIcon, TrashIcon } from "@/components/ui/icons";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { TimetableEntry } from "@/services/timetable-service";
 
 export function TimetableEntryTable({
   entries,
   onDeleteEntry,
+  onDuplicateEntry,
   onEditEntry,
 }: {
   entries: TimetableEntry[];
   onDeleteEntry: (entry: TimetableEntry) => void;
+  onDuplicateEntry: (entry: TimetableEntry) => void;
   onEditEntry: (entry: TimetableEntry) => void;
 }) {
   return (
@@ -21,6 +23,7 @@ export function TimetableEntryTable({
             entry={entry}
             key={entry.id}
             onDeleteEntry={onDeleteEntry}
+            onDuplicateEntry={onDuplicateEntry}
             onEditEntry={onEditEntry}
           />
         ))}
@@ -55,6 +58,7 @@ export function TimetableEntryTable({
                 <TimetableActions
                   entry={entry}
                   onDeleteEntry={onDeleteEntry}
+                  onDuplicateEntry={onDuplicateEntry}
                   onEditEntry={onEditEntry}
                 />
               </td>
@@ -69,10 +73,12 @@ export function TimetableEntryTable({
 function TimetableEntryMobileRow({
   entry,
   onDeleteEntry,
+  onDuplicateEntry,
   onEditEntry,
 }: {
   entry: TimetableEntry;
   onDeleteEntry: (entry: TimetableEntry) => void;
+  onDuplicateEntry: (entry: TimetableEntry) => void;
   onEditEntry: (entry: TimetableEntry) => void;
 }) {
   return (
@@ -87,6 +93,7 @@ function TimetableEntryMobileRow({
         <TimetableActions
           entry={entry}
           onDeleteEntry={onDeleteEntry}
+          onDuplicateEntry={onDuplicateEntry}
           onEditEntry={onEditEntry}
         />
       </div>
@@ -102,16 +109,24 @@ function TimetableEntryMobileRow({
 function TimetableActions({
   entry,
   onDeleteEntry,
+  onDuplicateEntry,
   onEditEntry,
 }: {
   entry: TimetableEntry;
   onDeleteEntry: (entry: TimetableEntry) => void;
+  onDuplicateEntry: (entry: TimetableEntry) => void;
   onEditEntry: (entry: TimetableEntry) => void;
 }) {
   return (
     <div className="flex gap-2">
       <IconButton label="Edit timetable entry" onClick={() => onEditEntry(entry)}>
         <PencilIcon />
+      </IconButton>
+      <IconButton
+        label="Duplicate timetable entry"
+        onClick={() => onDuplicateEntry(entry)}
+      >
+        <CopyIcon />
       </IconButton>
       <IconButton
         label="Delete timetable entry"

@@ -4,6 +4,8 @@ import type { ActionResult } from "@/lib/action-results";
 import { appConfig } from "@/lib/app-config";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/passwords";
+import { validateNewPassword } from "@/lib/security/password-policy";
+import { getRequiredServerEnvInProduction } from "@/lib/server-env";
 import { AuditService } from "@/services/audit-service";
 import { EmailService } from "@/services/email-service";
 
@@ -135,11 +137,10 @@ export class PasswordResetService {
       };
     }
 
-    if (newPassword.length < 8) {
-      return {
-        ok: false,
-        message: "New password must be at least 8 characters.",
-      };
+    const passwordPolicy = validateNewPassword(newPassword);
+
+    if (!passwordPolicy.ok) {
+      return passwordPolicy;
     }
 
     const client = await db.connect();
@@ -179,6 +180,7 @@ export class PasswordResetService {
         `,
         [passwordHash, resetToken.user_id],
       );
+      await deleteUserSessions(client, resetToken.user_id);
       await client.query(
         `
           update password_reset_tokens
@@ -237,12 +239,25 @@ async function expireExistingTokens(client: PoolClient, userId: string) {
   );
 }
 
+async function deleteUserSessions(client: PoolClient, userId: string) {
+  await client.query(
+    `
+      delete from user_sessions
+      where user_id = $1
+    `,
+    [userId],
+  );
+}
+
 function hashResetToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
 function buildResetUrl(token: string) {
-  const baseUrl = process.env.APP_BASE_URL ?? "http://localhost:3000";
+  const baseUrl = getRequiredServerEnvInProduction(
+    "APP_BASE_URL",
+    "http://localhost:3000",
+  );
   const resetUrl = new URL("/reset-password", baseUrl);
   resetUrl.searchParams.set("token", token);
 

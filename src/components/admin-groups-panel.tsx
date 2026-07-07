@@ -17,6 +17,7 @@ import { GroupImportModal } from "@/components/admin-groups/group-import-modal";
 import { GroupListPanel } from "@/components/admin-groups/group-list-panel";
 import { GroupModal } from "@/components/admin-groups/group-modal";
 import { GroupsPageHeader } from "@/components/admin-groups/groups-page-header";
+import { AdminPageSection } from "@/components/ui/admin-page-section";
 import { downloadCsv } from "@/lib/client-csv";
 import { formatDateTime } from "@/lib/formatters";
 import type {
@@ -39,6 +40,8 @@ export function AdminGroupsPanel() {
   const [showInactiveGroups, setShowInactiveGroups] = useState(false);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [duplicatingGroup, setDuplicatingGroup] =
+    useState<GroupListItem | null>(null);
   const [editingGroup, setEditingGroup] = useState<GroupListItem | null>(null);
   const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -181,6 +184,7 @@ export function AdminGroupsPanel() {
   }
 
   async function handleGroupCreated() {
+    setDuplicatingGroup(null);
     setIsCreateModalOpen(false);
     setMessage("Group created.");
     setError(null);
@@ -338,6 +342,7 @@ export function AdminGroupsPanel() {
     setMembers([]);
     setSelectedMemberIds([]);
     setSelectedStudentIds([]);
+    setDuplicatingGroup(null);
     setEditingGroup(null);
     setSelectedGroupId(group.id);
   }
@@ -347,8 +352,20 @@ export function AdminGroupsPanel() {
     setSelectedMemberIds([]);
     setSelectedStudentIds([]);
     setStudentQuery("");
+    setDuplicatingGroup(null);
     setEditingGroup(group);
     setSelectedGroupId(group.id);
+  }
+
+  function duplicateGroup(group: GroupListItem) {
+    setMembers([]);
+    setSelectedMemberIds([]);
+    setSelectedStudentIds([]);
+    setStudentQuery("");
+    setEditingGroup(null);
+    setSelectedGroupId("");
+    setDuplicatingGroup(group);
+    setIsCreateModalOpen(true);
   }
 
   function closeGroupDetails() {
@@ -378,14 +395,17 @@ export function AdminGroupsPanel() {
   }
 
   return (
-    <section className="theme-panel motion-panel mt-5 p-5">
+    <AdminPageSection>
       <GroupsPageHeader
         areFiltersOpen={areFiltersOpen}
         count={filteredGroups.length}
         onExportClick={() => downloadGroups(filteredGroups)}
         onFilterToggle={() => setAreFiltersOpen((isOpen) => !isOpen)}
         onImportClick={() => setIsImportModalOpen(true)}
-        onNewGroupClick={() => setIsCreateModalOpen(true)}
+        onNewGroupClick={() => {
+          setDuplicatingGroup(null);
+          setIsCreateModalOpen(true);
+        }}
         totalCount={groups.length}
       />
 
@@ -393,6 +413,7 @@ export function AdminGroupsPanel() {
         areFiltersOpen={areFiltersOpen}
         groups={filteredGroups}
         isLoading={isLoadingGroups}
+        onDuplicateGroup={duplicateGroup}
         onEditGroup={editGroup}
         onGroupSelect={selectGroup}
         onSearchChange={setGroupSearch}
@@ -424,7 +445,14 @@ export function AdminGroupsPanel() {
 
       {isCreateModalOpen && (
         <GroupModal
-          onClose={() => setIsCreateModalOpen(false)}
+          initialDescription={duplicatingGroup?.description ?? ""}
+          initialName={
+            duplicatingGroup ? `${duplicatingGroup.name} Copy` : ""
+          }
+          onClose={() => {
+            setDuplicatingGroup(null);
+            setIsCreateModalOpen(false);
+          }}
           onSaved={handleGroupCreated}
         />
       )}
@@ -459,7 +487,7 @@ export function AdminGroupsPanel() {
           onImported={handleGroupsImported}
         />
       )}
-    </section>
+    </AdminPageSection>
   );
 }
 

@@ -12,7 +12,7 @@ import type { TransactionLogItem } from "@/services/transaction-service";
 import { getSignedAmountTextClassName } from "@/lib/amount-style";
 import {
   formatDateTime,
-  formatSignedCurrencyAmount,
+  formatSignedAmount,
 } from "@/lib/formatters";
 import { matchesTransactionFilters } from "@/components/transactions/transaction-filter-utils";
 import { TransactionDetailsModal } from "@/components/transactions/transaction-details-modal";
@@ -203,7 +203,6 @@ export function TransactionLogPanel({
           <TransactionList
             canViewAllTransactions={canViewAllTransactionsForUser}
             canVoidTransactions={canVoidTransactionsForUser}
-            currencyName={currencyName}
             onDetailsClick={setViewingTransaction}
             onVoidClick={setVoidingTransaction}
             transactions={filteredTransactions}
@@ -236,14 +235,12 @@ export function TransactionLogPanel({
 function TransactionList({
   canViewAllTransactions,
   canVoidTransactions,
-  currencyName,
   onDetailsClick,
   onVoidClick,
   transactions,
 }: {
   canViewAllTransactions: boolean;
   canVoidTransactions: boolean;
-  currencyName: string;
   onDetailsClick: (transaction: TransactionLogItem) => void;
   onVoidClick: (transaction: TransactionLogItem) => void;
   transactions: TransactionLogItem[];
@@ -253,7 +250,6 @@ function TransactionList({
       <div className="grid w-full min-w-0 gap-2 md:hidden">
         {transactions.map((transaction) => (
           <TransactionMobileRow
-            currencyName={currencyName}
             key={transaction.id}
             onDetailsClick={onDetailsClick}
             transaction={transaction}
@@ -300,10 +296,8 @@ function TransactionList({
                 <td className="py-2 pr-4">
                   <TransactionStatusBadge transaction={transaction} />
                 </td>
-                <td
-                  className={`py-2 pr-4 text-right font-semibold ${getSignedAmountTextClassName(transaction.amount)}`}
-                >
-                  {formatSignedCurrencyAmount(transaction.amount, currencyName)}
+                <td className="py-2 pr-4 text-right">
+                  <TransactionAmount amount={transaction.amount} />
                 </td>
                 <td className="py-2">
                   <TransactionActions
@@ -350,19 +344,12 @@ function TransactionTableColumnGroup({
 }
 
 function TransactionMobileRow({
-  currencyName,
   onDetailsClick,
   transaction,
 }: {
-  currencyName: string;
   onDetailsClick: (transaction: TransactionLogItem) => void;
   transaction: TransactionLogItem;
 }) {
-  const amountLabel = formatSignedCurrencyAmount(
-    transaction.amount,
-    currencyName,
-  );
-
   return (
     <article className="theme-card flex w-full min-w-0 items-center justify-between gap-3 overflow-hidden p-3">
       <div className="min-w-0 flex-1 overflow-hidden">
@@ -372,11 +359,7 @@ function TransactionMobileRow({
         <p className="mt-1 truncate text-xs text-text-muted">
           {formatDateTime(transaction.createdAt)}
         </p>
-        <p
-          className={`mt-1 font-semibold ${getSignedAmountTextClassName(transaction.amount)}`}
-        >
-          {amountLabel}
-        </p>
+        <TransactionAmount amount={transaction.amount} variant="mobile" />
       </div>
       <div className="shrink-0">
         <IconButton
@@ -387,6 +370,27 @@ function TransactionMobileRow({
         </IconButton>
       </div>
     </article>
+  );
+}
+
+function TransactionAmount({
+  amount,
+  variant = "desktop",
+}: {
+  amount: number;
+  variant?: "desktop" | "mobile";
+}) {
+  const layoutClassName =
+    variant === "desktop"
+      ? "min-w-20 text-right text-base"
+      : "mt-2 text-left text-sm";
+
+  return (
+    <span
+      className={`block font-semibold tabular-nums tracking-normal ${layoutClassName} ${getSignedAmountTextClassName(amount)}`}
+    >
+      {formatSignedAmount(amount)}
+    </span>
   );
 }
 
@@ -456,6 +460,9 @@ function TransactionFilters({
             <option value="">Any type</option>
             <option value="reward">Reward</option>
             <option value="penalty">Penalty</option>
+            <option value="credit">Credit</option>
+            <option value="debit">Debit</option>
+            <option value="hold">Hold</option>
             <option value="shop_hold">Shop hold</option>
             <option value="shop_purchase">Shop purchase</option>
             <option value="shop_refund">Shop refund</option>

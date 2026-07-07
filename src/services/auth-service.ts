@@ -3,6 +3,7 @@ import { getDatabaseErrorMessage } from "@/lib/database-error-message";
 import { appConfig } from "@/lib/app-config";
 import { verifyPassword } from "@/lib/passwords";
 import type { Role, SessionUser } from "@/lib/session";
+import { AuditService } from "@/services/audit-service";
 
 type UserRow = {
   id: string;
@@ -13,6 +14,8 @@ type UserRow = {
   role: Role;
   password_hash: string;
 };
+
+const auditService = new AuditService();
 
 export type LoginResult =
   | {
@@ -59,11 +62,23 @@ export class AuthService {
       const user = result.rows[0];
 
       if (!user || !(await verifyPassword(password, user.password_hash))) {
+        await logAuthEvent({
+          action: "auth.login_failed",
+          details: { username: normalizedUsername },
+        });
+
         return {
           ok: false,
           message: "Username or password is incorrect.",
         };
       }
+
+      await logAuthEvent({
+        action: "auth.login_success",
+        actorUserId: user.id,
+        details: { username: user.username },
+        entityId: user.id,
+      });
 
       return {
         ok: true,
@@ -88,6 +103,25 @@ export class AuthService {
         ),
       };
     }
+  }
+}
+
+async function logAuthEvent(input: {
+  action: string;
+  actorUserId?: string;
+  details: Record<string, unknown>;
+  entityId?: string;
+}) {
+  try {
+    await auditService.log({
+      action: input.action,
+      actorUserId: input.actorUserId ?? null,
+      details: input.details,
+      entityId: input.entityId ?? null,
+      entityType: "auth",
+    });
+  } catch (error) {
+    console.error("Auth audit log failed", error);
   }
 }
 

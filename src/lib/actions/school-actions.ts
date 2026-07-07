@@ -10,6 +10,7 @@ import type { UpdateSchoolInfoInput } from "@/services/school-service";
 const schoolService = new SchoolService();
 
 export async function getSchoolInfo() {
+  await requireUser();
   return schoolService.getSchoolInfo();
 }
 

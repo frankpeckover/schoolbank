@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
 import {
   Bar,
   BarChart,
@@ -34,6 +33,7 @@ import {
   UsersIcon,
   WalletIcon,
 } from "@/components/ui/icons";
+import { MetricCard } from "@/components/ui/metric-card";
 import { SearchInput } from "@/components/ui/search-input";
 import {
   getCreditAnalyticsSummary,
@@ -244,7 +244,7 @@ function AnalyticsMetricGrid({
 }) {
   return (
     <section className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <AnalyticsMetricCard
+      <MetricCard
         icon={<UsersIcon />}
         label={`Active in last ${selectedWindowDays} days`}
         tone="brand"
@@ -254,7 +254,7 @@ function AnalyticsMetricGrid({
             : getLoadingMetricValue(isLoading)
         }
       />
-      <AnalyticsMetricCard
+      <MetricCard
         icon={<ShoppingBagIcon />}
         label="Active shop requests"
         tone="accent"
@@ -264,7 +264,7 @@ function AnalyticsMetricGrid({
             : getLoadingMetricValue(isLoading)
         }
       />
-      <AnalyticsMetricCard
+      <MetricCard
         icon={<WalletIcon />}
         label={`Total ${currencyName}`}
         tone="success"
@@ -274,7 +274,7 @@ function AnalyticsMetricGrid({
             : getLoadingMetricValue(isLoading)
         }
       />
-      <AnalyticsMetricCard
+      <MetricCard
         icon={<ClockIcon />}
         label="Pending holds"
         tone="neutral"
@@ -315,56 +315,6 @@ function AnalyticsWindowSelector({
       ))}
     </div>
   );
-}
-
-function AnalyticsMetricCard({
-  icon,
-  label,
-  tone,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  tone: AnalyticsMetricTone;
-  value: string;
-}) {
-  return (
-    <article className="theme-card min-w-0 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-3xl font-semibold leading-none text-foreground">
-            {value}
-          </p>
-          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.08em] text-text-kicker">
-            {label}
-          </p>
-        </div>
-        <span
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${getAnalyticsMetricToneClassName(tone)}`}
-        >
-          {icon}
-        </span>
-      </div>
-    </article>
-  );
-}
-
-type AnalyticsMetricTone = "accent" | "brand" | "neutral" | "success";
-
-function getAnalyticsMetricToneClassName(tone: AnalyticsMetricTone) {
-  if (tone === "accent") {
-    return "bg-accent-soft text-accent";
-  }
-
-  if (tone === "success") {
-    return "bg-success-soft text-success";
-  }
-
-  if (tone === "neutral") {
-    return "bg-panel-soft text-text-muted";
-  }
-
-  return "bg-brand-soft text-brand";
 }
 
 function getLoadingMetricValue(isLoading: boolean) {

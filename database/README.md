@@ -131,6 +131,26 @@ from shop_items
 order by name;
 ```
 
+## API Clients
+
+External apps use API keys stored in the school database as hashed values. Generate a key and insert SQL from the app folder:
+
+```txt
+npm run create-api-client -- --name "Shop app" --scopes balances:read,ledger:hold,ledger:void
+```
+
+The command prints the raw key once, then prints SQL you can run against the school database in DBeaver. Store the raw key in the external app, not in SchoolBank.
+
+Available scopes:
+
+```txt
+balances:read
+ledger:credit
+ledger:debit
+ledger:hold
+ledger:void
+```
+
 ## Notes
 
 - The browser never receives database credentials.

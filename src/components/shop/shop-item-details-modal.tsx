@@ -1,6 +1,7 @@
 import { formatCurrencyAmount } from "@/lib/formatters";
 import type { ShopItem } from "@/services/shop-service";
 import { CheckIcon, PencilIcon, ShoppingBagIcon, TicketIcon } from "@/components/ui/icons";
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 
 type ShopItemDetailsModalProps = {
   canManage: boolean;
@@ -35,13 +36,7 @@ export function ShopItemDetailsModal({
               </span>
             )}
           </div>
-          <button
-            className="rounded-md border border-button-border px-3 py-2 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
-            onClick={onClose}
-            type="button"
-          >
-            Close
-          </button>
+          <ModalCloseButton onClick={onClose} />
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">

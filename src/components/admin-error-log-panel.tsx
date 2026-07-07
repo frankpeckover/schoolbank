@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { listErrorLog } from "@/lib/actions";
 import { formatDateTime } from "@/lib/formatters";
 import type { ErrorLogItem } from "@/services/error-log-service";
+import { AdminPageSection } from "@/components/ui/admin-page-section";
 import { IconButton } from "@/components/ui/icon-button";
 import { EyeIcon } from "@/components/ui/icons";
+import { ModalShell } from "@/components/ui/modal-shell";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
 
 export function AdminErrorLogPanel() {
@@ -44,7 +46,7 @@ export function AdminErrorLogPanel() {
   }, []);
 
   return (
-    <section className="theme-panel motion-panel mt-5 min-w-0 p-5">
+    <AdminPageSection>
       {!isLoading && !error && entries.length > 0 && (
         <PanelToolbar>
           <p className="text-sm font-semibold text-text-muted">
@@ -76,7 +78,7 @@ export function AdminErrorLogPanel() {
           onClose={() => setViewingEntry(null)}
         />
       )}
-    </section>
+    </AdminPageSection>
   );
 }
 
@@ -173,33 +175,20 @@ function ErrorLogDetailsModal({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-6">
-      <div className="theme-panel motion-pop max-h-full w-full max-w-3xl overflow-y-auto p-5 shadow-lg">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h3 className="text-xl font-semibold">Error Details</h3>
-            <p className="mt-1 text-sm text-text-muted">
-              {formatDateTime(entry.createdAt)}
-            </p>
-          </div>
-          <button
-            className="rounded-md border border-button-border px-4 py-2 text-sm font-semibold text-text-control transition hover:bg-surface-hover"
-            onClick={onClose}
-            type="button"
-          >
-            Close
-          </button>
-        </div>
+    <ModalShell
+      description={formatDateTime(entry.createdAt)}
+      maxWidthClassName="max-w-3xl"
+      onClose={onClose}
+      title="Error Details"
+    >
+      <dl className="grid gap-3 text-sm sm:grid-cols-2">
+        <ErrorDetail label="Source" value={entry.source} />
+        <ErrorDetail label="Message" value={entry.message} />
+      </dl>
 
-        <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
-          <ErrorDetail label="Source" value={entry.source} />
-          <ErrorDetail label="Message" value={entry.message} />
-        </dl>
-
-        <ErrorCodeBlock label="Context" value={JSON.stringify(entry.context, null, 2)} />
-        {entry.stack && <ErrorCodeBlock label="Stack" value={entry.stack} />}
-      </div>
-    </div>
+      <ErrorCodeBlock label="Context" value={JSON.stringify(entry.context, null, 2)} />
+      {entry.stack && <ErrorCodeBlock label="Stack" value={entry.stack} />}
+    </ModalShell>
   );
 }
 

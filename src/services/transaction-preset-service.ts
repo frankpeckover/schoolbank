@@ -1,0 +1,183 @@
+import type { PoolClient } from "pg";
+import type { ActionResult } from "@/lib/action-results";
+import { db } from "@/lib/db";
+import type { SessionUser } from "@/lib/session";
+import {
+  defaultTransactionPresets,
+  maxQuickAmounts,
+  maxQuickReasons,
+  type TransactionPresets,
+} from "@/lib/transaction-presets";
+import { AuditService } from "@/services/audit-service";
+
+export type UpdateTransactionPresetsInput = TransactionPresets;
+
+type TransactionPresetRow = {
+  amount: number | null;
+  preset_type: "amount" | "reason";
+  reason: string | null;
+};
+
+const auditService = new AuditService();
+
+export class TransactionPresetService {
+  async getPresets(): Promise<TransactionPresets> {
+    try {
+      const result = await db.query<TransactionPresetRow>(`
+        select preset_type, amount, reason
+        from transaction_presets
+        where is_active = true
+        order by preset_type, sort_order
+      `);
+
+      return normalisePresets({
+        amounts: result.rows
+          .filter((row) => row.preset_type === "amount" && row.amount)
+          .map((row) => Number(row.amount)),
+        reasons: result.rows
+          .filter((row) => row.preset_type === "reason" && row.reason)
+          .map((row) => String(row.reason)),
+      });
+    } catch (error) {
+      if (isMissingTableError(error)) {
+        return defaultTransactionPresets;
+      }
+
+      throw error;
+    }
+  }
+
+  async updatePresets(
+    currentUser: SessionUser,
+    input: UpdateTransactionPresetsInput,
+  ): Promise<ActionResult> {
+    const presets = normalisePresets(input);
+    const validation = validatePresets(presets);
+
+    if (!validation.ok) {
+      return validation;
+    }
+
+    const client = await db.connect();
+
+    try {
+      await client.query("begin");
+      await replacePresets(client, presets);
+      await auditService.logWithClient(client, {
+        action: "transaction_presets.updated",
+        actorUserId: currentUser.id,
+        details: {
+          amountCount: presets.amounts.length,
+          reasonCount: presets.reasons.length,
+        },
+        entityId: null,
+        entityType: "transaction_presets",
+      });
+      await client.query("commit");
+
+      return { ok: true };
+    } catch (error) {
+      await client.query("rollback");
+      console.error("Update transaction presets failed", error);
+
+      return {
+        ok: false,
+        message: isMissingTableError(error)
+          ? "Transaction preset table is missing. Run the latest school database setup script."
+          : "Could not save quick amounts and reasons.",
+      };
+    } finally {
+      client.release();
+    }
+  }
+}
+
+async function replacePresets(
+  client: PoolClient,
+  presets: TransactionPresets,
+) {
+  await client.query("delete from transaction_presets");
+
+  for (const [index, amount] of presets.amounts.entries()) {
+    await client.query(
+      `
+        insert into transaction_presets (
+          preset_type,
+          amount,
+          reason,
+          sort_order
+        )
+        values ('amount', $1, null, $2)
+      `,
+      [amount, index + 1],
+    );
+  }
+
+  for (const [index, reason] of presets.reasons.entries()) {
+    await client.query(
+      `
+        insert into transaction_presets (
+          preset_type,
+          amount,
+          reason,
+          sort_order
+        )
+        values ('reason', null, $1, $2)
+      `,
+      [reason, index + 1],
+    );
+  }
+}
+
+function normalisePresets(input: TransactionPresets): TransactionPresets {
+  return {
+    amounts: [...new Set(input.amounts)]
+      .map((amount) => Number(amount))
+      .filter((amount) => Number.isInteger(amount) && amount > 0)
+      .slice(0, maxQuickAmounts),
+    reasons: [...new Set(input.reasons.map((reason) => reason.trim()))]
+      .filter(Boolean)
+      .slice(0, maxQuickReasons),
+  };
+}
+
+function validatePresets(presets: TransactionPresets): ActionResult {
+  if (presets.amounts.length === 0) {
+    return {
+      ok: false,
+      message: "Enter at least one quick amount.",
+    };
+  }
+
+  if (presets.reasons.length === 0) {
+    return {
+      ok: false,
+      message: "Enter at least one quick reason.",
+    };
+  }
+
+  if (presets.amounts.length > maxQuickAmounts) {
+    return {
+      ok: false,
+      message: `Use ${maxQuickAmounts} quick amounts or fewer.`,
+    };
+  }
+
+  if (presets.reasons.length > maxQuickReasons) {
+    return {
+      ok: false,
+      message: `Use ${maxQuickReasons} quick reasons or fewer.`,
+    };
+  }
+
+  return { ok: true };
+}
+
+function isMissingTableError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "42P01"
+  );
+}

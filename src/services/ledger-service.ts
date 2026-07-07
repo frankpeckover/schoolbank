@@ -3,6 +3,9 @@ import type { PoolClient } from "pg";
 export type LedgerEntryType =
   | "reward"
   | "penalty"
+  | "credit"
+  | "debit"
+  | "hold"
   | "shop_hold"
   | "shop_purchase"
   | "shop_refund"
@@ -35,6 +38,7 @@ type LedgerEntryRow = {
   status: LedgerEntryStatus;
 };
 
+const primaryAccountName = "Primary account";
 let hasEnsuredLedgerSourceIndex = false;
 
 export class LedgerService {
@@ -58,15 +62,15 @@ export class LedgerService {
 
     const newAccount = await client.query<{ id: string }>(
       `
-        insert into accounts (user_id)
-        select users.id
+        insert into accounts (user_id, account_name)
+        select users.id, $2
         from users
         join roles on roles.id = users.role_id
         where users.id = $1
           and roles.role_key = 'student'
         returning id
       `,
-      [userId],
+      [userId, primaryAccountName],
     );
 
     const accountId = newAccount.rows[0]?.id;
@@ -158,7 +162,7 @@ export class LedgerService {
   async voidEntry(
     client: PoolClient,
     ledgerEntryId: string,
-    voidedByUserId: string,
+    voidedByUserId: string | null,
     voidReason: string,
   ) {
     const entry = await this.getLedgerEntryForUpdate(client, ledgerEntryId);
@@ -194,7 +198,7 @@ export class LedgerService {
     client: PoolClient,
     relatedEntityType: string,
     relatedEntityId: string,
-    voidedByUserId: string,
+    voidedByUserId: string | null,
     voidReason: string,
   ) {
     const result = await client.query<{ id: string }>(

@@ -4,6 +4,7 @@ import { useState, type ChangeEvent } from "react";
 import { importUsers, previewImportUsers } from "@/lib/actions";
 import { downloadCsv } from "@/lib/client-csv";
 import { parseCsvObjects } from "@/lib/csv";
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import type { Role } from "@/lib/session";
 import type {
   ImportedUserCredential,
@@ -119,7 +120,7 @@ export function UserImportModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
       <div className="theme-panel motion-pop w-full max-w-2xl p-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <h3 className="text-xl font-semibold">Import Users</h3>
             <p className="mt-1 text-sm text-text-muted">
               Upload a CSV with headers: {csvHeaders}
@@ -128,13 +129,7 @@ export function UserImportModal({
               Existing usernames or emails are skipped and reported below.
             </p>
           </div>
-          <button
-            className="rounded-md border border-button-border px-3 py-2 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
-            onClick={onClose}
-            type="button"
-          >
-            Close
-          </button>
+          <ModalCloseButton onClick={onClose} />
         </div>
 
         <div className="theme-subpanel mt-5 p-4">

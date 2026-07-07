@@ -1,13 +1,17 @@
 import { headers } from "next/headers";
 import { Pool, type PoolClient, type QueryResult, type QueryResultRow } from "pg";
+import {
+  getRequiredServerEnv,
+  getServerEnvNumber,
+} from "@/lib/server-env";
 
 type TenantDatabaseConfig = {
-  database: string | undefined;
-  host: string | undefined;
-  password: string | undefined;
+  database: string;
+  host: string;
+  password: string;
   port: number;
   slug: string;
-  user: string | undefined;
+  user: string;
 };
 
 type OrganisationDatabaseRow = {
@@ -28,6 +32,9 @@ type TenantLookup = {
 const rootDomain = process.env.SCHOOLBANK_ROOT_DOMAIN ?? "schoolbank.com";
 const localOrganisationSlug = process.env.LOCAL_ORGANISATION_SLUG ?? "local";
 const defaultPostgresPort = 5432;
+const allowOrganisationHeaderOverride =
+  process.env.NODE_ENV !== "production" ||
+  process.env.ALLOW_ORGANISATION_HEADER_OVERRIDE === "true";
 
 declare global {
   var schoolbankTenantPools: Map<string, Pool> | undefined;
@@ -85,7 +92,7 @@ async function resolveTenantLookup(): Promise<TenantLookup> {
   const overrideSlug = requestHeaders.get("x-schoolbank-org");
   const host = getHostname(requestHeaders.get("host"));
 
-  if (overrideSlug) {
+  if (overrideSlug && allowOrganisationHeaderOverride) {
     return {
       host,
       slug: normaliseSlug(overrideSlug),
@@ -148,6 +155,8 @@ async function getOrganisationDatabaseConfig(lookup: TenantLookup) {
     );
   }
 
+  validateOrganisationDatabaseConfig(organisation);
+
   return {
     database: organisation.database_name,
     host: organisation.database_host,
@@ -164,13 +173,11 @@ function getPlatformPool() {
   }
 
   const platformPool = new Pool({
-    database: process.env.PLATFORM_POSTGRES_DATABASE,
-    host: process.env.PLATFORM_POSTGRES_HOST,
-    password: process.env.PLATFORM_POSTGRES_PASSWORD,
-    port: Number(
-      process.env.PLATFORM_POSTGRES_PORT ?? defaultPostgresPort,
-    ),
-    user: process.env.PLATFORM_POSTGRES_USER,
+    database: getRequiredServerEnv("PLATFORM_POSTGRES_DATABASE"),
+    host: getRequiredServerEnv("PLATFORM_POSTGRES_HOST"),
+    password: getRequiredServerEnv("PLATFORM_POSTGRES_PASSWORD"),
+    port: getServerEnvNumber("PLATFORM_POSTGRES_PORT", defaultPostgresPort),
+    user: getRequiredServerEnv("PLATFORM_POSTGRES_USER"),
   });
 
   if (process.env.NODE_ENV !== "production") {
@@ -178,6 +185,25 @@ function getPlatformPool() {
   }
 
   return platformPool;
+}
+
+function validateOrganisationDatabaseConfig(
+  organisation: OrganisationDatabaseRow,
+) {
+  const missingFields = [
+    ["database_host", organisation.database_host],
+    ["database_name", organisation.database_name],
+    ["database_user", organisation.database_user],
+    ["database_password", organisation.database_password],
+  ]
+    .filter(([, value]) => !String(value ?? "").trim())
+    .map(([field]) => field);
+
+  if (missingFields.length > 0) {
+    throw new Error(
+      `Organisation "${organisation.slug}" is missing database settings: ${missingFields.join(", ")}.`,
+    );
+  }
 }
 
 function getTenantPools() {

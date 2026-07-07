@@ -1,21 +1,27 @@
 import { IconButton } from "@/components/ui/icon-button";
-import { PencilIcon } from "@/components/ui/icons";
+import { CopyIcon, PencilIcon } from "@/components/ui/icons";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatDateTime } from "@/lib/formatters";
 import type { UserListItem } from "@/services/user-service";
 
 type UsersTableProps = {
+  onDuplicate: (user: UserListItem) => void;
   onEdit: (user: UserListItem) => void;
   users: UserListItem[];
 };
 
-export function UsersTable({ onEdit, users }: UsersTableProps) {
+export function UsersTable({ onDuplicate, onEdit, users }: UsersTableProps) {
   return (
     <>
       <div className="grid gap-3 md:hidden">
         {users.map((user) => (
-          <UserCard key={user.id} onEdit={onEdit} user={user} />
+          <UserCard
+            key={user.id}
+            onDuplicate={onDuplicate}
+            onEdit={onEdit}
+            user={user}
+          />
         ))}
       </div>
 
@@ -47,9 +53,11 @@ export function UsersTable({ onEdit, users }: UsersTableProps) {
                 <UserStatusBadge isActive={user.isActive} />
               </td>
               <td className="py-3">
-                <IconButton label={`Edit ${user.displayName}`} onClick={() => onEdit(user)}>
-                  <PencilIcon />
-                </IconButton>
+                <UserActions
+                  onDuplicate={onDuplicate}
+                  onEdit={onEdit}
+                  user={user}
+                />
               </td>
             </tr>
           ))}
@@ -60,9 +68,11 @@ export function UsersTable({ onEdit, users }: UsersTableProps) {
 }
 
 function UserCard({
+  onDuplicate,
   onEdit,
   user,
 }: {
+  onDuplicate: (user: UserListItem) => void;
   onEdit: (user: UserListItem) => void;
   user: UserListItem;
 }) {
@@ -79,9 +89,11 @@ function UserCard({
             <p className="truncate text-sm text-text-muted">{user.username}</p>
           </div>
         </div>
-        <IconButton label={`Edit ${user.displayName}`} onClick={() => onEdit(user)}>
-          <PencilIcon />
-        </IconButton>
+        <UserActions
+          onDuplicate={onDuplicate}
+          onEdit={onEdit}
+          user={user}
+        />
       </div>
       <div className="mt-3 grid gap-2 text-sm">
         <p className="truncate text-text-muted">{user.email}</p>
@@ -94,6 +106,30 @@ function UserCard({
         </div>
       </div>
     </article>
+  );
+}
+
+function UserActions({
+  onDuplicate,
+  onEdit,
+  user,
+}: {
+  onDuplicate: (user: UserListItem) => void;
+  onEdit: (user: UserListItem) => void;
+  user: UserListItem;
+}) {
+  return (
+    <div className="flex gap-2">
+      <IconButton
+        label={`Duplicate ${user.displayName}`}
+        onClick={() => onDuplicate(user)}
+      >
+        <CopyIcon />
+      </IconButton>
+      <IconButton label={`Edit ${user.displayName}`} onClick={() => onEdit(user)}>
+        <PencilIcon />
+      </IconButton>
+    </div>
   );
 }
 

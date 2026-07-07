@@ -19,6 +19,8 @@ import { StudentDashboardPanel } from "@/components/student-dashboard-panel";
 import { TeacherDashboardPanel } from "@/components/teacher-dashboard-panel";
 import { TransactionLogPanel } from "@/components/transactions/transaction-log-panel";
 import { AppBrand } from "@/components/ui/app-brand";
+import { AppFooter } from "@/components/ui/app-footer";
+import { GlobalMaintenanceBanner } from "@/components/ui/global-maintenance-banner";
 import { getSchoolInfo } from "@/lib/actions";
 import { appConfig } from "@/lib/app-config";
 import {
@@ -92,6 +94,7 @@ export function DashboardShell({
 
   return (
     <main className={`app-shell-surface min-h-screen overflow-x-hidden bg-background text-foreground ${shellRoleClassName}`}>
+      <GlobalMaintenanceBanner />
       <div className="mx-auto flex min-h-screen w-full max-w-7xl min-w-0 flex-col overflow-x-hidden px-4 py-4 sm:px-6 lg:px-8">
         <header className="relative z-50 py-3">
           <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-3">
@@ -184,6 +187,11 @@ export function DashboardShell({
             onClose={() => setIsPasswordModalOpen(false)}
           />
         )}
+
+        <AppFooter
+          contactEmail={schoolInfo.contactEmail}
+          schoolName={schoolName}
+        />
       </div>
     </main>
   );

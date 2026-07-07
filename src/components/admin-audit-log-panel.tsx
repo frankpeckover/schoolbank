@@ -5,8 +5,10 @@ import { listAuditLog } from "@/lib/actions";
 import { downloadCsv } from "@/lib/client-csv";
 import { formatDateTime } from "@/lib/formatters";
 import type { AuditLogItem } from "@/services/audit-service";
+import { AdminPageSection } from "@/components/ui/admin-page-section";
 import { IconButton } from "@/components/ui/icon-button";
 import { EyeIcon, FileDownIcon, FilterIcon } from "@/components/ui/icons";
+import { ModalShell } from "@/components/ui/modal-shell";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
 import { SearchInput } from "@/components/ui/search-input";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
@@ -70,7 +72,7 @@ export function AdminAuditLogPanel() {
   const visibleEntries = filteredEntries.slice(0, visibleAuditLimit);
 
   return (
-    <section className="theme-panel motion-panel mt-5 min-w-0 p-5">
+    <AdminPageSection>
       <PanelToolbar
         actions={
           <>
@@ -140,7 +142,7 @@ export function AdminAuditLogPanel() {
           onClose={() => setViewingEntry(null)}
         />
       )}
-    </section>
+    </AdminPageSection>
   );
 }
 
@@ -318,39 +320,24 @@ function AuditLogDetailsModal({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-6">
-      <div className="theme-panel motion-pop max-h-full w-full max-w-2xl overflow-y-auto p-5 shadow-lg">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h3 className="text-xl font-semibold">Audit Details</h3>
-            <p className="mt-1 text-sm text-text-muted">
-              {formatDateTime(entry.createdAt)}
-            </p>
-          </div>
-          <StatusBadge
-            label={formatAction(entry.action)}
-            tone={getActionTone(entry.action)}
-          />
-        </div>
-
-        <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
-          <AuditDetail label="Action" value={formatAction(entry.action)} />
-          <AuditDetail label="Actor" value={formatActor(entry)} />
-          <AuditDetail label="Record" value={formatEntity(entry)} />
-          <AuditDetail label="Details" value={formatDetails(entry.details)} />
-        </dl>
-
-        <div className="mt-5 flex justify-end">
-          <button
-            className="rounded-md border border-button-border px-4 py-2 text-sm font-semibold text-text-control transition hover:bg-surface-hover"
-            onClick={onClose}
-            type="button"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
+    <ModalShell
+      actions={
+        <StatusBadge
+          label={formatAction(entry.action)}
+          tone={getActionTone(entry.action)}
+        />
+      }
+      description={formatDateTime(entry.createdAt)}
+      onClose={onClose}
+      title="Audit Details"
+    >
+      <dl className="grid gap-3 text-sm sm:grid-cols-2">
+        <AuditDetail label="Action" value={formatAction(entry.action)} />
+        <AuditDetail label="Actor" value={formatActor(entry)} />
+        <AuditDetail label="Record" value={formatEntity(entry)} />
+        <AuditDetail label="Details" value={formatDetails(entry.details)} />
+      </dl>
+    </ModalShell>
   );
 }
 

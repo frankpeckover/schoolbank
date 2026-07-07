@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -22,7 +22,7 @@ import {
   type BalanceTimePoint,
   type ChartTimeScale,
 } from "@/lib/chart-time-scale";
-import { formatCurrencyAmount } from "@/lib/formatters";
+import { formatAmount, formatCurrencyAmount } from "@/lib/formatters";
 import type { SessionUser } from "@/lib/session";
 import type { TransactionLogItem } from "@/services/transaction-service";
 
@@ -41,6 +41,7 @@ type BalanceTrendTooltipProps = {
 const ACTIVE_CHART_POINT_RADIUS = 6;
 const CHART_STROKE_WIDTH = 3;
 const CHART_CURSOR_WIDTH = 2;
+const BALANCE_COUNT_ANIMATION_DURATION_MS = 650;
 
 export function StudentDashboardPanel({
   currencyName,
@@ -118,7 +119,7 @@ function StudentWalletCard({
   currencyName: string;
   currentUser: SessionUser;
 }) {
-  const balanceAmount = Math.abs(balance);
+  const balanceAmount = useAnimatedWholeNumber(Math.abs(balance));
 
   return (
     <article className="dashboard-unit-2 wallet-card rounded-3xl border border-brand-soft-strong p-5 text-foreground shadow-sm transition hover:shadow-md sm:p-6">
@@ -138,7 +139,7 @@ function StudentWalletCard({
           </p>
           <p className="mt-2 flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 break-words text-brand-ink">
             <span className="wallet-balance-number text-6xl leading-none sm:text-7xl">
-              {balanceAmount}
+              {formatAmount(balanceAmount)}
             </span>
             <span className="text-lg font-semibold text-text-control sm:text-xl">
               {currencyName}
@@ -268,9 +269,66 @@ function BalanceTrendCard({
             </ResponsiveContainer>
           </div>
         )}
+        {!isLoading && chartPoints.length > 0 && (
+          <p className="mt-2 text-center text-xs font-semibold text-text-muted">
+            Shows how your balance has changed over time.
+          </p>
+        )}
       </div>
     </article>
   );
+}
+
+function useAnimatedWholeNumber(targetValue: number) {
+  const [displayValue, setDisplayValue] = useState(targetValue);
+  const currentValueRef = useRef(targetValue);
+  const animationFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+
+    const startValue = currentValueRef.current;
+    const valueDifference = targetValue - startValue;
+
+    if (valueDifference === 0) {
+      return;
+    }
+
+    const animationStart = performance.now();
+
+    function animateBalance(currentTime: number) {
+      const elapsedTime = currentTime - animationStart;
+      const progress = Math.min(
+        elapsedTime / BALANCE_COUNT_ANIMATION_DURATION_MS,
+        1,
+      );
+      const easedProgress = 1 - (1 - progress) ** 3;
+      const nextValue = Math.round(startValue + valueDifference * easedProgress);
+
+      currentValueRef.current = nextValue;
+      setDisplayValue(nextValue);
+
+      if (progress < 1) {
+        animationFrameRef.current = requestAnimationFrame(animateBalance);
+        return;
+      }
+
+      currentValueRef.current = targetValue;
+      setDisplayValue(targetValue);
+    }
+
+    animationFrameRef.current = requestAnimationFrame(animateBalance);
+
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [targetValue]);
+
+  return displayValue;
 }
 
 function BalanceTrendTooltip({

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "create-api-client": "node scripts/create-api-client-key.mjs",
     "start": "next start",
     "lint": "eslint"
   },

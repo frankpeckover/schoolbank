@@ -78,6 +78,7 @@ type TransactionLogRow = {
   voided_by_name: string | null;
   void_reason: string;
   purchase_status: ShopPurchaseStatus | null;
+  api_client_name: string | null;
 };
 
 type StudentBalanceRow = {
@@ -214,6 +215,7 @@ export class TransactionService {
           ledger_entries.void_reason,
           shop_items.name as shop_item_name,
           student_groups.name as student_group_name,
+          api_clients.name as api_client_name,
           shop_purchases.status as purchase_status
         from ledger_entries
         join accounts on accounts.id = ledger_entries.account_id
@@ -227,6 +229,9 @@ export class TransactionService {
         left join student_groups
           on ledger_entries.related_entity_type = 'student_group'
           and student_groups.id = ledger_entries.related_entity_id
+        left join api_clients
+          on ledger_entries.related_entity_type = 'api_client'
+          and api_clients.id = ledger_entries.related_entity_id
         where $1::boolean = true
           or accounts.user_id = $2
         order by ledger_entries.created_at desc
@@ -614,7 +619,7 @@ export class TransactionService {
 
   private mapTransactionRow(row: TransactionLogRow): TransactionLogItem {
     return {
-      accountName: row.account_name,
+      accountName: formatAccountName(row.account_name),
       id: row.id,
       amount: row.amount,
       createdByName: row.created_by_name,
@@ -677,6 +682,9 @@ export class TransactionService {
 function formatLedgerType(type: LedgerEntryType) {
   const labels: Record<LedgerEntryType, string> = {
     manual_adjustment: "Manual adjustment",
+    credit: "Credit",
+    debit: "Debit",
+    hold: "Hold",
     penalty: "Penalty",
     reward: "Reward",
     shop_hold: "Shop hold",
@@ -731,6 +739,10 @@ function formatSource(row: TransactionLogRow) {
     return `Group: ${row.student_group_name}`;
   }
 
+  if (row.api_client_name) {
+    return row.api_client_name;
+  }
+
   if (row.created_by_name) {
     return `Entered by ${row.created_by_name}`;
   }
@@ -743,4 +755,8 @@ function formatRelatedEntityType(entityType: string) {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function formatAccountName(accountName: string) {
+  return accountName === "Student account" ? "Primary account" : accountName;
 }

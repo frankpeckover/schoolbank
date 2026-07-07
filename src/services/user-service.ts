@@ -8,6 +8,7 @@ import {
   hashPassword,
   verifyPassword,
 } from "@/lib/passwords";
+import { validateNewPassword } from "@/lib/security/password-policy";
 import type { ActionResult } from "@/lib/action-results";
 import type { Role, SessionUser } from "@/lib/session";
 import { AuditService } from "@/services/audit-service";
@@ -165,6 +166,7 @@ type ImportedUserRow = {
 const ledgerService = new LedgerService();
 const auditService = new AuditService();
 const defaultStudentSearchLimit = 12;
+const primaryAccountName = "Primary account";
 const profileImageUploadDirectory = path.join(
   process.cwd(),
   "public",
@@ -276,6 +278,12 @@ export class UserService {
         ok: false,
         message: "Complete all user fields.",
       };
+    }
+
+    const passwordPolicy = validateNewPassword(password);
+
+    if (!passwordPolicy.ok) {
+      return passwordPolicy;
     }
 
     const client = await db.connect();
@@ -527,15 +535,15 @@ export class UserService {
 
       await client.query(
         `
-          insert into accounts (user_id)
-          select users.id
+          insert into accounts (user_id, account_name)
+          select users.id, $2
           from users
           join roles on roles.id = users.role_id
           where users.username = any($1::text[])
             and roles.role_key = 'student'
           on conflict (user_id) do nothing
         `,
-        [insertedUsers.rows.map((user) => user.username)],
+        [insertedUsers.rows.map((user) => user.username), primaryAccountName],
       );
 
       await auditService.logWithClient(client, {
@@ -725,6 +733,10 @@ export class UserService {
         removedGroupMembershipCount = await removeUserFromGroups(client, user.id);
       }
 
+      if (!user.is_active) {
+        await deleteUserSessions(client, user.id);
+      }
+
       await auditService.logWithClient(client, {
         action: "user.updated",
         actorUserId: currentUser?.id,
@@ -769,6 +781,12 @@ export class UserService {
       };
     }
 
+    const passwordPolicy = validateNewPassword(input.password);
+
+    if (!passwordPolicy.ok) {
+      return passwordPolicy;
+    }
+
     const client = await db.connect();
 
     try {
@@ -792,6 +810,8 @@ export class UserService {
           message: "User was not found.",
         };
       }
+
+      await deleteUserSessions(client, input.id);
 
       await auditService.logWithClient(client, {
         action: "user.password_reset",
@@ -826,11 +846,10 @@ export class UserService {
       };
     }
 
-    if (input.newPassword.length < 8) {
-      return {
-        ok: false,
-        message: "New password must be at least 8 characters.",
-      };
+    const passwordPolicy = validateNewPassword(input.newPassword);
+
+    if (!passwordPolicy.ok) {
+      return passwordPolicy;
     }
 
     const client = await db.connect();
@@ -875,6 +894,7 @@ export class UserService {
         `,
         [newPasswordHash, currentUser.id],
       );
+      await deleteUserSessions(client, currentUser.id);
 
       await auditService.logWithClient(client, {
         action: "user.password_changed",
@@ -929,6 +949,10 @@ export class UserService {
       const removedGroupMembershipCount = isActive
         ? 0
         : await removeUserFromGroups(client, userId);
+
+      if (!isActive) {
+        await deleteUserSessions(client, userId);
+      }
 
       await auditService.logWithClient(client, {
         action: isActive ? "user.enabled" : "user.disabled",
@@ -997,6 +1021,19 @@ async function removeUserFromGroups(
   );
 
   return result.rowCount ?? 0;
+}
+
+async function deleteUserSessions(
+  client: import("pg").PoolClient,
+  userId: string,
+) {
+  await client.query(
+    `
+      delete from user_sessions
+      where user_id = $1
+    `,
+    [userId],
+  );
 }
 
 async function prepareImportUsers(

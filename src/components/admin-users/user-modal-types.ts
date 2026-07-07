@@ -17,6 +17,7 @@ export type UserFormFieldChange = <Field extends keyof UserFormState>(
 ) => void;
 
 export type UserModalProps = {
+  initialForm?: Partial<UserFormState>;
   mode: UserModalMode;
   onClose: () => void;
   onSaved: () => void;

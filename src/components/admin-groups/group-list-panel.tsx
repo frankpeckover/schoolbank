@@ -1,5 +1,5 @@
 import { IconButton } from "@/components/ui/icon-button";
-import { EyeIcon, PencilIcon } from "@/components/ui/icons";
+import { CopyIcon, EyeIcon, PencilIcon } from "@/components/ui/icons";
 import { SearchInput } from "@/components/ui/search-input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { GroupListItem } from "@/services/group-service";
@@ -8,6 +8,7 @@ type GroupListPanelProps = {
   areFiltersOpen: boolean;
   groups: GroupListItem[];
   isLoading: boolean;
+  onDuplicateGroup: (group: GroupListItem) => void;
   onEditGroup: (group: GroupListItem) => void;
   onGroupSelect: (group: GroupListItem) => void;
   onSearchChange: (value: string) => void;
@@ -21,6 +22,7 @@ export function GroupListPanel({
   areFiltersOpen,
   groups,
   isLoading,
+  onDuplicateGroup,
   onEditGroup,
   onGroupSelect,
   onSearchChange,
@@ -50,6 +52,7 @@ export function GroupListPanel({
         {!isLoading && groups.length > 0 && (
           <GroupList
             groups={groups}
+            onDuplicateGroup={onDuplicateGroup}
             onEditGroup={onEditGroup}
             onGroupSelect={onGroupSelect}
             selectedGroupId={selectedGroupId}
@@ -102,11 +105,13 @@ function GroupFilters({
 
 function GroupList({
   groups,
+  onDuplicateGroup,
   onEditGroup,
   onGroupSelect,
   selectedGroupId,
 }: {
   groups: GroupListItem[];
+  onDuplicateGroup: (group: GroupListItem) => void;
   onEditGroup: (group: GroupListItem) => void;
   onGroupSelect: (group: GroupListItem) => void;
   selectedGroupId: string;
@@ -119,6 +124,7 @@ function GroupList({
             group={group}
             isSelected={selectedGroupId === group.id}
             key={group.id}
+            onDuplicateGroup={onDuplicateGroup}
             onEditGroup={onEditGroup}
             onGroupSelect={onGroupSelect}
           />
@@ -158,6 +164,9 @@ function GroupList({
                   <IconButton label={`View ${group.name}`} onClick={() => onGroupSelect(group)}>
                     <EyeIcon />
                   </IconButton>
+                  <IconButton label={`Duplicate ${group.name}`} onClick={() => onDuplicateGroup(group)}>
+                    <CopyIcon />
+                  </IconButton>
                   <IconButton label={`Edit ${group.name}`} onClick={() => onEditGroup(group)}>
                     <PencilIcon />
                   </IconButton>
@@ -174,11 +183,13 @@ function GroupList({
 function GroupCard({
   group,
   isSelected,
+  onDuplicateGroup,
   onEditGroup,
   onGroupSelect,
 }: {
   group: GroupListItem;
   isSelected: boolean;
+  onDuplicateGroup: (group: GroupListItem) => void;
   onEditGroup: (group: GroupListItem) => void;
   onGroupSelect: (group: GroupListItem) => void;
 }) {
@@ -203,6 +214,9 @@ function GroupCard({
         </button>
         <IconButton label={`View ${group.name}`} onClick={() => onGroupSelect(group)}>
           <EyeIcon />
+        </IconButton>
+        <IconButton label={`Duplicate ${group.name}`} onClick={() => onDuplicateGroup(group)}>
+          <CopyIcon />
         </IconButton>
         <IconButton label={`Edit ${group.name}`} onClick={() => onEditGroup(group)}>
           <PencilIcon />

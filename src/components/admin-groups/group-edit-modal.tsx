@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { updateGroup } from "@/lib/actions";
 import { GroupMemberManagement } from "@/components/admin-groups/group-member-management";
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import type {
   GroupListItem,
   GroupMemberItem,
@@ -80,19 +81,13 @@ export function GroupEditModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
       <div className="theme-panel motion-pop max-h-full w-full max-w-4xl overflow-y-auto p-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <h3 className="text-2xl font-semibold">Edit Group</h3>
             <p className="mt-1 text-sm text-text-muted">
               Update group details, status, and student membership.
             </p>
           </div>
-          <button
-            className="rounded-md border border-button-border px-3 py-2 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
-            onClick={onClose}
-            type="button"
-          >
-            Close
-          </button>
+          <ModalCloseButton onClick={onClose} />
         </div>
 
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>

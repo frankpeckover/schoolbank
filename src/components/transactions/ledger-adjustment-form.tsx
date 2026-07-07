@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   createGroupLedgerAdjustment,
   createLedgerAdjustments,
+  getTransactionPresets,
   listGroups,
   searchStudents,
 } from "@/lib/actions";
@@ -12,6 +13,10 @@ import type {
   AdjustmentDirection,
   AdjustmentTarget,
 } from "@/components/transactions/ledger-adjustment-types";
+import {
+  defaultTransactionPresets,
+  type TransactionPresets,
+} from "@/lib/transaction-presets";
 import type { GroupListItem } from "@/services/group-service";
 import type { StudentListItem } from "@/services/user-service";
 
@@ -27,15 +32,6 @@ type LedgerAdjustmentFormProps = {
   preferredStudentSelectionVersion?: number;
 };
 
-const amountPresets = [1, 5, 10, 25, 50];
-const reasonPresets = [
-  "Great effort",
-  "Helping others",
-  "Homework complete",
-  "Positive participation",
-  "Late work",
-  "Class disruption",
-];
 const studentSearchDebounceMs = 250;
 const studentSearchMinChars = 2;
 const emptyStudentResults: StudentListItem[] = [];
@@ -62,6 +58,9 @@ export function LedgerAdjustmentForm({
   const [studentQuery, setStudentQuery] = useState("");
   const [studentResults, setStudentResults] = useState<StudentListItem[]>(
     emptyStudentResults,
+  );
+  const [presets, setPresets] = useState<TransactionPresets>(
+    defaultTransactionPresets,
   );
   const [step, setStep] = useState<AdjustmentStep>("recipient");
   const [selectedStudents, setSelectedStudents] = useState<StudentListItem[]>(
@@ -119,6 +118,30 @@ export function LedgerAdjustmentForm({
       isActive = false;
     };
   }, [onError]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadPresets() {
+      try {
+        const loadedPresets = await getTransactionPresets();
+
+        if (isActive) {
+          setPresets(loadedPresets);
+        }
+      } catch {
+        if (isActive) {
+          setPresets(defaultTransactionPresets);
+        }
+      }
+    }
+
+    loadPresets();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!preferredGroupId) {
@@ -346,6 +369,7 @@ export function LedgerAdjustmentForm({
             direction={direction}
             onAmountChange={setAmount}
             onDirectionChange={setDirection}
+            presets={presets.amounts}
           />
         )}
 
@@ -356,7 +380,7 @@ export function LedgerAdjustmentForm({
             direction={direction}
             onReasonChange={setReason}
             reason={reason}
-            reasonPresets={reasonPresets}
+            reasonPresets={presets.reasons}
             recipientLabel={recipientLabel}
           />
         )}
@@ -382,12 +406,14 @@ function AdjustmentAmountStep({
   direction,
   onAmountChange,
   onDirectionChange,
+  presets,
 }: {
   amount: string;
   currencyName: string;
   direction: AdjustmentDirection;
   onAmountChange: (value: string) => void;
   onDirectionChange: (direction: AdjustmentDirection) => void;
+  presets: number[];
 }) {
   return (
     <section className="theme-card p-3">
@@ -405,7 +431,7 @@ function AdjustmentAmountStep({
           amount={amount}
           currencyName={currencyName}
           onAmountChange={onAmountChange}
-          presets={amountPresets}
+          presets={presets}
         />
       </div>
     </section>

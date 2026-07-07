@@ -7,7 +7,7 @@ import {
   listStaffShopRequests,
 } from "@/lib/actions";
 import type { ShopPurchaseRequest } from "@/services/shop-service";
-import { formatCurrencyAmount, formatDateTime } from "@/lib/formatters";
+import { formatAmount, formatDateTime } from "@/lib/formatters";
 import { IconButton } from "@/components/ui/icon-button";
 import { CheckIcon, ShoppingBagIcon, XIcon } from "@/components/ui/icons";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
@@ -26,7 +26,6 @@ type ShopRequestsPanelProps = {
 export function ShopRequestsPanel({
   className = "mt-5",
   compact = false,
-  currencyName,
   maxVisibleRequests,
   onRequestActioned,
   showViewToggle = true,
@@ -197,7 +196,6 @@ export function ShopRequestsPanel({
         {!isLoading && visibleRequests.length > 0 && (
           <ShopRequestList
             compact={compact}
-            currencyName={currencyName}
             onApprove={handleApprove}
             onDeny={setDenyingRequestId}
             requests={visibleRequests}
@@ -221,13 +219,11 @@ export function ShopRequestsPanel({
 
 function ShopRequestList({
   compact,
-  currencyName,
   onApprove,
   onDeny,
   requests,
 }: {
   compact: boolean;
-  currencyName: string;
   onApprove: (purchaseId: string) => void;
   onDeny: (purchaseId: string) => void;
   requests: ShopPurchaseRequest[];
@@ -235,7 +231,6 @@ function ShopRequestList({
   if (compact) {
     return (
       <CompactShopRequestList
-        currencyName={currencyName}
         onApprove={onApprove}
         onDeny={onDeny}
         requests={requests}
@@ -247,7 +242,6 @@ function ShopRequestList({
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
       {requests.map((request) => (
         <ShopRequestCard
-          currencyName={currencyName}
           key={request.id}
           onApprove={onApprove}
           onDeny={onDeny}
@@ -259,12 +253,10 @@ function ShopRequestList({
 }
 
 function CompactShopRequestList({
-  currencyName,
   onApprove,
   onDeny,
   requests,
 }: {
-  currencyName: string;
   onApprove: (purchaseId: string) => void;
   onDeny: (purchaseId: string) => void;
   requests: ShopPurchaseRequest[];
@@ -274,7 +266,6 @@ function CompactShopRequestList({
       <div className="grid gap-2 md:hidden">
         {requests.map((request) => (
           <CompactShopRequestMobileRow
-            currencyName={currencyName}
             key={request.id}
             onApprove={onApprove}
             onDeny={onDeny}
@@ -322,7 +313,7 @@ function CompactShopRequestList({
                 </td>
                 <td className="py-2 pr-4">
                   <span className="text-sm font-semibold">
-                    {formatCurrencyAmount(request.price, currencyName)}
+                    {formatAmount(request.price)}
                   </span>
                 </td>
                 <td className="py-2 pr-4">
@@ -345,12 +336,10 @@ function CompactShopRequestList({
 }
 
 function CompactShopRequestMobileRow({
-  currencyName,
   onApprove,
   onDeny,
   request,
 }: {
-  currencyName: string;
   onApprove: (purchaseId: string) => void;
   onDeny: (purchaseId: string) => void;
   request: ShopPurchaseRequest;
@@ -367,7 +356,7 @@ function CompactShopRequestMobileRow({
         </p>
         <p className="mt-1">
           <span className="text-sm font-semibold">
-            {formatCurrencyAmount(request.price, currencyName)}
+            {formatAmount(request.price)}
           </span>
         </p>
       </div>
@@ -381,12 +370,10 @@ function CompactShopRequestMobileRow({
 }
 
 function ShopRequestCard({
-  currencyName,
   onApprove,
   onDeny,
   request,
 }: {
-  currencyName: string;
   onApprove: (purchaseId: string) => void;
   onDeny: (purchaseId: string) => void;
   request: ShopPurchaseRequest;
@@ -414,7 +401,7 @@ function ShopRequestCard({
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <ShopRequestStatusBadge request={request} />
         <span className="shrink-0 text-right text-sm font-semibold">
-          {formatCurrencyAmount(request.price, currencyName)}
+          {formatAmount(request.price)}
         </span>
       </div>
       <p className="mt-2 text-xs text-text-muted">

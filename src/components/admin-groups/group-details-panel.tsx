@@ -2,6 +2,7 @@ import type {
   GroupListItem,
   GroupMemberItem,
 } from "@/services/group-service";
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 
 type GroupDetailsPanelProps = {
   isLoadingMembers: boolean;
@@ -25,13 +26,7 @@ export function GroupDetailsPanel({
       <div className="theme-panel motion-pop max-h-full w-full max-w-4xl overflow-y-auto p-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
           <GroupSummary memberCount={members.length} selectedGroup={selectedGroup} />
-          <button
-            className="rounded-md border border-button-border px-3 py-2 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
-            onClick={onClose}
-            type="button"
-          >
-            Close
-          </button>
+          <ModalCloseButton onClick={onClose} />
         </div>
 
         <GroupMembersList isLoading={isLoadingMembers} members={members} />
