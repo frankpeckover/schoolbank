@@ -7,6 +7,8 @@ import { canManageShopItems } from "@/lib/permissions";
 import type { SessionUser } from "@/lib/session";
 import { AuditService } from "@/services/audit-service";
 import type {
+  ImportShopItemsInput,
+  ImportShopItemsResult,
   SaveShopItemInput,
   ShopItem,
   ShopItemRow,
@@ -186,6 +188,128 @@ export class ShopItemService {
     }
 
     return { ok: true };
+  }
+
+  async importItems(
+    currentUser: SessionUser,
+    input: ImportShopItemsInput,
+  ): Promise<ImportShopItemsResult> {
+    if (!canManageShopItems(currentUser)) {
+      return {
+        createdCount: 0,
+        errors: [
+          {
+            message: "Only staff can manage shop items.",
+            name: "",
+            rowNumber: 0,
+          },
+        ],
+        updatedCount: 0,
+      };
+    }
+
+    const client = await db.connect();
+    const errors: ImportShopItemsResult["errors"] = [];
+    let createdCount = 0;
+    let updatedCount = 0;
+
+    try {
+      await client.query("begin");
+
+      for (const [index, item] of input.items.entries()) {
+        const rowNumber = index + 2;
+        const name = item.name.trim();
+        const description = item.description.trim();
+        const imageUrl = item.imageUrl.trim();
+
+        if (!name) {
+          errors.push({
+            message: "Item name is required.",
+            name,
+            rowNumber,
+          });
+          continue;
+        }
+
+        if (item.price < 0 || item.quantity < 0) {
+          errors.push({
+            message: "Price and quantity cannot be negative.",
+            name,
+            rowNumber,
+          });
+          continue;
+        }
+
+        const existingItem = await client.query<{ id: string }>(
+          `
+            select id
+            from shop_items
+            where lower(name) = lower($1)
+            limit 1
+          `,
+          [name],
+        );
+
+        if (existingItem.rowCount && existingItem.rows[0]) {
+          await updateItem(
+            client,
+            existingItem.rows[0].id,
+            name,
+            description,
+            imageUrl,
+            item.price,
+            item.quantity,
+          );
+          updatedCount += 1;
+        } else {
+          await createItem(
+            client,
+            name,
+            description,
+            imageUrl,
+            item.price,
+            item.quantity,
+          );
+          createdCount += 1;
+        }
+      }
+
+      await auditService.logWithClient(client, {
+        action: "shop_item.imported",
+        actorUserId: currentUser.id,
+        details: {
+          createdCount,
+          errorCount: errors.length,
+          updatedCount,
+        },
+        entityType: "shop_item",
+      });
+
+      await client.query("commit");
+    } catch (error) {
+      await client.query("rollback");
+      console.error("Import shop items failed", error);
+
+      return {
+        createdCount: 0,
+        errors: [
+          {
+            message: "Could not import shop items.",
+            name: "",
+            rowNumber: 0,
+          },
+        ],
+        updatedCount: 0,
+      };
+    } finally {
+      client.release();
+    }
+
+    return {
+      createdCount,
+      errors,
+      updatedCount,
+    };
   }
 
   async uploadImage(file: File): Promise<UploadShopItemImageResult> {

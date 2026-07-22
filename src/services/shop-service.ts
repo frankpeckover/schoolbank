@@ -1,4 +1,8 @@
 export type {
+  ImportShopItemError,
+  ImportShopItemInput,
+  ImportShopItemsInput,
+  ImportShopItemsResult,
   SaveShopItemInput,
   ShopItem,
   ShopPurchaseRequest,

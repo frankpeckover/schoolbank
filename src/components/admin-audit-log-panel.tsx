@@ -181,6 +181,14 @@ function AuditLogList({
       <div className="hidden w-full min-w-0 max-w-full overflow-x-auto md:block">
         {toolbar}
         <table className="w-full min-w-[760px] table-fixed border-collapse text-left text-sm">
+          <colgroup>
+            <col className="w-[17%]" />
+            <col className="w-[15%]" />
+            <col className="w-[20%]" />
+            <col className="w-[18%]" />
+            <col className="w-[24%]" />
+            <col className="w-12" />
+          </colgroup>
           <thead>
             <tr className="border-b border-border-subtle text-text-muted">
               <th className="py-2 pr-4 font-semibold">Time</th>
@@ -236,7 +244,9 @@ function AuditLogList({
                   />
                 </TableHeaderFilter>
               </th>
-              <th className="py-2 font-semibold">Actions</th>
+              <th className="py-2 text-right font-semibold">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -260,7 +270,7 @@ function AuditLogList({
                 <td className="break-words py-3 pr-4 text-text-muted">
                   {formatDetails(entry.details)}
                 </td>
-                <td className="py-3">
+                <td className="py-3 text-right">
                   <TableActionMenu
                     label="Open audit event actions"
                     items={[

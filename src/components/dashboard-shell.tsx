@@ -10,6 +10,7 @@ import { AdminTimetablePanel } from "@/components/admin-timetable-panel";
 import { AdminUsersPanel } from "@/components/admin-users-panel";
 import { CreditAnalyticsPanel } from "@/components/credit-analytics-panel";
 import {
+  DesktopAccountMenu,
   DesktopSideNav,
   HeaderNavMenu,
   type NavigationItem,
@@ -97,18 +98,14 @@ export function DashboardShell({
   return (
     <main className={`app-shell-surface min-h-screen overflow-x-hidden bg-background text-foreground ${shellRoleClassName}`}>
       <GlobalMaintenanceBanner message={maintenanceMessage} />
-      <div className="mx-auto flex min-h-screen w-full max-w-[96rem] min-w-0 gap-4 overflow-x-hidden px-4 py-2 sm:px-6 lg:px-8">
+      <div className="flex min-h-screen w-full min-w-0 overflow-x-hidden">
         <DesktopSideNav
           activeItem={activeNavItem}
           onItemChange={setActiveNavItem}
-          onLogout={onLogout}
-          onPasswordChange={() => setIsPasswordModalOpen(true)}
-          profileImageUrl={user.profileImageUrl}
           role={user.role}
-          userDisplayName={user.displayName}
         />
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="mx-auto flex min-w-0 flex-1 flex-col px-4 py-2 sm:px-6 lg:max-w-[calc(96rem-15rem)] lg:px-8">
           <header className="relative z-50 pb-2 pt-4">
             <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-3">
               <div className="lg:hidden">
@@ -117,6 +114,12 @@ export function DashboardShell({
               <p className="min-w-0 flex-1 truncate text-left text-base font-medium text-text-control sm:text-center sm:text-lg lg:text-left">
                 {greeting}, {getGreetingName(user)}!
               </p>
+              <DesktopAccountMenu
+                onLogout={onLogout}
+                onPasswordChange={() => setIsPasswordModalOpen(true)}
+                profileImageUrl={user.profileImageUrl}
+                userDisplayName={user.displayName}
+              />
               <HeaderNavMenu
                 activeItem={activeNavItem}
                 onItemChange={setActiveNavItem}

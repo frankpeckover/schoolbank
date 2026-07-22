@@ -7,7 +7,10 @@ import {
 } from "@/lib/actions/action-auth";
 import { ShopItemService } from "@/services/shop-item-service";
 import { ShopPurchaseService } from "@/services/shop-purchase-service";
-import type { SaveShopItemInput } from "@/services/shop-service";
+import type {
+  ImportShopItemsInput,
+  SaveShopItemInput,
+} from "@/services/shop-service";
 
 const shopItemService = new ShopItemService();
 const shopPurchaseService = new ShopPurchaseService();
@@ -22,6 +25,11 @@ export async function listShopItems(includeInactive = false) {
 export async function saveShopItem(input: SaveShopItemInput) {
   const currentUser = await requireShopManager();
   return shopItemService.saveItem(currentUser, input);
+}
+
+export async function importShopItems(input: ImportShopItemsInput) {
+  const currentUser = await requireShopManager();
+  return shopItemService.importItems(currentUser, input);
 }
 
 export async function uploadShopItemImage(formData: FormData) {

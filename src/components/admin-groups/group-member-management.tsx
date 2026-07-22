@@ -221,13 +221,21 @@ function GroupMembersTable({
             ))}
           </div>
 
-          <table className="hidden w-full text-left text-sm md:table">
+          <table className="hidden w-full table-fixed text-left text-sm md:table">
+            <colgroup>
+              <col className="w-[12%]" />
+              <col className="w-[42%]" />
+              <col className="w-[38%]" />
+              <col className="w-12" />
+            </colgroup>
             <thead className="text-text-muted">
               <tr className="border-b border-border-subtle">
                 <th className="py-2 pr-4 font-semibold">Select</th>
                 <th className="py-2 pr-4 font-semibold">Name</th>
                 <th className="py-2 pr-4 font-semibold">Username</th>
-                <th className="py-2 font-semibold">Actions</th>
+                <th className="py-2 text-right font-semibold">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -247,7 +255,7 @@ function GroupMembersTable({
                   <td className="py-2 pr-4 text-text-muted">
                     {member.username}
                   </td>
-                  <td className="py-2">
+                  <td className="py-2 text-right">
                     <TableActionMenu
                       label={`Open actions for ${member.displayName}`}
                       items={[

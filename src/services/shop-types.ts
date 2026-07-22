@@ -19,6 +19,30 @@ export type SaveShopItemInput = {
   quantity: number;
 };
 
+export type ImportShopItemInput = {
+  name: string;
+  description: string;
+  imageUrl: string;
+  price: number;
+  quantity: number;
+};
+
+export type ImportShopItemsInput = {
+  items: ImportShopItemInput[];
+};
+
+export type ImportShopItemError = {
+  message: string;
+  name: string;
+  rowNumber: number;
+};
+
+export type ImportShopItemsResult = {
+  createdCount: number;
+  errors: ImportShopItemError[];
+  updatedCount: number;
+};
+
 export type ShopPurchaseRequest = {
   decidedAt: string | null;
   decisionNote: string;

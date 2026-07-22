@@ -11,19 +11,28 @@ import { formatCurrencyAmount } from "@/lib/formatters";
 import { canManageShopItems } from "@/lib/permissions";
 import type { SessionUser } from "@/lib/session";
 import type { ShopItem } from "@/services/shop-service";
+import { ShopImportModal } from "@/components/shop/shop-import-modal";
 import { ShopItemCard } from "@/components/shop/shop-item-card";
 import { ShopItemDetailsModal } from "@/components/shop/shop-item-details-modal";
 import { ShopItemModal } from "@/components/shop/shop-item-modal";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FixedNotification } from "@/components/ui/fixed-notification";
 import { IconButton } from "@/components/ui/icon-button";
-import { FileDownIcon, FilterIcon, PlusIcon, ShoppingBagIcon, WalletIcon } from "@/components/ui/icons";
+import {
+  FileDownIcon,
+  FileUpIcon,
+  FilterIcon,
+  PlusIcon,
+  ShoppingBagIcon,
+  WalletIcon,
+} from "@/components/ui/icons";
 import {
   ListPagination,
   usePagedList,
 } from "@/components/ui/list-pagination";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
 import { SearchInput } from "@/components/ui/search-input";
+import { TableActionMenu } from "@/components/ui/table-action-menu";
 import { downloadCsv } from "@/lib/client-csv";
 
 type ShopPanelProps = {
@@ -34,6 +43,8 @@ type ShopPanelProps = {
 export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   const canManage = canManageShopItems(currentUser);
   const [items, setItems] = useState<ShopItem[]>([]);
+  const [priceMax, setPriceMax] = useState("");
+  const [priceMin, setPriceMin] = useState("");
   const [search, setSearch] = useState("");
   const [showArchivedItems, setShowArchivedItems] = useState(false);
   const [balance, setBalance] = useState<number | null>(null);
@@ -42,6 +53,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   const [editingItem, setEditingItem] = useState<ShopItem | null>(null);
   const [viewingItem, setViewingItem] = useState<ShopItem | null>(null);
   const [areFiltersOpen, setAreFiltersOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
@@ -192,9 +204,14 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   const visibleItems = useMemo(
     () =>
       items.filter((item) =>
-        matchesShopFilters(item, search, canManage && showArchivedItems),
+        matchesShopFilters(item, {
+          priceMax,
+          priceMin,
+          search,
+          showArchivedItems: canManage && showArchivedItems,
+        }),
       ),
-    [canManage, items, search, showArchivedItems],
+    [canManage, items, priceMax, priceMin, search, showArchivedItems],
   );
   const {
     page,
@@ -211,6 +228,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
           areFiltersOpen={areFiltersOpen}
           count={pageItems.length}
           onFilterToggle={() => setAreFiltersOpen((isOpen) => !isOpen)}
+          onImportItems={() => setIsImportModalOpen(true)}
           onItemsExport={() => downloadShopItems(visibleItems)}
           onNewItem={openNewItemModal}
           totalCount={items.length}
@@ -220,8 +238,12 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
       )}
       {canManage && areFiltersOpen && (
         <ShopFilters
+          onPriceMaxChange={setPriceMax}
+          onPriceMinChange={setPriceMin}
           onSearchChange={setSearch}
           onShowArchivedItemsChange={setShowArchivedItems}
+          priceMax={priceMax}
+          priceMin={priceMin}
           search={search}
           showArchivedItems={showArchivedItems}
         />
@@ -293,6 +315,19 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
         />
       )}
 
+      {isImportModalOpen && (
+        <ShopImportModal
+          onClose={() => setIsImportModalOpen(false)}
+          onImportCompleted={refreshItems}
+          onImported={(importMessage, shouldClose = true) => {
+            setMessage(importMessage);
+            if (shouldClose) {
+              setIsImportModalOpen(false);
+            }
+          }}
+        />
+      )}
+
       {viewingItem && (
         <ShopItemDetailsModal
           canManage={canManage}
@@ -312,6 +347,7 @@ function ShopPanelHeader({
   areFiltersOpen,
   count,
   onFilterToggle,
+  onImportItems,
   onItemsExport,
   onNewItem,
   totalCount,
@@ -319,6 +355,7 @@ function ShopPanelHeader({
   areFiltersOpen: boolean;
   count: number;
   onFilterToggle: () => void;
+  onImportItems: () => void;
   onItemsExport: () => void;
   onNewItem: () => void;
   totalCount: number;
@@ -336,14 +373,6 @@ function ShopPanelHeader({
             <FilterIcon />
           </IconButton>
           <IconButton
-            disabled={count === 0}
-            label="Export shop items"
-            onClick={onItemsExport}
-            text="Export"
-          >
-            <FileDownIcon />
-          </IconButton>
-          <IconButton
             label="New item"
             onClick={onNewItem}
             text="New Item"
@@ -351,6 +380,22 @@ function ShopPanelHeader({
           >
             <PlusIcon />
           </IconButton>
+          <TableActionMenu
+            label="Open shop tools"
+            items={[
+              {
+                icon: <FileUpIcon />,
+                label: "Import shop items",
+                onSelect: onImportItems,
+              },
+              {
+                disabled: count === 0,
+                icon: <FileDownIcon />,
+                label: "Export shop items",
+                onSelect: onItemsExport,
+              },
+            ]}
+          />
         </div>
       }
     >
@@ -374,7 +419,7 @@ function StudentShopWallet({
     balance === null ? "Loading wallet..." : formatCurrencyAmount(balance, currencyName);
 
   return (
-    <div className="wallet-card flex min-h-24 items-center justify-between gap-4 rounded-3xl border border-brand-soft-strong px-5 py-4 text-foreground shadow-sm sm:px-6">
+    <div className="shop-wallet-card wallet-card flex min-h-24 items-center justify-between gap-4 rounded-3xl border border-transparent px-5 py-4 text-foreground shadow-sm sm:px-6">
       <div className="relative flex min-w-0 items-center gap-3">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-surface/80 text-brand shadow-sm">
           <WalletIcon />
@@ -394,19 +439,27 @@ function StudentShopWallet({
 }
 
 function ShopFilters({
+  onPriceMaxChange,
+  onPriceMinChange,
   onSearchChange,
   onShowArchivedItemsChange,
+  priceMax,
+  priceMin,
   search,
   showArchivedItems,
 }: {
+  onPriceMaxChange: (value: string) => void;
+  onPriceMinChange: (value: string) => void;
   onSearchChange: (value: string) => void;
   onShowArchivedItemsChange: (value: boolean) => void;
+  priceMax: string;
+  priceMin: string;
   search: string;
   showArchivedItems: boolean;
 }) {
   return (
     <div className="theme-subpanel mt-4 p-4">
-      <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+      <div className="grid gap-4 md:grid-cols-[1fr_10rem_10rem_auto] md:items-end">
         <div>
           <label className="text-sm font-semibold text-text-control" htmlFor="shopSearch">
             Search items
@@ -419,6 +472,18 @@ function ShopFilters({
             value={search}
           />
         </div>
+        <PriceFilterInput
+          id="shopPriceMin"
+          label="Min price"
+          onChange={onPriceMinChange}
+          value={priceMin}
+        />
+        <PriceFilterInput
+          id="shopPriceMax"
+          label="Max price"
+          onChange={onPriceMaxChange}
+          value={priceMax}
+        />
         <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-surface px-3 py-3 text-sm font-semibold text-text-control">
           <input
             checked={showArchivedItems}
@@ -433,12 +498,43 @@ function ShopFilters({
   );
 }
 
-function matchesShopFilters(
-  item: ShopItem,
-  search: string,
-  showArchivedItems: boolean,
-) {
+function PriceFilterInput({
+  id,
+  label,
+  onChange,
+  value,
+}: {
+  id: string;
+  label: string;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  return (
+    <div>
+      <label className="text-sm font-semibold text-text-control" htmlFor={id}>
+        {label}
+      </label>
+      <input
+        className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition focus:ring-2"
+        id={id}
+        min="0"
+        onChange={(event) => onChange(event.target.value)}
+        step="1"
+        type="number"
+        value={value}
+      />
+    </div>
+  );
+}
+
+function matchesShopFilters(item: ShopItem, filters: ShopFiltersState) {
+  const { priceMax, priceMin, search, showArchivedItems } = filters;
+
   if (!showArchivedItems && !item.isActive) {
+    return false;
+  }
+
+  if (!matchesPriceFilter(item.price, priceMin, priceMax)) {
     return false;
   }
 
@@ -451,6 +547,44 @@ function matchesShopFilters(
   return [item.name, item.description].some((value) =>
     value.toLowerCase().includes(query),
   );
+}
+
+type ShopFiltersState = {
+  priceMax: string;
+  priceMin: string;
+  search: string;
+  showArchivedItems: boolean;
+};
+
+function matchesPriceFilter(price: number, minimum: string, maximum: string) {
+  const minimumPrice = parsePriceFilter(minimum);
+  const maximumPrice = parsePriceFilter(maximum);
+
+  if (minimumPrice !== null && price < minimumPrice) {
+    return false;
+  }
+
+  if (maximumPrice !== null && price > maximumPrice) {
+    return false;
+  }
+
+  return true;
+}
+
+function parsePriceFilter(value: string) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return null;
+  }
+
+  const parsedValue = Number(trimmedValue);
+
+  if (!Number.isFinite(parsedValue)) {
+    return null;
+  }
+
+  return Math.abs(parsedValue);
 }
 
 function downloadShopItems(items: ShopItem[]) {

@@ -310,9 +310,9 @@ function TransactionList({
         ))}
       </div>
 
-      <div className="hidden w-full min-w-0 max-w-full overflow-x-auto md:block">
+      <div className="hidden w-full min-w-0 max-w-full overflow-visible md:block">
         {toolbar}
-        <table className="w-full min-w-full table-fixed border-collapse text-left text-sm">
+        <table className="transaction-log-table w-full min-w-0 table-fixed border-collapse text-left text-sm">
           <TransactionTableColumnGroup
             canViewAllTransactions={canViewAllTransactions}
           />
@@ -320,27 +320,15 @@ function TransactionList({
             <tr className="border-b border-border-subtle text-text-muted">
               <th className="py-2 pr-4 font-semibold">
                 <TableHeaderFilter
-                  isActive={Boolean(filters.reason || filters.type)}
+                  isActive={Boolean(filters.reason)}
                   label="Description"
-                  onClear={() =>
-                    onFiltersChange({ ...filters, reason: "", type: "" })
-                  }
+                  onClear={() => updateFilter("reason", "")}
                 >
-                  <div className="grid gap-3">
-                    <TableHeaderFilterInput
-                      label="Reason"
-                      onChange={(value) => updateFilter("reason", value)}
-                      value={filters.reason}
-                    />
-                    <TableHeaderFilterSelect
-                      label="Type"
-                      onChange={(value) =>
-                        updateFilter("type", value as TransactionFilters["type"])
-                      }
-                      options={transactionTypeOptions}
-                      value={filters.type}
-                    />
-                  </div>
+                  <TableHeaderFilterInput
+                    label="Reason"
+                    onChange={(value) => updateFilter("reason", value)}
+                    value={filters.reason}
+                  />
                 </TableHeaderFilter>
               </th>
               {canViewAllTransactions && (
@@ -358,6 +346,23 @@ function TransactionList({
                   </TableHeaderFilter>
                 </th>
               )}
+              <th className="py-2 pr-4 font-semibold">
+                <TableHeaderFilter
+                  isActive={Boolean(filters.type)}
+                  label="Type"
+                  onClear={() => updateFilter("type", "")}
+                >
+                  <TableHeaderFilterSelect
+                    label="Type"
+                    onChange={(value) =>
+                      updateFilter("type", value as TransactionFilters["type"])
+                    }
+                    options={transactionTypeOptions}
+                    value={filters.type}
+                  />
+                </TableHeaderFilter>
+              </th>
+              <th className="py-2 pr-4 font-semibold">Time</th>
               <th className="py-2 pr-4 font-semibold">
                 <TableHeaderFilter
                   isActive={Boolean(
@@ -400,24 +405,51 @@ function TransactionList({
               </th>
               <th className="py-2 pr-4 text-right font-semibold">
                 <TableHeaderFilter
-                  isActive={Boolean(filters.amountDirection)}
+                  isActive={Boolean(
+                    filters.amountDirection ||
+                      filters.amountMin ||
+                      filters.amountMax,
+                  )}
                   label="Amount"
-                  onClear={() => updateFilter("amountDirection", "")}
+                  onClear={() =>
+                    onFiltersChange({
+                      ...filters,
+                      amountDirection: "",
+                      amountMax: "",
+                      amountMin: "",
+                    })
+                  }
                 >
-                  <TableHeaderFilterSelect
-                    label="Amount"
-                    onChange={(value) =>
-                      updateFilter(
-                        "amountDirection",
-                        value as TransactionFilters["amountDirection"],
-                      )
-                    }
-                    options={amountDirectionOptions}
-                    value={filters.amountDirection}
-                  />
+                  <div className="grid gap-3">
+                    <TableHeaderFilterSelect
+                      label="Direction"
+                      onChange={(value) =>
+                        updateFilter(
+                          "amountDirection",
+                          value as TransactionFilters["amountDirection"],
+                        )
+                      }
+                      options={amountDirectionOptions}
+                      value={filters.amountDirection}
+                    />
+                    <TableHeaderFilterInput
+                      label="Minimum"
+                      onChange={(value) => updateFilter("amountMin", value)}
+                      type="number"
+                      value={filters.amountMin}
+                    />
+                    <TableHeaderFilterInput
+                      label="Maximum"
+                      onChange={(value) => updateFilter("amountMax", value)}
+                      type="number"
+                      value={filters.amountMax}
+                    />
+                  </div>
                 </TableHeaderFilter>
               </th>
-              <th className="py-2 font-semibold">Actions</th>
+              <th className="py-2 text-right font-semibold">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -425,9 +457,6 @@ function TransactionList({
               <tr className="border-b border-border-subtle" key={transaction.id}>
                 <td className="break-words py-2 pr-4">
                   <span className="font-semibold">{transaction.reason}</span>
-                  <span className="mt-1 block text-xs text-text-muted">
-                    {formatDateTime(transaction.createdAt)}
-                  </span>
                   <span className="mt-1 block text-xs text-text-subtle">
                     {transaction.description}
                   </span>
@@ -440,13 +469,19 @@ function TransactionList({
                     </span>
                   </td>
                 )}
+                <td className="py-2 pr-4 text-text-muted">
+                  {formatTransactionType(transaction.type)}
+                </td>
+                <td className="py-2 pr-4 text-text-muted">
+                  {formatDateTime(transaction.createdAt)}
+                </td>
                 <td className="py-2 pr-4">
                   <TransactionStatusBadge transaction={transaction} />
                 </td>
                 <td className="py-2 pr-4 text-right">
                   <TransactionAmount amount={transaction.amount} />
                 </td>
-                <td className="py-2">
+                <td className="py-2 text-right">
                   <TransactionActions
                     canVoidTransactions={canVoidTransactions}
                     onDetailsClick={onDetailsClick}
@@ -471,22 +506,36 @@ function TransactionTableColumnGroup({
   if (canViewAllTransactions) {
     return (
       <colgroup>
-        <col className="w-[42%]" />
-        <col className="w-[20%]" />
-        <col className="w-[14%]" />
-        <col className="w-[14%]" />
-        <col className="w-[10%]" />
+        <col className="w-[27%]" />
+        <col className="w-[16%]" />
+        <col className="w-[12%]" />
+        <col className="w-[15%]" />
+        <col className="w-[13%]" />
+        <col className="w-[11%]" />
+        <col className="w-[6%]" />
       </colgroup>
     );
   }
 
   return (
-    <colgroup>
-      <col className="w-[52%]" />
+      <colgroup>
+      <col className="w-[37%]" />
+      <col className="w-[15%]" />
       <col className="w-[18%]" />
-      <col className="w-[20%]" />
+      <col className="w-[14%]" />
       <col className="w-[10%]" />
+      <col className="w-[6%]" />
     </colgroup>
+  );
+}
+
+function formatTransactionType(type: TransactionLogItem["type"]) {
+  return (
+    transactionTypeOptions.find((option) => option.value === type)?.label ??
+    type
+      .split("_")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ")
   );
 }
 

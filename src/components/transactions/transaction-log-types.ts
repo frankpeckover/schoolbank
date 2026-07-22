@@ -2,6 +2,8 @@ import type { TransactionLogItem } from "@/services/transaction-service";
 
 export type TransactionFilters = {
   amountDirection: "" | "positive" | "negative";
+  amountMax: string;
+  amountMin: string;
   purchaseStatus: "" | "pending" | "approved" | "denied";
   reason: string;
   student: string;
@@ -11,6 +13,8 @@ export type TransactionFilters = {
 
 export const emptyTransactionFilters: TransactionFilters = {
   amountDirection: "",
+  amountMax: "",
+  amountMin: "",
   purchaseStatus: "",
   reason: "",
   student: "",

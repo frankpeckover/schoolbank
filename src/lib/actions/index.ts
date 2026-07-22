@@ -65,6 +65,7 @@ export {
 export {
   approveShopRequest,
   denyShopRequest,
+  importShopItems,
   listPendingShopRequests,
   listShopItems,
   listStaffShopRequests,

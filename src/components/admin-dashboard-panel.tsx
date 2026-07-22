@@ -4,8 +4,11 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import {
   CartesianGrid,
+  Cell,
   Line,
   LineChart,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -36,11 +39,10 @@ import {
   ArrowDownIcon,
   ArrowUpIcon,
   ClockIcon,
-  ShoppingBagIcon,
+  ListIcon,
   UserCircleIcon,
   WalletIcon,
 } from "@/components/ui/icons";
-import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 
 type AdminDashboardPanelProps = {
@@ -98,46 +100,59 @@ export function AdminDashboardPanel({
     <>
       <FixedNotification error={error} />
       <div className="dashboard-grid mt-2">
-        <section className="dashboard-unit-2 section-highlight theme-panel min-w-0 p-4">
-          {isLoading && (
+        {isLoading && (
+          <section className="dashboard-unit-4 theme-panel min-w-0 p-4">
             <p className="text-sm text-text-muted">Loading overview...</p>
-          )}
-
-          {summary && (
-            <>
-              <div className="grid gap-3 md:grid-cols-3">
-                <MetricCard
-                  icon={<WalletIcon />}
-                  label="Ledger Balance"
-                  tone="brand"
-                  value={formatWholeNumber(summary.ledgerBalance)}
-                  variant="centered"
-                />
-                <PendingSummaryCard
-                  pendingHolds={summary.pendingHolds}
-                  pendingShopRequests={summary.pendingShopRequests}
-                />
-                <AccountSummaryCard
-                  disabledAccounts={summary.totalUsers - summary.activeUsers}
-                  studentAccounts={summary.studentAccounts}
-                  totalAccounts={summary.totalUsers}
-                />
-              </div>
-              <TeacherIssuerPanel
-                currencyName={currencyName}
-                topCreditIssuers={summary.topCreditIssuers}
-                topDemeritIssuers={summary.topDemeritIssuers}
-              />
-            </>
-          )}
-        </section>
+          </section>
+        )}
 
         {summary && (
-          <CirculationChartSection
-            currencyName={currencyName}
-            entries={summary.circulationEntries}
-            ledgerBalance={summary.ledgerBalance}
-          />
+          <>
+            <LedgerBalanceCard
+              currencyName={currencyName}
+              entries={summary.circulationEntries}
+              ledgerBalance={summary.ledgerBalance}
+            />
+            <PendingSummaryCard
+              pendingHolds={summary.pendingHolds}
+              pendingShopRequests={summary.pendingShopRequests}
+            />
+            <AccountSummaryCard
+              adminAccounts={summary.adminAccounts}
+              disabledAccounts={summary.totalUsers - summary.activeUsers}
+              staffAccounts={summary.staffAccounts}
+              studentAccounts={summary.studentAccounts}
+              totalAccounts={summary.totalUsers}
+            />
+            <SystemSummaryCard
+              pendingItems={summary.pendingHolds + summary.pendingShopRequests}
+              recentAuditCount={summary.recentAuditEntries.length}
+            />
+          </>
+        )}
+
+        {summary && (
+          <>
+            <CirculationChartSection
+              currencyName={currencyName}
+              entries={summary.circulationEntries}
+              ledgerBalance={summary.ledgerBalance}
+            />
+            <TeacherIssuerTile
+              currencyName={currencyName}
+              icon={<ArrowUpIcon />}
+              issuers={summary.topCreditIssuers}
+              title="Top Credit Issuers"
+              tone="positive"
+            />
+            <TeacherIssuerTile
+              currencyName={currencyName}
+              icon={<ArrowDownIcon />}
+              issuers={summary.topDemeritIssuers}
+              title="Top Demerit Issuers"
+              tone="negative"
+            />
+          </>
         )}
       </div>
 
@@ -153,36 +168,96 @@ export function AdminDashboardPanel({
   );
 }
 
-function TeacherIssuerPanel({
+function LedgerBalanceCard({
   currencyName,
-  topCreditIssuers,
-  topDemeritIssuers,
+  entries,
+  ledgerBalance,
 }: {
   currencyName: string;
-  topCreditIssuers: TeacherIssuerSummary[];
-  topDemeritIssuers: TeacherIssuerSummary[];
+  entries: AdminDashboardEntry[];
+  ledgerBalance: number;
 }) {
+  const sparklinePoints = buildCirculationChartPoints(
+    entries,
+    ledgerBalance,
+    "daily",
+  );
+
   return (
-    <div className="mt-3 grid gap-3 md:grid-cols-2">
-      <TeacherIssuerList
-        currencyName={currencyName}
-        icon={<ArrowUpIcon />}
-        issuers={topCreditIssuers}
-        title="Top Credit Issuers"
-        tone="positive"
+    <section className="dashboard-unit-1 theme-panel flex min-h-36 min-w-0 flex-col p-4">
+      <MetricCardHeader
+        icon={<WalletIcon />}
+        label="Ledger Balance"
+        tone="brand"
       />
-      <TeacherIssuerList
-        currencyName={currencyName}
-        icon={<ArrowDownIcon />}
-        issuers={topDemeritIssuers}
-        title="Top Demerit Issuers"
-        tone="negative"
-      />
+      <div className="grid flex-1 grid-cols-[minmax(0,1fr)_5.75rem] items-center gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-4xl font-semibold tracking-normal text-foreground">
+            {formatWholeNumber(ledgerBalance)}
+          </p>
+          <p className="mt-2 text-xs font-semibold uppercase tracking-normal text-text-muted">
+            {currencyName}
+          </p>
+        </div>
+        <LedgerSparkline points={sparklinePoints} />
+      </div>
+    </section>
+  );
+}
+
+function LedgerSparkline({ points }: { points: BalanceTimePoint[] }) {
+  if (points.length < 2) {
+    return (
+      <div className="flex h-16 min-w-0 flex-col justify-center rounded-md bg-panel-soft px-2">
+        <span className="h-0.5 rounded-full bg-brand-soft-strong" />
+        <span className="mt-2 text-center text-[0.65rem] font-semibold uppercase text-text-muted">
+          Trend
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-16 min-w-0 rounded-md bg-panel-soft/60 px-1 py-1">
+      <ResponsiveContainer height="100%" width="100%">
+        <LineChart data={points} margin={{ bottom: 4, left: 2, right: 2, top: 4 }}>
+          <Line
+            dataKey="balance"
+            dot={false}
+            isAnimationActive={false}
+            stroke="var(--brand)"
+            strokeWidth={2.5}
+            type="monotone"
+          />
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 }
 
-function TeacherIssuerList({
+function SystemSummaryCard({
+  pendingItems,
+  recentAuditCount,
+}: {
+  pendingItems: number;
+  recentAuditCount: number;
+}) {
+  return (
+    <section className="dashboard-unit-1 theme-panel flex min-h-36 flex-col p-4">
+      <MetricCardHeader
+        icon={<ListIcon />}
+        label="System Snapshot"
+        tone="neutral"
+      />
+      <div className="mt-2 grid flex-1 gap-1">
+        <CompactMetricRow label="Admin changes" value={recentAuditCount} />
+        <CompactMetricRow label="Pending items" value={pendingItems} />
+      </div>
+    </section>
+  );
+}
+
+function TeacherIssuerTile({
   currencyName,
   icon,
   issuers,
@@ -199,7 +274,7 @@ function TeacherIssuerList({
     tone === "positive" ? "text-success" : "text-danger-strong";
 
   return (
-    <article className="theme-card min-w-0 p-3">
+    <section className="dashboard-unit-1 theme-panel min-w-0 p-4">
       <div className="flex items-center gap-2">
         <span className={`shrink-0 ${toneClassName}`}>{icon}</span>
         <h3 className="truncate text-sm font-semibold">{title}</h3>
@@ -217,7 +292,7 @@ function TeacherIssuerList({
         <ol className="mt-3 grid gap-2">
           {issuers.map((issuer, index) => (
             <li
-              className="flex min-w-0 items-center justify-between gap-3 rounded-md bg-panel-soft px-3 py-2"
+              className="flex min-w-0 items-center justify-between gap-3 py-1.5"
               key={`${issuer.username}-${index}`}
             >
               <div className="min-w-0">
@@ -235,7 +310,7 @@ function TeacherIssuerList({
           ))}
         </ol>
       )}
-    </article>
+    </section>
   );
 }
 
@@ -350,7 +425,7 @@ function PendingSummaryCard({
   pendingShopRequests: number;
 }) {
   return (
-    <article className="theme-card flex min-h-24 flex-col p-3">
+    <section className="dashboard-unit-1 theme-panel flex min-h-36 flex-col p-4">
       <MetricCardHeader
         icon={<ClockIcon />}
         label="Pending"
@@ -366,7 +441,7 @@ function PendingSummaryCard({
           value={pendingHolds}
         />
       </div>
-    </article>
+    </section>
   );
 }
 
@@ -449,33 +524,137 @@ function formatWholeNumber(amount: number) {
 }
 
 function AccountSummaryCard({
+  adminAccounts,
   disabledAccounts,
+  staffAccounts,
   studentAccounts,
   totalAccounts,
 }: {
+  adminAccounts: number;
   disabledAccounts: number;
+  staffAccounts: number;
   studentAccounts: number;
   totalAccounts: number;
 }) {
+  const accountSegments = [
+    { color: "var(--brand)", label: "Students", value: studentAccounts },
+    { color: "var(--accent)", label: "Staff", value: staffAccounts },
+    { color: "var(--success)", label: "Admins", value: adminAccounts },
+  ].filter((segment) => segment.value > 0);
+
   return (
-    <article className="theme-card flex min-h-24 flex-col p-3">
+    <section className="dashboard-unit-1 theme-panel flex min-h-36 flex-col p-4">
       <MetricCardHeader
         icon={<UserCircleIcon />}
         label="Accounts"
         tone="neutral"
       />
-      <div className="mt-2 grid flex-1 gap-1">
-        <CompactMetricRow label="Total" value={totalAccounts} />
-        <CompactMetricRow
-          label="Students"
-          value={studentAccounts}
-        />
-        <CompactMetricRow
-          label="Disabled"
-          value={disabledAccounts}
-        />
+      <div className="mt-2 grid flex-1 grid-cols-[5.25rem_minmax(0,1fr)] items-center gap-3">
+        <AccountDonut segments={accountSegments} totalAccounts={totalAccounts} />
+        <div className="grid gap-1">
+          <AccountLegend color="var(--brand)" label="Students" value={studentAccounts} />
+          <AccountLegend color="var(--accent)" label="Staff" value={staffAccounts} />
+          <AccountLegend color="var(--success)" label="Admins" value={adminAccounts} />
+          <AccountLegend color="var(--danger)" label="Disabled" value={disabledAccounts} />
+        </div>
       </div>
-    </article>
+    </section>
+  );
+}
+
+type AccountSegment = {
+  color: string;
+  label: string;
+  value: number;
+};
+
+function AccountDonut({
+  segments,
+  totalAccounts,
+}: {
+  segments: AccountSegment[];
+  totalAccounts: number;
+}) {
+  if (segments.length === 0) {
+    return (
+      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-panel-soft text-sm font-semibold text-text-muted">
+        0
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative h-20 w-20">
+      <ResponsiveContainer height="100%" width="100%">
+        <PieChart>
+          <Pie
+            data={segments}
+            dataKey="value"
+            innerRadius="64%"
+            isAnimationActive={false}
+            outerRadius="94%"
+            paddingAngle={2}
+            stroke="var(--surface)"
+            strokeWidth={2}
+          >
+            {segments.map((segment) => (
+              <Cell fill={segment.color} key={segment.label} />
+            ))}
+          </Pie>
+          <Tooltip
+            content={<AccountDonutTooltip />}
+            wrapperStyle={{ zIndex: 50 }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+      <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center text-lg font-semibold text-foreground">
+        {formatWholeNumber(totalAccounts)}
+      </div>
+    </div>
+  );
+}
+
+function AccountDonutTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: { payload: AccountSegment }[];
+}) {
+  const segment = payload?.[0]?.payload;
+
+  if (!active || !segment) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-md border border-border bg-surface px-3 py-2 text-sm shadow-md">
+      <p className="font-semibold text-text-control">{segment.label}</p>
+      <p className="mt-1 text-text-muted">{formatWholeNumber(segment.value)}</p>
+    </div>
+  );
+}
+
+function AccountLegend({
+  color,
+  label,
+  value,
+}: {
+  color: string;
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="flex min-w-0 items-center justify-between gap-2 text-xs">
+      <span className="flex min-w-0 items-center gap-1.5 text-text-muted">
+        <span
+          className="h-2 w-2 shrink-0 rounded-full"
+          style={{ background: color }}
+        />
+        <span className="truncate">{label}</span>
+      </span>
+      <span className="font-semibold text-foreground">{formatWholeNumber(value)}</span>
+    </div>
   );
 }
 
@@ -489,7 +668,7 @@ function CompactMetricRow({
   value: number;
 }) {
   return (
-    <div className="flex min-w-0 items-center justify-between gap-3 rounded-md bg-panel-soft px-3 py-1.5">
+    <div className="flex min-w-0 items-center justify-between gap-3 border-b border-border-muted px-1 py-1.5 last:border-b-0">
       <div className="flex min-w-0 items-center gap-1.5">
         {icon && <span className="shrink-0 text-text-muted">{icon}</span>}
         <p className="truncate text-xs font-semibold uppercase tracking-normal text-text-muted">

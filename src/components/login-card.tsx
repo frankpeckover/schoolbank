@@ -102,15 +102,15 @@ export function LoginCard({
     <main className="flex min-h-screen flex-col bg-background text-foreground">
       <GlobalMaintenanceBanner message={maintenanceMessage} />
       <div className="mx-auto flex w-full max-w-md flex-1 items-center px-4 py-5 sm:px-6 lg:px-8">
-        <section className="login-panel w-full p-2 sm:p-0">
-          <div className="mb-4 flex justify-start">
+        <section className="login-panel login-entry w-full p-2 sm:p-0">
+          <div className="login-entry-item mb-4 flex justify-start">
             <AppBrand showNameOnMobile />
           </div>
-          <div className="mb-5 flex justify-start">
+          <div className="login-entry-item mb-5 flex justify-start">
             <h1 className="text-3xl font-semibold tracking-normal">Sign In</h1>
           </div>
           <form className="space-y-3" onSubmit={handleSubmit}>
-            <div>
+            <div className="login-entry-item">
               <div className="relative">
                 <UserFieldIcon />
                 <input
@@ -127,7 +127,7 @@ export function LoginCard({
               </div>
             </div>
 
-            <div>
+            <div className="login-entry-item">
               <div className="relative">
                 <PasswordFieldIcon />
                 <input
@@ -156,7 +156,7 @@ export function LoginCard({
             )}
 
             <button
-              className="w-full rounded-md bg-brand px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70"
+              className="login-entry-item w-full rounded-md bg-brand px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70"
               disabled={isSubmitting}
               type="submit"
             >
@@ -164,10 +164,12 @@ export function LoginCard({
             </button>
 
             {ssoProviders.length > 0 && (
-              <SsoLoginOptions providers={ssoProviders} />
+              <div className="login-entry-item">
+                <SsoLoginOptions providers={ssoProviders} />
+              </div>
             )}
 
-            <div className="text-center">
+            <div className="login-entry-item text-center">
               <button
                 className="text-sm font-semibold text-text-muted underline-offset-4 transition hover:text-text-control hover:underline disabled:cursor-not-allowed disabled:opacity-70"
                 onClick={() => setIsForgotPasswordOpen(true)}

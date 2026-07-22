@@ -56,7 +56,15 @@ export function TimetableEntryTable({
       </div>
 
       {toolbar && <div className="hidden md:block">{toolbar}</div>}
-      <table className="hidden w-full border-collapse text-left text-sm md:table">
+      <table className="hidden w-full table-fixed border-collapse text-left text-sm md:table">
+        <colgroup>
+          <col className="w-[28%]" />
+          <col className="w-[28%]" />
+          <col className="w-[14%]" />
+          <col className="w-[16%]" />
+          <col className="w-[8%]" />
+          <col className="w-12" />
+        </colgroup>
         <thead>
           <tr className="border-b border-border-subtle text-text-muted">
             <th className="py-2 pr-4 font-semibold">
@@ -140,7 +148,9 @@ export function TimetableEntryTable({
                 />
               </TableHeaderFilter>
             </th>
-            <th className="py-2 font-semibold">Actions</th>
+            <th className="py-2 text-right font-semibold">
+              <span className="sr-only">Actions</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -157,7 +167,7 @@ export function TimetableEntryTable({
               <td className="py-3 pr-4">
                 <TimetableStatusBadge isActive={entry.isActive} />
               </td>
-              <td className="py-3">
+              <td className="py-3 text-right">
                 <TimetableActions
                   entry={entry}
                   onDeleteEntry={onDeleteEntry}

@@ -10,6 +10,7 @@ export function matchesTransactionFilters(
     matchesVoidedStatus(transaction.isVoided, filters.voidedStatus) &&
     matchesPurchaseStatus(transaction.purchaseStatus, filters.purchaseStatus) &&
     matchesAmountDirection(transaction.amount, filters.amountDirection) &&
+    matchesAmountRange(transaction.amount, filters) &&
     includesFilter(transaction.reason, filters.reason) &&
     includesFilter(
       `${transaction.studentName} ${transaction.studentUsername}`,
@@ -57,6 +58,38 @@ function matchesAmountDirection(
   }
 
   return true;
+}
+
+function matchesAmountRange(amount: number, filters: TransactionFilters) {
+  const absoluteAmount = Math.abs(amount);
+  const minimumAmount = parseAmountFilter(filters.amountMin);
+  const maximumAmount = parseAmountFilter(filters.amountMax);
+
+  if (minimumAmount !== null && absoluteAmount < minimumAmount) {
+    return false;
+  }
+
+  if (maximumAmount !== null && absoluteAmount > maximumAmount) {
+    return false;
+  }
+
+  return true;
+}
+
+function parseAmountFilter(value: string) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return null;
+  }
+
+  const parsedValue = Number(trimmedValue);
+
+  if (!Number.isFinite(parsedValue)) {
+    return null;
+  }
+
+  return Math.abs(parsedValue);
 }
 
 function includesFilter(value: string, filter: string) {

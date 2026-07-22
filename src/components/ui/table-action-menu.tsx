@@ -65,7 +65,10 @@ export function TableActionMenu({
   }
 
   return (
-    <div className="relative inline-flex justify-end" ref={menuRef}>
+    <div
+      className={`relative inline-flex justify-end ${isOpen ? "z-[160]" : "z-0"}`}
+      ref={menuRef}
+    >
       <button
         aria-expanded={isOpen}
         aria-label={label}
@@ -77,7 +80,7 @@ export function TableActionMenu({
       </button>
 
       {isOpen && (
-        <div className="motion-pop absolute right-0 top-9 z-[120] min-w-40 rounded-md border border-border bg-surface p-1.5 text-sm shadow-lg">
+        <div className="motion-pop absolute right-0 top-9 z-[170] min-w-40 rounded-md border border-border bg-surface p-1.5 text-sm shadow-lg">
           {visibleItems.map((item) => (
             <button
               className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left transition disabled:cursor-not-allowed disabled:opacity-50 ${

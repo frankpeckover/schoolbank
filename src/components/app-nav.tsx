@@ -12,8 +12,9 @@ import { isAdmin, isStudent } from "@/lib/permissions";
 import { useAccentTheme } from "@/lib/use-accent-theme";
 import { useThemeMode } from "@/lib/use-theme-mode";
 import {
-  ChevronDownIcon,
+  AlertTriangleIcon,
   ClockIcon,
+  CogIcon,
   EyeIcon,
   ListIcon,
   LogOutIcon,
@@ -21,13 +22,11 @@ import {
   PackageIcon,
   SidebarCollapseIcon,
   SidebarExpandIcon,
-  SparkleIcon,
   SunIcon,
   TargetIcon,
   UserCircleIcon,
   UsersIcon,
   WalletIcon,
-  XIcon,
 } from "@/components/ui/icons";
 import { AppBrand } from "@/components/ui/app-brand";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -146,7 +145,6 @@ export function HeaderNavMenu({
           imageUrl={profileImageUrl}
           size="sm"
         />
-        <ChevronDownIcon className="h-3.5 w-3.5" />
       </button>
 
       {isMobileMenuOpen && (
@@ -181,14 +179,79 @@ export function HeaderNavMenu({
 export function DesktopSideNav({
   activeItem,
   onItemChange,
+  role,
+}: Pick<HeaderNavMenuProps, "activeItem" | "onItemChange" | "role">) {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const navigationItems = getNavigationItems(role);
+
+  function handleItemChange(item: NavigationItem) {
+    onItemChange(item);
+  }
+
+  const widthClassName = isExpanded ? "w-60" : "w-20";
+
+  return (
+    <>
+      <div
+        aria-hidden="true"
+        className={`hidden shrink-0 transition-[width] duration-200 lg:block ${widthClassName}`}
+      />
+      <aside
+        className={`fixed inset-y-0 left-0 z-[90] hidden h-dvh shrink-0 transition-[width] duration-200 lg:block ${widthClassName}`}
+      >
+        <div className="flex h-full flex-col gap-4 border-r border-border-subtle bg-surface p-3 shadow-sm">
+          <div
+            className={`flex h-10 items-center gap-2 px-1 ${
+              isExpanded ? "justify-between" : "justify-center"
+            }`}
+          >
+            {isExpanded && (
+              <div className="min-w-0">
+                <AppBrand showNameOnMobile />
+              </div>
+            )}
+            <button
+              aria-label={isExpanded ? "Collapse navigation" : "Expand navigation"}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center text-text-muted transition hover:bg-brand-soft hover:text-brand-ink"
+              onClick={() => setIsExpanded((currentValue) => !currentValue)}
+              title={isExpanded ? "Collapse navigation" : "Expand navigation"}
+              type="button"
+            >
+              {isExpanded ? (
+                <SidebarCollapseIcon className="h-4 w-4" />
+              ) : (
+                <SidebarExpandIcon className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+
+          <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
+            {navigationItems.map((item) => (
+              <SideNavButton
+                isActive={activeItem === item}
+                isExpanded={isExpanded}
+                item={item}
+                key={item}
+                onItemChange={handleItemChange}
+              />
+            ))}
+          </div>
+        </div>
+      </aside>
+    </>
+  );
+}
+
+export function DesktopAccountMenu({
   onLogout,
   onPasswordChange,
   profileImageUrl,
-  role,
   userDisplayName,
-}: HeaderNavMenuProps) {
-  const navRef = useRef<HTMLElement | null>(null);
-  const [isExpanded, setIsExpanded] = useState(true);
+}: Pick<
+  HeaderNavMenuProps,
+  "onLogout" | "onPasswordChange" | "profileImageUrl" | "userDisplayName"
+>) {
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const {
     accentTheme,
@@ -198,7 +261,6 @@ export function DesktopSideNav({
     setAccentTheme,
   } = useAccentTheme();
   const { isDarkMode, toggleThemeMode } = useThemeMode();
-  const navigationItems = getNavigationItems(role);
 
   function closeMenu() {
     setIsAccountMenuOpen(false);
@@ -210,7 +272,7 @@ export function DesktopSideNav({
     }
 
     function handlePointerDown(event: PointerEvent) {
-      if (!navRef.current?.contains(event.target as Node)) {
+      if (!menuRef.current?.contains(event.target as Node)) {
         closeMenu();
       }
     }
@@ -230,11 +292,6 @@ export function DesktopSideNav({
     };
   }, [isAccountMenuOpen]);
 
-  function handleItemChange(item: NavigationItem) {
-    onItemChange(item);
-    closeMenu();
-  }
-
   function handleLogout() {
     closeMenu();
     onLogout();
@@ -246,90 +303,42 @@ export function DesktopSideNav({
   }
 
   return (
-    <aside
-      className={`sticky top-0 z-[90] hidden h-[calc(100vh-1rem)] shrink-0 py-0 transition-[width] duration-200 lg:block ${
-        isExpanded ? "w-60" : "w-20"
-      }`}
-      ref={navRef}
-    >
-      <div className="theme-panel flex h-full flex-col gap-4 p-3">
-        <div className="flex items-center justify-between gap-2 px-1">
-          <div className={isExpanded ? "min-w-0" : "sr-only"}>
-            <AppBrand showNameOnMobile />
-          </div>
-          <button
-            aria-label={isExpanded ? "Collapse navigation" : "Expand navigation"}
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-muted transition hover:bg-brand-soft hover:text-brand-ink"
-            onClick={() => setIsExpanded((currentValue) => !currentValue)}
-            title={isExpanded ? "Collapse navigation" : "Expand navigation"}
-            type="button"
-          >
-            {isExpanded ? (
-              <SidebarCollapseIcon className="h-3.5 w-3.5" />
-            ) : (
-              <SidebarExpandIcon className="h-3.5 w-3.5" />
-            )}
-          </button>
-        </div>
+    <div className="relative hidden lg:block" ref={menuRef}>
+      <button
+        aria-expanded={isAccountMenuOpen}
+        aria-label="Open account menu"
+        className={`flex h-10 items-center gap-2 rounded-md px-2 text-xs font-light transition ${
+          isAccountMenuOpen
+            ? "bg-brand text-white shadow-sm"
+            : "text-text-control hover:bg-brand-soft hover:text-brand-ink"
+        }`}
+        onClick={() => setIsAccountMenuOpen((currentValue) => !currentValue)}
+        type="button"
+      >
+        <UserAvatar
+          displayName={userDisplayName}
+          imageUrl={profileImageUrl}
+          size="sm"
+        />
+      </button>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
-          {navigationItems.map((item) => (
-            <SideNavButton
-              isActive={activeItem === item}
-              isExpanded={isExpanded}
-              item={item}
-              key={item}
-              onItemChange={handleItemChange}
-            />
-          ))}
-        </div>
-
-        <div className="relative border-t border-border-subtle pt-3">
-          <button
-            aria-expanded={isAccountMenuOpen}
-            aria-label="Open account menu"
-            className={`flex h-11 w-full items-center rounded-md text-xs font-light transition ${
-              isAccountMenuOpen
-                ? "bg-brand text-white shadow-sm"
-                : "text-text-control hover:bg-brand-soft hover:text-brand-ink"
-            } ${isExpanded ? "justify-between gap-2 px-2" : "justify-center px-0"}`}
-            onClick={() =>
-              setIsAccountMenuOpen((currentValue) => !currentValue)
-            }
-            type="button"
-          >
-            <span className="flex min-w-0 items-center gap-2">
-              <UserAvatar
-                displayName={userDisplayName}
-                imageUrl={profileImageUrl}
-                size="sm"
-              />
-              {isExpanded && (
-                <span className="truncate">{userDisplayName}</span>
-              )}
-            </span>
-            {isExpanded && <ChevronDownIcon className="h-3.5 w-3.5 rotate-180" />}
-          </button>
-
-          {isAccountMenuOpen && (
-            <NavMenuPanel align="left" placement="up">
-              <AccountMenuItems
-                accentTheme={accentTheme}
-                accentThemeOptions={accentThemeOptions}
-                customAccentColor={customAccentColor}
-                hasTopBorder={false}
-                isDarkMode={isDarkMode}
-                onAccentThemeChange={setAccentTheme}
-                onCustomAccentColorChange={setCustomAccentColor}
-                onLogout={handleLogout}
-                onPasswordChange={handlePasswordChange}
-                onThemeToggle={toggleThemeMode}
-              />
-            </NavMenuPanel>
-          )}
-        </div>
-      </div>
-    </aside>
+      {isAccountMenuOpen && (
+        <NavMenuPanel align="right">
+          <AccountMenuItems
+            accentTheme={accentTheme}
+            accentThemeOptions={accentThemeOptions}
+            customAccentColor={customAccentColor}
+            hasTopBorder={false}
+            isDarkMode={isDarkMode}
+            onAccentThemeChange={setAccentTheme}
+            onCustomAccentColorChange={setCustomAccentColor}
+            onLogout={handleLogout}
+            onPasswordChange={handlePasswordChange}
+            onThemeToggle={toggleThemeMode}
+          />
+        </NavMenuPanel>
+      )}
+    </div>
   );
 }
 
@@ -348,7 +357,7 @@ function SideNavButton({
     <button
       aria-current={isActive ? "page" : undefined}
       aria-label={item}
-      className={`flex h-11 w-full items-center rounded-md text-xs font-light transition ${
+      className={`flex h-11 w-full items-center text-xs font-light transition ${
         isActive
           ? "bg-brand text-white shadow-sm"
           : "text-text-control hover:bg-brand-soft hover:text-brand-ink"
@@ -549,9 +558,9 @@ function NavigationItemIcon({ item }: { item: NavigationItem }) {
     case "Audit Log":
       return <EyeIcon className={className} />;
     case "Error Log":
-      return <XIcon className={className} />;
+      return <AlertTriangleIcon className={className} />;
     case "Settings":
-      return <SparkleIcon className={className} />;
+      return <CogIcon className={className} />;
     default:
       return <ListIcon className={className} />;
   }

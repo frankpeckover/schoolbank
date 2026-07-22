@@ -4,6 +4,7 @@ import type { LedgerEntryStatus, LedgerEntryType } from "@/services/ledger-servi
 
 export type AdminDashboardSummary = {
   activeUsers: number;
+  adminAccounts: number;
   circulationEntries: AdminDashboardEntry[];
   ledgerBalance: number;
   moneyIn: number;
@@ -12,6 +13,7 @@ export type AdminDashboardSummary = {
   pendingShopRequests: number;
   recentAuditEntries: AuditLogItem[];
   recentEntries: AdminDashboardEntry[];
+  staffAccounts: number;
   studentAccounts: number;
   topCreditIssuers: TeacherIssuerSummary[];
   topDemeritIssuers: TeacherIssuerSummary[];
@@ -36,11 +38,13 @@ export type TeacherIssuerSummary = {
 
 type SummaryRow = {
   active_users: string;
+  admin_accounts: string;
   ledger_balance: string;
   money_in: string;
   money_out: string;
   pending_holds: string;
   pending_shop_requests: string;
+  staff_accounts: string;
   student_accounts: string;
   total_users: string;
 };
@@ -97,6 +101,18 @@ export class AdminDashboardService {
           (select count(*) from users) as total_users,
           (select count(*) from users where is_active = true) as active_users,
           (select count(*) from accounts) as student_accounts,
+          (
+            select count(*)
+            from users
+            join roles on roles.id = users.role_id
+            where roles.role_key = 'teacher'
+          ) as staff_accounts,
+          (
+            select count(*)
+            from users
+            join roles on roles.id = users.role_id
+            where roles.role_key = 'admin'
+          ) as admin_accounts,
           (
             select count(*)
             from shop_purchases
@@ -189,6 +205,7 @@ export class AdminDashboardService {
 
     return {
       activeUsers: toNumber(summary.active_users),
+      adminAccounts: toNumber(summary.admin_accounts),
       circulationEntries: circulationResult.rows.map(mapDashboardEntry),
       ledgerBalance: toNumber(summary.ledger_balance),
       moneyIn: toNumber(summary.money_in),
@@ -197,6 +214,7 @@ export class AdminDashboardService {
       pendingShopRequests: toNumber(summary.pending_shop_requests),
       recentAuditEntries: recentAuditResult.rows.map(mapAuditLogRow),
       recentEntries: recentResult.rows.map(mapDashboardEntry),
+      staffAccounts: toNumber(summary.staff_accounts),
       studentAccounts: toNumber(summary.student_accounts),
       topCreditIssuers,
       topDemeritIssuers,

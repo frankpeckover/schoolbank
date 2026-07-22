@@ -299,11 +299,11 @@ function CompactShopRequestList({
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full table-fixed border-collapse text-left text-sm">
           <colgroup>
-            <col className="w-[34%]" />
-            <col className="w-[26%]" />
-            <col className="w-[16%]" />
-            <col className="w-[14%]" />
-            <col className="w-[10%]" />
+            <col className="w-[38%]" />
+            <col className="w-[30%]" />
+            <col className="w-[12%]" />
+            <col className="w-[12%]" />
+            <col className="w-12" />
           </colgroup>
           <thead>
             <tr className="border-b border-border-subtle text-text-muted">
@@ -358,7 +358,9 @@ function CompactShopRequestList({
                   />
                 </TableHeaderFilter>
               </th>
-              <th className="py-2 font-semibold">Actions</th>
+              <th className="py-2 text-right font-semibold">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -388,7 +390,7 @@ function CompactShopRequestList({
                 <td className="py-2 pr-4">
                   <ShopRequestStatusBadge request={request} />
                 </td>
-                <td className="py-2">
+                <td className="py-2 text-right">
                   <ShopRequestActions
                     onApprove={onApprove}
                     onDeny={onDeny}

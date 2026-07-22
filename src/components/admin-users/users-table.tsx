@@ -62,7 +62,16 @@ export function UsersTable({
       </div>
 
       {toolbar && <div className="hidden md:block">{toolbar}</div>}
-      <table className="hidden w-full border-collapse text-left text-sm md:table">
+      <table className="hidden w-full table-fixed border-collapse text-left text-sm md:table">
+        <colgroup>
+          <col className="w-[24%]" />
+          <col className="w-[15%]" />
+          <col className="w-[24%]" />
+          <col className="w-[10%]" />
+          <col className="w-[15%]" />
+          <col className="w-[7%]" />
+          <col className="w-12" />
+        </colgroup>
         <thead>
           <tr className="border-b border-border-subtle text-text-muted">
             <th className="py-3 pr-4 font-semibold">
@@ -175,7 +184,9 @@ export function UsersTable({
                 />
               </TableHeaderFilter>
             </th>
-            <th className="py-3 font-semibold">Actions</th>
+            <th className="py-3 text-right font-semibold">
+              <span className="sr-only">Actions</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -193,7 +204,7 @@ export function UsersTable({
               <td className="py-3 pr-4">
                 <UserStatusBadge isActive={user.isActive} />
               </td>
-              <td className="py-3">
+              <td className="py-3 text-right">
                 <UserActions
                   onDuplicate={onDuplicate}
                   onEdit={onEdit}

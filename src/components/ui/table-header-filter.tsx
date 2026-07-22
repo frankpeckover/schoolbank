@@ -85,10 +85,12 @@ export function TableHeaderFilter({
 export function TableHeaderFilterInput({
   label,
   onChange,
+  type = "text",
   value,
 }: {
   label: string;
   onChange: (value: string) => void;
+  type?: "number" | "text";
   value: string;
 }) {
   return (
@@ -97,6 +99,9 @@ export function TableHeaderFilterInput({
       <input
         className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm font-normal text-text-control outline-none ring-brand transition placeholder:text-text-muted focus:ring-2"
         onChange={(event) => onChange(event.target.value)}
+        min={type === "number" ? "0" : undefined}
+        step={type === "number" ? "1" : undefined}
+        type={type}
         value={value}
       />
     </label>

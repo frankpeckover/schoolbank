@@ -16,7 +16,8 @@ const toneClassNames: Record<IconButtonTone, string> = {
   danger:
     "border-danger-button-border text-danger-strong hover:bg-danger-soft",
   default: "border-button-border text-text-control hover:bg-surface",
-  primary: "border-brand bg-brand text-white hover:bg-brand-hover",
+  primary:
+    "border-brand bg-brand text-white shadow-sm hover:bg-brand-hover hover:shadow-md",
 };
 
 export function IconButton({

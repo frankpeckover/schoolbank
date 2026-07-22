@@ -131,7 +131,14 @@ function GroupList({
       </div>
 
       {toolbar && <div className="hidden md:block">{toolbar}</div>}
-      <table className="hidden w-full border-collapse text-left text-sm md:table">
+      <table className="hidden w-full table-fixed border-collapse text-left text-sm md:table">
+        <colgroup>
+          <col className="w-[28%]" />
+          <col className="w-[42%]" />
+          <col className="w-[12%]" />
+          <col className="w-[10%]" />
+          <col className="w-12" />
+        </colgroup>
         <thead>
           <tr className="border-b border-border-subtle text-text-muted">
             <th className="py-2 pr-4 font-semibold">
@@ -180,7 +187,9 @@ function GroupList({
                 />
               </TableHeaderFilter>
             </th>
-            <th className="py-2 font-semibold">Actions</th>
+            <th className="py-2 text-right font-semibold">
+              <span className="sr-only">Actions</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -201,7 +210,7 @@ function GroupList({
               <td className="py-3 pr-4">
                 <GroupStatusBadge group={group} />
               </td>
-              <td className="py-3">
+              <td className="py-3 text-right">
                 <GroupActions
                   group={group}
                   onDuplicateGroup={onDuplicateGroup}
