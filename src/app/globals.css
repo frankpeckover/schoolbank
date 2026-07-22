@@ -262,11 +262,11 @@ h6 {
 }
 
 .font-semibold {
-  font-weight: 550;
+  font-weight: 500;
 }
 
 .font-bold {
-  font-weight: 650;
+  font-weight: 600;
 }
 
 button,
@@ -437,9 +437,9 @@ html[data-theme="dark"] .professional-shell {
 
 .theme-panel {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   border-radius: var(--radius-panel);
-  box-shadow: 0 1px 2px var(--shadow-panel), 0 10px 28px rgba(31, 37, 35, 0.035);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--shadow-panel) 72%, transparent), 0 10px 28px rgba(31, 37, 35, 0.025);
 }
 
 .login-panel {
@@ -455,13 +455,13 @@ html[data-theme="dark"] .professional-shell {
 
 .theme-card {
   background: var(--surface);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid transparent;
   border-radius: var(--radius-card);
 }
 
 .theme-subpanel {
   background: var(--panel-soft);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid transparent;
   border-radius: var(--radius-card);
 }
 
@@ -479,28 +479,32 @@ table td {
   border-bottom: 1px solid var(--border-subtle);
 }
 
+table thead th {
+  border-bottom: 2px solid var(--border);
+}
+
 .professional-shell .theme-panel {
   background: var(--professional-panel-bg);
-  border-color: var(--border-strong);
-  box-shadow: 0 1px 2px var(--professional-panel-shadow);
+  border-color: transparent;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--professional-panel-shadow) 70%, transparent);
 }
 
 .professional-shell .theme-card {
   background: var(--professional-card-bg);
-  border-color: var(--border);
+  border-color: transparent;
   box-shadow: none;
 }
 
 .professional-shell .theme-subpanel {
   background: color-mix(in srgb, var(--panel-soft) 72%, var(--surface));
-  border-color: var(--border);
+  border-color: transparent;
 }
 
 .professional-shell .wallet-card {
   background: var(--professional-panel-bg);
-  border-color: var(--border-strong);
+  border-color: transparent;
   border-radius: var(--radius-panel);
-  box-shadow: 0 1px 2px var(--professional-panel-shadow);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--professional-panel-shadow) 70%, transparent);
 }
 
 .professional-shell .wallet-card::before,
@@ -566,7 +570,7 @@ table td {
 
 .professional-shell label.text-sm.font-semibold,
 .professional-shell p.text-sm.font-semibold {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .professional-shell .theme-card span[class*="bg-brand-soft"],
@@ -632,9 +636,26 @@ html[data-theme="dark"] .professional-shell .motion-pop.theme-panel {
   color: var(--text-control);
 }
 
-.professional-shell .theme-card:hover,
-.professional-shell .theme-panel:hover {
-  border-color: color-mix(in srgb, var(--border-strong) 82%, var(--brand));
+.theme-panel:hover,
+.theme-card:hover,
+.theme-subpanel:hover,
+.wallet-card:hover {
+  border-color: transparent !important;
+}
+
+.theme-card:hover,
+.theme-subpanel:hover {
+  box-shadow: none !important;
+}
+
+.theme-panel:hover,
+.wallet-card:hover {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--shadow-panel) 72%, transparent), 0 10px 28px rgba(31, 37, 35, 0.025) !important;
+}
+
+.professional-shell .theme-panel:hover,
+.professional-shell .wallet-card:hover {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--professional-panel-shadow) 70%, transparent) !important;
 }
 
 @keyframes panel-enter {

@@ -77,7 +77,7 @@ export function StudentDashboardPanel({
 
   return (
     <>
-      <section className="dashboard-grid motion-panel mt-5">
+      <section className="dashboard-grid motion-panel mt-2">
         <StudentWalletCard
           balance={balance}
           currencyName={currencyName}

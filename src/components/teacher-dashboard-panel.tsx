@@ -173,7 +173,7 @@ export function TeacherDashboardPanel({
 
   return (
     <>
-    <section className="motion-panel mt-5">
+    <section className="motion-panel mt-2">
         {isLoading && (
           <p className="mt-4 text-sm text-text-muted">Loading students...</p>
         )}

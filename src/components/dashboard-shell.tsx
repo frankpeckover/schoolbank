@@ -10,6 +10,7 @@ import { AdminTimetablePanel } from "@/components/admin-timetable-panel";
 import { AdminUsersPanel } from "@/components/admin-users-panel";
 import { CreditAnalyticsPanel } from "@/components/credit-analytics-panel";
 import {
+  DesktopSideNav,
   HeaderNavMenu,
   type NavigationItem,
 } from "@/components/app-nav";
@@ -96,24 +97,37 @@ export function DashboardShell({
   return (
     <main className={`app-shell-surface min-h-screen overflow-x-hidden bg-background text-foreground ${shellRoleClassName}`}>
       <GlobalMaintenanceBanner message={maintenanceMessage} />
-      <div className="mx-auto flex min-h-screen w-full max-w-7xl min-w-0 flex-col overflow-x-hidden px-4 py-4 sm:px-6 lg:px-8">
-        <header className="relative z-50 py-3">
-          <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-3">
-            <AppBrand />
-            <p className="min-w-0 flex-1 truncate text-left text-sm font-medium text-text-control sm:text-center sm:text-base">
-              {greeting}, {getGreetingName(user)}!
-            </p>
-            <HeaderNavMenu
-              activeItem={activeNavItem}
-              onItemChange={setActiveNavItem}
-              onLogout={onLogout}
-              onPasswordChange={() => setIsPasswordModalOpen(true)}
-              profileImageUrl={user.profileImageUrl}
-              role={user.role}
-              userDisplayName={user.displayName}
-            />
-          </div>
-        </header>
+      <div className="mx-auto flex min-h-screen w-full max-w-[96rem] min-w-0 gap-4 overflow-x-hidden px-4 py-2 sm:px-6 lg:px-8">
+        <DesktopSideNav
+          activeItem={activeNavItem}
+          onItemChange={setActiveNavItem}
+          onLogout={onLogout}
+          onPasswordChange={() => setIsPasswordModalOpen(true)}
+          profileImageUrl={user.profileImageUrl}
+          role={user.role}
+          userDisplayName={user.displayName}
+        />
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="relative z-50 pb-2 pt-4">
+            <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-3">
+              <div className="lg:hidden">
+                <AppBrand />
+              </div>
+              <p className="min-w-0 flex-1 truncate text-left text-base font-medium text-text-control sm:text-center sm:text-lg lg:text-left">
+                {greeting}, {getGreetingName(user)}!
+              </p>
+              <HeaderNavMenu
+                activeItem={activeNavItem}
+                onItemChange={setActiveNavItem}
+                onLogout={onLogout}
+                onPasswordChange={() => setIsPasswordModalOpen(true)}
+                profileImageUrl={user.profileImageUrl}
+                role={user.role}
+                userDisplayName={user.displayName}
+              />
+            </div>
+          </header>
 
         {isAdmin(user) && activeNavItem === "Dashboard" && (
           <AdminDashboardPanel
@@ -193,6 +207,7 @@ export function DashboardShell({
           contactEmail={schoolInfo.contactEmail}
           schoolName={schoolName}
         />
+        </div>
       </div>
     </main>
   );

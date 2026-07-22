@@ -95,7 +95,7 @@ export function AdminDashboardPanel({
 
   return (
     <>
-      <div className="dashboard-grid mt-5">
+      <div className="dashboard-grid mt-2">
         <section className="dashboard-unit-2 section-highlight theme-panel min-w-0 p-4">
           {isLoading && (
             <p className="text-sm text-text-muted">Loading overview...</p>
