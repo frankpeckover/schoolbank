@@ -1,11 +1,9 @@
 import { IconButton } from "@/components/ui/icon-button";
-import { FileDownIcon, FileUpIcon, FilterIcon, PlusIcon } from "@/components/ui/icons";
+import { FileDownIcon, FileUpIcon, PlusIcon } from "@/components/ui/icons";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
 
 type GroupsPageHeaderProps = {
-  areFiltersOpen: boolean;
   count: number;
-  onFilterToggle: () => void;
   onExportClick: () => void;
   onImportClick: () => void;
   onNewGroupClick: () => void;
@@ -13,9 +11,7 @@ type GroupsPageHeaderProps = {
 };
 
 export function GroupsPageHeader({
-  areFiltersOpen,
   count,
-  onFilterToggle,
   onExportClick,
   onImportClick,
   onNewGroupClick,
@@ -25,14 +21,6 @@ export function GroupsPageHeader({
     <PanelToolbar
       actions={
         <>
-          <IconButton
-            ariaExpanded={areFiltersOpen}
-            label={areFiltersOpen ? "Hide filters" : "Show filters"}
-            onClick={onFilterToggle}
-            text="Filters"
-          >
-            <FilterIcon />
-          </IconButton>
           <IconButton
             disabled={count === 0}
             label="Export groups"

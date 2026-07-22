@@ -35,7 +35,15 @@ import {
   usePagedList,
 } from "@/components/ui/list-pagination";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
-import { SearchInput } from "@/components/ui/search-input";
+import {
+  TableActionMenu,
+  type TableActionMenuItem,
+} from "@/components/ui/table-action-menu";
+import {
+  TableHeaderFilter,
+  TableHeaderFilterInput,
+  TableHeaderFilterSelect,
+} from "@/components/ui/table-header-filter";
 import { TextReasonModal } from "@/components/ui/text-reason-modal";
 
 type TransactionLogPanelProps = {
@@ -43,6 +51,39 @@ type TransactionLogPanelProps = {
   currentUser: SessionUser;
   title?: string;
 };
+
+const transactionTypeOptions = [
+  { label: "Any type", value: "" },
+  { label: "Reward", value: "reward" },
+  { label: "Penalty", value: "penalty" },
+  { label: "Credit", value: "credit" },
+  { label: "Debit", value: "debit" },
+  { label: "Hold", value: "hold" },
+  { label: "Shop hold", value: "shop_hold" },
+  { label: "Shop purchase", value: "shop_purchase" },
+  { label: "Shop refund", value: "shop_refund" },
+  { label: "Manual adjustment", value: "manual_adjustment" },
+  { label: "Void reversal", value: "void_reversal" },
+];
+
+const voidedStatusOptions = [
+  { label: "Any status", value: "" },
+  { label: "Active", value: "active" },
+  { label: "Voided", value: "voided" },
+];
+
+const purchaseStatusOptions = [
+  { label: "Any purchase status", value: "" },
+  { label: "Pending", value: "pending" },
+  { label: "Approved", value: "approved" },
+  { label: "Denied", value: "denied" },
+];
+
+const amountDirectionOptions = [
+  { label: "Any amount", value: "" },
+  { label: "Added", value: "positive" },
+  { label: "Removed/spent", value: "negative" },
+];
 
 export function TransactionLogPanel({
   currencyName,
@@ -54,7 +95,6 @@ export function TransactionLogPanel({
   const [filters, setFilters] = useState<TransactionFilters>(
     emptyTransactionFilters,
   );
-  const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -145,14 +185,6 @@ export function TransactionLogPanel({
         actions={
           <>
             <IconButton
-              ariaExpanded={areFiltersOpen}
-              label={areFiltersOpen ? "Hide filters" : "Show filters"}
-              onClick={() => setAreFiltersOpen((isOpen) => !isOpen)}
-              text="Filters"
-            >
-              <FilterIcon />
-            </IconButton>
-            <IconButton
               label="Export transactions"
               onClick={() => {
                 if (isLoading || filteredTransactions.length === 0) {
@@ -174,16 +206,6 @@ export function TransactionLogPanel({
           </p>
         )}
       </PanelToolbar>
-
-      <div>
-        {areFiltersOpen && (
-          <TransactionFilters
-            canViewAllTransactions={canViewAllTransactionsForUser}
-            filters={filters}
-            onFiltersChange={setFilters}
-          />
-        )}
-      </div>
 
       <div className="mt-5">
         {isLoading && (
@@ -218,7 +240,9 @@ export function TransactionLogPanel({
             <TransactionList
               canViewAllTransactions={canViewAllTransactionsForUser}
               canVoidTransactions={canVoidTransactionsForUser}
+              filters={filters}
               onDetailsClick={setViewingTransaction}
+              onFiltersChange={setFilters}
               onVoidClick={setVoidingTransaction}
               transactions={visibleTransactions}
             />
@@ -257,16 +281,27 @@ export function TransactionLogPanel({
 function TransactionList({
   canViewAllTransactions,
   canVoidTransactions,
+  filters,
   onDetailsClick,
+  onFiltersChange,
   onVoidClick,
   transactions,
 }: {
   canViewAllTransactions: boolean;
   canVoidTransactions: boolean;
+  filters: TransactionFilters;
   onDetailsClick: (transaction: TransactionLogItem) => void;
+  onFiltersChange: (filters: TransactionFilters) => void;
   onVoidClick: (transaction: TransactionLogItem) => void;
   transactions: TransactionLogItem[];
 }) {
+  function updateFilter<Field extends keyof TransactionFilters>(
+    field: Field,
+    value: TransactionFilters[Field],
+  ) {
+    onFiltersChange({ ...filters, [field]: value });
+  }
+
   return (
     <>
       <div className="grid w-full min-w-0 gap-2 md:hidden">
@@ -286,12 +321,105 @@ function TransactionList({
           />
           <thead>
             <tr className="border-b border-border-subtle text-text-muted">
-              <th className="py-2 pr-4 font-semibold">Description</th>
+              <th className="py-2 pr-4 font-semibold">
+                <TableHeaderFilter
+                  isActive={Boolean(filters.reason || filters.type)}
+                  label="Description"
+                  onClear={() =>
+                    onFiltersChange({ ...filters, reason: "", type: "" })
+                  }
+                >
+                  <div className="grid gap-3">
+                    <TableHeaderFilterInput
+                      label="Reason"
+                      onChange={(value) => updateFilter("reason", value)}
+                      value={filters.reason}
+                    />
+                    <TableHeaderFilterSelect
+                      label="Type"
+                      onChange={(value) =>
+                        updateFilter("type", value as TransactionFilters["type"])
+                      }
+                      options={transactionTypeOptions}
+                      value={filters.type}
+                    />
+                  </div>
+                </TableHeaderFilter>
+              </th>
               {canViewAllTransactions && (
-                <th className="py-2 pr-4 font-semibold">Account</th>
+                <th className="py-2 pr-4 font-semibold">
+                  <TableHeaderFilter
+                    isActive={Boolean(filters.student)}
+                    label="Account"
+                    onClear={() => updateFilter("student", "")}
+                  >
+                    <TableHeaderFilterInput
+                      label="Student"
+                      onChange={(value) => updateFilter("student", value)}
+                      value={filters.student}
+                    />
+                  </TableHeaderFilter>
+                </th>
               )}
-              <th className="py-2 pr-4 font-semibold">Status</th>
-              <th className="py-2 pr-4 text-right font-semibold">Amount</th>
+              <th className="py-2 pr-4 font-semibold">
+                <TableHeaderFilter
+                  isActive={Boolean(
+                    filters.purchaseStatus || filters.voidedStatus !== "active",
+                  )}
+                  label="Status"
+                  onClear={() =>
+                    onFiltersChange({
+                      ...filters,
+                      purchaseStatus: "",
+                      voidedStatus: "active",
+                    })
+                  }
+                >
+                  <div className="grid gap-3">
+                    <TableHeaderFilterSelect
+                      label="Void status"
+                      onChange={(value) =>
+                        updateFilter(
+                          "voidedStatus",
+                          value as TransactionFilters["voidedStatus"],
+                        )
+                      }
+                      options={voidedStatusOptions}
+                      value={filters.voidedStatus}
+                    />
+                    <TableHeaderFilterSelect
+                      label="Purchase status"
+                      onChange={(value) =>
+                        updateFilter(
+                          "purchaseStatus",
+                          value as TransactionFilters["purchaseStatus"],
+                        )
+                      }
+                      options={purchaseStatusOptions}
+                      value={filters.purchaseStatus}
+                    />
+                  </div>
+                </TableHeaderFilter>
+              </th>
+              <th className="py-2 pr-4 text-right font-semibold">
+                <TableHeaderFilter
+                  isActive={Boolean(filters.amountDirection)}
+                  label="Amount"
+                  onClear={() => updateFilter("amountDirection", "")}
+                >
+                  <TableHeaderFilterSelect
+                    label="Amount"
+                    onChange={(value) =>
+                      updateFilter(
+                        "amountDirection",
+                        value as TransactionFilters["amountDirection"],
+                      )
+                    }
+                    options={amountDirectionOptions}
+                    value={filters.amountDirection}
+                  />
+                </TableHeaderFilter>
+              </th>
               <th className="py-2 font-semibold">Actions</th>
             </tr>
           </thead>
@@ -427,179 +555,28 @@ function TransactionActions({
   onVoidClick: (transaction: TransactionLogItem) => void;
   transaction: TransactionLogItem;
 }) {
-  return (
-    <div className="flex gap-2">
-      <IconButton label="Transaction details" onClick={() => onDetailsClick(transaction)}>
-        <EyeIcon />
-      </IconButton>
-      {canVoidTransactions && (
-        <IconButton
-          disabled={transaction.isVoided || transaction.type === "void_reversal"}
-          label="Void transaction"
-          onClick={() => onVoidClick(transaction)}
-        >
-          <XIcon />
-        </IconButton>
-      )}
-    </div>
-  );
-}
+  const actionItems: TableActionMenuItem[] = [
+    {
+      icon: <EyeIcon />,
+      label: "View details",
+      onSelect: () => onDetailsClick(transaction),
+    },
+  ];
 
-function TransactionFilters({
-  canViewAllTransactions,
-  filters,
-  onFiltersChange,
-}: {
-  canViewAllTransactions: boolean;
-  filters: TransactionFilters;
-  onFiltersChange: (filters: TransactionFilters) => void;
-}) {
-  function updateFilter<Field extends keyof TransactionFilters>(
-    field: Field,
-    value: TransactionFilters[Field],
-  ) {
-    onFiltersChange({ ...filters, [field]: value });
+  if (canVoidTransactions) {
+    actionItems.push({
+      disabled: transaction.isVoided || transaction.type === "void_reversal",
+      icon: <XIcon />,
+      label: "Void",
+      onSelect: () => onVoidClick(transaction),
+    });
   }
 
   return (
-    <div className="theme-subpanel mt-4 p-3">
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-        <div>
-          <label className="text-sm font-semibold text-text-control" htmlFor="transactionType">
-            Type
-          </label>
-          <select
-            className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none ring-brand transition focus:ring-2"
-            id="transactionType"
-            onChange={(event) =>
-              updateFilter(
-                "type",
-                event.target.value as TransactionFilters["type"],
-              )
-            }
-            value={filters.type}
-          >
-            <option value="">Any type</option>
-            <option value="reward">Reward</option>
-            <option value="penalty">Penalty</option>
-            <option value="credit">Credit</option>
-            <option value="debit">Debit</option>
-            <option value="hold">Hold</option>
-            <option value="shop_hold">Shop hold</option>
-            <option value="shop_purchase">Shop purchase</option>
-            <option value="shop_refund">Shop refund</option>
-            <option value="manual_adjustment">Manual adjustment</option>
-            <option value="void_reversal">Void reversal</option>
-          </select>
-        </div>
-
-        <FilterInput
-          id="transactionReason"
-          label="Reason"
-          onChange={(value) => updateFilter("reason", value)}
-          value={filters.reason}
-        />
-
-        {canViewAllTransactions && (
-          <FilterInput
-            id="transactionStudent"
-            label="Student"
-            onChange={(value) => updateFilter("student", value)}
-            value={filters.student}
-          />
-        )}
-
-        <div>
-          <label className="text-sm font-semibold text-text-control" htmlFor="amountDirection">
-            Amount
-          </label>
-          <select
-            className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none ring-brand transition focus:ring-2"
-            id="amountDirection"
-            onChange={(event) =>
-              updateFilter(
-                "amountDirection",
-                event.target.value as TransactionFilters["amountDirection"],
-              )
-            }
-            value={filters.amountDirection}
-          >
-            <option value="">Any amount</option>
-            <option value="positive">Added</option>
-            <option value="negative">Removed/spent</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="text-sm font-semibold text-text-control" htmlFor="voidedStatus">
-            Void status
-          </label>
-          <select
-            className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none ring-brand transition focus:ring-2"
-            id="voidedStatus"
-            onChange={(event) =>
-              updateFilter(
-                "voidedStatus",
-                event.target.value as TransactionFilters["voidedStatus"],
-              )
-            }
-            value={filters.voidedStatus}
-          >
-            <option value="">Any status</option>
-            <option value="active">Active</option>
-            <option value="voided">Voided</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="text-sm font-semibold text-text-control" htmlFor="purchaseStatus">
-            Purchase status
-          </label>
-          <select
-            className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none ring-brand transition focus:ring-2"
-            id="purchaseStatus"
-            onChange={(event) =>
-              updateFilter(
-                "purchaseStatus",
-                event.target.value as TransactionFilters["purchaseStatus"],
-              )
-            }
-            value={filters.purchaseStatus}
-          >
-            <option value="">Any purchase status</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="denied">Denied</option>
-          </select>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FilterInput({
-  id,
-  label,
-  onChange,
-  value,
-}: {
-  id: string;
-  label: string;
-  onChange: (value: string) => void;
-  value: string;
-}) {
-  return (
-    <div>
-      <label className="text-sm font-semibold text-text-control" htmlFor={id}>
-        {label}
-      </label>
-      <SearchInput
-        className="mt-2"
-        id={id}
-        onChange={onChange}
-        value={value}
-      />
-    </div>
+    <TableActionMenu
+      label="Open transaction actions"
+      items={actionItems}
+    />
   );
 }
 

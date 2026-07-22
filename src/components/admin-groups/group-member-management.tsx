@@ -1,6 +1,7 @@
 import { IconButton } from "@/components/ui/icon-button";
 import { TrashIcon } from "@/components/ui/icons";
 import { SearchInput } from "@/components/ui/search-input";
+import { TableActionMenu } from "@/components/ui/table-action-menu";
 import type {
   GroupListItem,
   GroupMemberItem,
@@ -247,13 +248,17 @@ function GroupMembersTable({
                     {member.username}
                   </td>
                   <td className="py-2">
-                    <IconButton
-                      label={`Remove ${member.displayName}`}
-                      onClick={() => onRemoveStudent(member)}
-                      tone="danger"
-                    >
-                      <TrashIcon />
-                    </IconButton>
+                    <TableActionMenu
+                      label={`Open actions for ${member.displayName}`}
+                      items={[
+                        {
+                          icon: <TrashIcon />,
+                          label: "Remove",
+                          onSelect: () => onRemoveStudent(member),
+                          tone: "danger",
+                        },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

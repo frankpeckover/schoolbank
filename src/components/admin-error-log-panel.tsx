@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { listErrorLog } from "@/lib/actions";
 import { formatDateTime } from "@/lib/formatters";
 import type { ErrorLogItem } from "@/services/error-log-service";
@@ -13,18 +13,38 @@ import {
 } from "@/components/ui/list-pagination";
 import { ModalShell } from "@/components/ui/modal-shell";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
+import { TableActionMenu } from "@/components/ui/table-action-menu";
+import {
+  TableHeaderFilter,
+  TableHeaderFilterInput,
+} from "@/components/ui/table-header-filter";
+
+type ErrorFilters = {
+  message: string;
+  source: string;
+};
+
+const emptyErrorFilters: ErrorFilters = {
+  message: "",
+  source: "",
+};
 
 export function AdminErrorLogPanel() {
   const [entries, setEntries] = useState<ErrorLogItem[]>([]);
+  const [filters, setFilters] = useState<ErrorFilters>(emptyErrorFilters);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [viewingEntry, setViewingEntry] = useState<ErrorLogItem | null>(null);
+  const filteredEntries = useMemo(
+    () => entries.filter((entry) => matchesErrorFilters(entry, filters)),
+    [entries, filters],
+  );
   const {
     page,
     pageItems: visibleEntries,
     setPage,
     totalPages,
-  } = usePagedList(entries);
+  } = usePagedList(filteredEntries);
 
   useEffect(() => {
     let isMounted = true;
@@ -57,15 +77,15 @@ export function AdminErrorLogPanel() {
 
   return (
     <AdminPageSection>
-      {!isLoading && !error && entries.length > 0 && (
+      {!isLoading && !error && filteredEntries.length > 0 && (
         <PanelToolbar>
           <p className="text-sm font-semibold text-text-muted">
-            Showing {visibleEntries.length} of {entries.length} errors.
+            Showing {visibleEntries.length} of {filteredEntries.length} errors.
           </p>
         </PanelToolbar>
       )}
 
-      <div className={!isLoading && !error && entries.length > 0 ? "mt-5" : ""}>
+      <div className={!isLoading && !error && filteredEntries.length > 0 ? "mt-5" : ""}>
         {isLoading && (
           <p className="text-sm text-text-muted">Loading error log...</p>
         )}
@@ -77,16 +97,23 @@ export function AdminErrorLogPanel() {
         {!isLoading && !error && entries.length === 0 && (
           <p className="text-sm text-text-muted">No server errors recorded.</p>
         )}
-        {!isLoading && !error && entries.length > 0 && (
+        {!isLoading && !error && entries.length > 0 && filteredEntries.length === 0 && (
+          <p className="text-sm text-text-muted">
+            No server errors match these filters.
+          </p>
+        )}
+        {!isLoading && !error && filteredEntries.length > 0 && (
           <>
             <ErrorLogList
               entries={visibleEntries}
+              filters={filters}
               onDetailsClick={setViewingEntry}
+              onFiltersChange={setFilters}
             />
             <ListPagination
               onPageChange={setPage}
               page={page}
-              totalCount={entries.length}
+              totalCount={filteredEntries.length}
               totalPages={totalPages}
             />
           </>
@@ -105,11 +132,19 @@ export function AdminErrorLogPanel() {
 
 function ErrorLogList({
   entries,
+  filters,
   onDetailsClick,
+  onFiltersChange,
 }: {
   entries: ErrorLogItem[];
+  filters: ErrorFilters;
   onDetailsClick: (entry: ErrorLogItem) => void;
+  onFiltersChange: (filters: ErrorFilters) => void;
 }) {
+  function updateFilter(field: keyof ErrorFilters, value: string) {
+    onFiltersChange({ ...filters, [field]: value });
+  }
+
   return (
     <>
       <div className="grid w-full min-w-0 gap-2 md:hidden">
@@ -127,8 +162,32 @@ function ErrorLogList({
           <thead>
             <tr className="border-b border-border-subtle text-text-muted">
               <th className="py-2 pr-4 font-semibold">Time</th>
-              <th className="py-2 pr-4 font-semibold">Source</th>
-              <th className="py-2 pr-4 font-semibold">Message</th>
+              <th className="py-2 pr-4 font-semibold">
+                <TableHeaderFilter
+                  isActive={Boolean(filters.source)}
+                  label="Source"
+                  onClear={() => updateFilter("source", "")}
+                >
+                  <TableHeaderFilterInput
+                    label="Source"
+                    onChange={(value) => updateFilter("source", value)}
+                    value={filters.source}
+                  />
+                </TableHeaderFilter>
+              </th>
+              <th className="py-2 pr-4 font-semibold">
+                <TableHeaderFilter
+                  isActive={Boolean(filters.message)}
+                  label="Message"
+                  onClear={() => updateFilter("message", "")}
+                >
+                  <TableHeaderFilterInput
+                    label="Message"
+                    onChange={(value) => updateFilter("message", value)}
+                    value={filters.message}
+                  />
+                </TableHeaderFilter>
+              </th>
               <th className="py-2 font-semibold">Actions</th>
             </tr>
           </thead>
@@ -145,12 +204,16 @@ function ErrorLogList({
                   {entry.message}
                 </td>
                 <td className="py-3">
-                  <IconButton
-                    label="Error details"
-                    onClick={() => onDetailsClick(entry)}
-                  >
-                    <EyeIcon />
-                  </IconButton>
+                  <TableActionMenu
+                    label="Open error actions"
+                    items={[
+                      {
+                        icon: <EyeIcon />,
+                        label: "View details",
+                        onSelect: () => onDetailsClick(entry),
+                      },
+                    ]}
+                  />
                 </td>
               </tr>
             ))}
@@ -235,4 +298,15 @@ function ErrorCodeBlock({ label, value }: { label: string; value: string }) {
       </pre>
     </div>
   );
+}
+
+function matchesErrorFilters(entry: ErrorLogItem, filters: ErrorFilters) {
+  return (
+    includesFilter(entry.source, filters.source) &&
+    includesFilter(entry.message, filters.message)
+  );
+}
+
+function includesFilter(value: string, filter: string) {
+  return value.toLowerCase().includes(filter.trim().toLowerCase());
 }

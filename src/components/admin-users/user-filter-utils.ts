@@ -15,10 +15,26 @@ export function matchesUserFilters(
     includesFilter(user.lastName, filters.lastName) &&
     includesFilter(user.username, filters.username) &&
     includesFilter(user.email, filters.email) &&
+    matchesLastActivityFilter(user.lastActivityAt, filters.lastActivity) &&
     (!filters.role || user.role === filters.role)
   );
 }
 
 function includesFilter(value: string, filter: string) {
   return value.toLowerCase().includes(filter.trim().toLowerCase());
+}
+
+function matchesLastActivityFilter(
+  lastActivityAt: string | null,
+  filter: UserFilters["lastActivity"],
+) {
+  if (filter === "active") {
+    return Boolean(lastActivityAt);
+  }
+
+  if (filter === "never") {
+    return !lastActivityAt;
+  }
+
+  return true;
 }

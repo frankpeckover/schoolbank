@@ -8,10 +8,27 @@ import {
 } from "@/lib/actions";
 import type { ShopPurchaseRequest } from "@/services/shop-service";
 import { formatAmount, formatDateTime } from "@/lib/formatters";
-import { IconButton } from "@/components/ui/icon-button";
 import { CheckIcon, ShoppingBagIcon, XIcon } from "@/components/ui/icons";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
+import { TableActionMenu } from "@/components/ui/table-action-menu";
+import {
+  TableHeaderFilter,
+  TableHeaderFilterInput,
+  TableHeaderFilterSelect,
+} from "@/components/ui/table-header-filter";
 import { TextReasonModal } from "@/components/ui/text-reason-modal";
+
+type ShopRequestTableFilters = {
+  item: string;
+  status: "" | ShopPurchaseRequest["status"];
+  student: string;
+};
+
+const emptyShopRequestTableFilters: ShopRequestTableFilters = {
+  item: "",
+  status: "",
+  student: "",
+};
 
 type ShopRequestsPanelProps = {
   className?: string;
@@ -261,10 +278,24 @@ function CompactShopRequestList({
   onDeny: (purchaseId: string) => void;
   requests: ShopPurchaseRequest[];
 }) {
+  const [filters, setFilters] = useState<ShopRequestTableFilters>(
+    emptyShopRequestTableFilters,
+  );
+  const filteredRequests = requests.filter((request) =>
+    matchesShopRequestTableFilters(request, filters),
+  );
+
+  function updateFilter<Field extends keyof ShopRequestTableFilters>(
+    field: Field,
+    value: ShopRequestTableFilters[Field],
+  ) {
+    setFilters({ ...filters, [field]: value });
+  }
+
   return (
     <>
       <div className="grid gap-2 md:hidden">
-        {requests.map((request) => (
+        {filteredRequests.map((request) => (
           <CompactShopRequestMobileRow
             key={request.id}
             onApprove={onApprove}
@@ -285,15 +316,62 @@ function CompactShopRequestList({
           </colgroup>
           <thead>
             <tr className="border-b border-border-subtle text-text-muted">
-              <th className="py-2 pr-4 font-semibold">Request</th>
-              <th className="py-2 pr-4 font-semibold">Student</th>
+              <th className="py-2 pr-4 font-semibold">
+                <TableHeaderFilter
+                  isActive={Boolean(filters.item)}
+                  label="Request"
+                  onClear={() => updateFilter("item", "")}
+                >
+                  <TableHeaderFilterInput
+                    label="Request"
+                    onChange={(value) => updateFilter("item", value)}
+                    value={filters.item}
+                  />
+                </TableHeaderFilter>
+              </th>
+              <th className="py-2 pr-4 font-semibold">
+                <TableHeaderFilter
+                  isActive={Boolean(filters.student)}
+                  label="Student"
+                  onClear={() => updateFilter("student", "")}
+                >
+                  <TableHeaderFilterInput
+                    label="Student"
+                    onChange={(value) => updateFilter("student", value)}
+                    value={filters.student}
+                  />
+                </TableHeaderFilter>
+              </th>
               <th className="py-2 pr-4 font-semibold">Cost</th>
-              <th className="py-2 pr-4 font-semibold">Status</th>
+              <th className="py-2 pr-4 font-semibold">
+                <TableHeaderFilter
+                  isActive={Boolean(filters.status)}
+                  label="Status"
+                  onClear={() => updateFilter("status", "")}
+                >
+                  <TableHeaderFilterSelect
+                    label="Status"
+                    onChange={(value) =>
+                      updateFilter(
+                        "status",
+                        value as ShopRequestTableFilters["status"],
+                      )
+                    }
+                    options={[
+                      { label: "Any status", value: "" },
+                      { label: "Pending", value: "pending" },
+                      { label: "Approved", value: "approved" },
+                      { label: "Denied", value: "denied" },
+                    ]}
+                    value={filters.status}
+                  />
+                </TableHeaderFilter>
+              </th>
               <th className="py-2 font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {requests.map((request) => (
+            {filteredRequests.map((request) => (
               <tr className="border-b border-border-subtle" key={request.id}>
                 <td className="py-2 pr-4">
                   <p className="truncate text-sm font-semibold text-text-control">
@@ -428,22 +506,23 @@ function ShopRequestActions({
   }
 
   return (
-    <div className="flex gap-2">
-      <IconButton
-        label={`Approve ${request.itemName} for ${request.studentName}`}
-        onClick={() => onApprove(request.id)}
-        tone="primary"
-      >
-        <CheckIcon />
-      </IconButton>
-      <IconButton
-        label={`Deny ${request.itemName} for ${request.studentName}`}
-        onClick={() => onDeny(request.id)}
-        tone="danger"
-      >
-        <XIcon />
-      </IconButton>
-    </div>
+    <TableActionMenu
+      label={`Open actions for ${request.itemName}`}
+      items={[
+        {
+          icon: <CheckIcon />,
+          label: "Approve",
+          onSelect: () => onApprove(request.id),
+          tone: "primary",
+        },
+        {
+          icon: <XIcon />,
+          label: "Deny",
+          onSelect: () => onDeny(request.id),
+          tone: "danger",
+        },
+      ]}
+    />
   );
 }
 
@@ -458,6 +537,24 @@ function ShopRequestStatusBadge({
       tone={getShopRequestStatusTone(request)}
     />
   );
+}
+
+function matchesShopRequestTableFilters(
+  request: ShopPurchaseRequest,
+  filters: ShopRequestTableFilters,
+) {
+  return (
+    includesFilter(request.itemName, filters.item) &&
+    includesFilter(
+      `${request.studentName} ${request.studentUsername}`,
+      filters.student,
+    ) &&
+    (!filters.status || request.status === filters.status)
+  );
+}
+
+function includesFilter(value: string, filter: string) {
+  return value.toLowerCase().includes(filter.trim().toLowerCase());
 }
 
 function getShopRequestStatusLabel(request: ShopPurchaseRequest) {

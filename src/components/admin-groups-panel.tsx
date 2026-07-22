@@ -43,7 +43,6 @@ export function AdminGroupsPanel() {
   const [duplicatingGroup, setDuplicatingGroup] =
     useState<GroupListItem | null>(null);
   const [editingGroup, setEditingGroup] = useState<GroupListItem | null>(null);
-  const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isLoadingGroups, setIsLoadingGroups] = useState(true);
@@ -299,13 +298,9 @@ export function AdminGroupsPanel() {
     await refreshGroups();
   }
 
-  async function handleGroupStatusChange() {
-    if (!selectedGroup) {
-      return;
-    }
-
-    const nextActiveState = !selectedGroup.isActive;
-    const result = await setGroupActive(selectedGroup.id, nextActiveState);
+  async function handleGroupStatusChange(group: GroupListItem) {
+    const nextActiveState = !group.isActive;
+    const result = await setGroupActive(group.id, nextActiveState);
 
     if (!result.ok) {
       setError(result.message);
@@ -314,7 +309,7 @@ export function AdminGroupsPanel() {
 
     setMessage(nextActiveState ? "Group reactivated." : "Group archived.");
     setError(null);
-    if (!nextActiveState && !showInactiveGroups) {
+    if (!nextActiveState && !showInactiveGroups && selectedGroupId === group.id) {
       setEditingGroup(null);
       setSelectedGroupId("");
       setMembers([]);
@@ -397,10 +392,8 @@ export function AdminGroupsPanel() {
   return (
     <AdminPageSection>
       <GroupsPageHeader
-        areFiltersOpen={areFiltersOpen}
         count={filteredGroups.length}
         onExportClick={() => downloadGroups(filteredGroups)}
-        onFilterToggle={() => setAreFiltersOpen((isOpen) => !isOpen)}
         onImportClick={() => setIsImportModalOpen(true)}
         onNewGroupClick={() => {
           setDuplicatingGroup(null);
@@ -410,12 +403,12 @@ export function AdminGroupsPanel() {
       />
 
       <GroupListPanel
-        areFiltersOpen={areFiltersOpen}
         groups={filteredGroups}
         isLoading={isLoadingGroups}
         onDuplicateGroup={duplicateGroup}
         onEditGroup={editGroup}
         onGroupSelect={selectGroup}
+        onGroupStatusChange={handleGroupStatusChange}
         onSearchChange={setGroupSearch}
         onShowArchivedChange={handleShowInactiveGroupsChange}
         search={groupSearch}
@@ -467,7 +460,6 @@ export function AdminGroupsPanel() {
           onAddSelectedStudents={handleAddSelectedStudents}
           onAddStudent={handleAddStudent}
           onClose={closeGroupEdit}
-          onGroupStatusChange={handleGroupStatusChange}
           onMemberSelectionToggle={toggleSelectedMember}
           onRemoveSelectedMembers={handleRemoveSelectedMembers}
           onRemoveStudent={handleRemoveStudent}

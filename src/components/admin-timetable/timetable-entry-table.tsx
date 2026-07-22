@@ -1,20 +1,42 @@
 import { weekDays } from "@/components/admin-timetable/timetable-constants";
-import { IconButton } from "@/components/ui/icon-button";
 import { CopyIcon, PencilIcon, TrashIcon } from "@/components/ui/icons";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { TableActionMenu } from "@/components/ui/table-action-menu";
+import {
+  TableHeaderFilter,
+  TableHeaderFilterSelect,
+} from "@/components/ui/table-header-filter";
+import type { TimetableFiltersState } from "@/components/admin-timetable/timetable-types";
+import type { GroupListItem } from "@/services/group-service";
 import type { TimetableEntry } from "@/services/timetable-service";
+import type { TimetableTeacher } from "@/services/timetable-service";
 
 export function TimetableEntryTable({
   entries,
+  filters,
+  groups,
   onDeleteEntry,
   onDuplicateEntry,
   onEditEntry,
+  onFiltersChange,
+  teachers,
 }: {
   entries: TimetableEntry[];
+  filters: TimetableFiltersState;
+  groups: GroupListItem[];
   onDeleteEntry: (entry: TimetableEntry) => void;
   onDuplicateEntry: (entry: TimetableEntry) => void;
   onEditEntry: (entry: TimetableEntry) => void;
+  onFiltersChange: (filters: TimetableFiltersState) => void;
+  teachers: TimetableTeacher[];
 }) {
+  function updateFilter<Field extends keyof TimetableFiltersState>(
+    field: Field,
+    value: TimetableFiltersState[Field],
+  ) {
+    onFiltersChange({ ...filters, [field]: value });
+  }
+
   return (
     <>
       <div className="grid gap-3 md:hidden">
@@ -32,11 +54,87 @@ export function TimetableEntryTable({
       <table className="hidden w-full border-collapse text-left text-sm md:table">
         <thead>
           <tr className="border-b border-border-subtle text-text-muted">
-            <th className="py-2 pr-4 font-semibold">Group</th>
-            <th className="py-2 pr-4 font-semibold">Teacher</th>
-            <th className="py-2 pr-4 font-semibold">Day</th>
+            <th className="py-2 pr-4 font-semibold">
+              <TableHeaderFilter
+                isActive={Boolean(filters.groupId)}
+                label="Group"
+                onClear={() => updateFilter("groupId", "")}
+              >
+                <TableHeaderFilterSelect
+                  label="Group"
+                  onChange={(value) => updateFilter("groupId", value)}
+                  options={[
+                    { label: "All groups", value: "" },
+                    ...groups.map((group) => ({
+                      label: group.name,
+                      value: group.id,
+                    })),
+                  ]}
+                  value={filters.groupId}
+                />
+              </TableHeaderFilter>
+            </th>
+            <th className="py-2 pr-4 font-semibold">
+              <TableHeaderFilter
+                isActive={Boolean(filters.teacherUserId)}
+                label="Teacher"
+                onClear={() => updateFilter("teacherUserId", "")}
+              >
+                <TableHeaderFilterSelect
+                  label="Teacher"
+                  onChange={(value) => updateFilter("teacherUserId", value)}
+                  options={[
+                    { label: "All teachers", value: "" },
+                    ...teachers.map((teacher) => ({
+                      label: teacher.displayName,
+                      value: teacher.id,
+                    })),
+                  ]}
+                  value={filters.teacherUserId}
+                />
+              </TableHeaderFilter>
+            </th>
+            <th className="py-2 pr-4 font-semibold">
+              <TableHeaderFilter
+                isActive={Boolean(filters.dayOfWeek)}
+                label="Day"
+                onClear={() => updateFilter("dayOfWeek", "")}
+              >
+                <TableHeaderFilterSelect
+                  label="Day"
+                  onChange={(value) => updateFilter("dayOfWeek", value)}
+                  options={[
+                    { label: "All days", value: "" },
+                    ...weekDays.map((day, index) => ({
+                      label: day,
+                      value: String(index),
+                    })),
+                  ]}
+                  value={filters.dayOfWeek}
+                />
+              </TableHeaderFilter>
+            </th>
             <th className="py-2 pr-4 font-semibold">Time</th>
-            <th className="py-2 pr-4 font-semibold">Status</th>
+            <th className="py-2 pr-4 font-semibold">
+              <TableHeaderFilter
+                isActive={Boolean(filters.status)}
+                label="Status"
+                onClear={() => updateFilter("status", "")}
+              >
+                <TableHeaderFilterSelect
+                  label="Status"
+                  onChange={(value) =>
+                    updateFilter("status", value as TimetableFiltersState["status"])
+                  }
+                  options={[
+                    { label: "Any status", value: "" },
+                    { label: "Active", value: "active" },
+                    { label: "Archived", value: "archived" },
+                  ]}
+                  value={filters.status}
+                />
+              </TableHeaderFilter>
+            </th>
             <th className="py-2 font-semibold">Actions</th>
           </tr>
         </thead>
@@ -118,24 +216,27 @@ function TimetableActions({
   onEditEntry: (entry: TimetableEntry) => void;
 }) {
   return (
-    <div className="flex gap-2">
-      <IconButton label="Edit timetable entry" onClick={() => onEditEntry(entry)}>
-        <PencilIcon />
-      </IconButton>
-      <IconButton
-        label="Duplicate timetable entry"
-        onClick={() => onDuplicateEntry(entry)}
-      >
-        <CopyIcon />
-      </IconButton>
-      <IconButton
-        label="Delete timetable entry"
-        onClick={() => onDeleteEntry(entry)}
-        tone="danger"
-      >
-        <TrashIcon />
-      </IconButton>
-    </div>
+    <TableActionMenu
+      label={`Open actions for ${entry.groupName}`}
+      items={[
+        {
+          icon: <PencilIcon />,
+          label: "Edit",
+          onSelect: () => onEditEntry(entry),
+        },
+        {
+          icon: <CopyIcon />,
+          label: "Duplicate",
+          onSelect: () => onDuplicateEntry(entry),
+        },
+        {
+          icon: <TrashIcon />,
+          label: "Delete",
+          onSelect: () => onDeleteEntry(entry),
+          tone: "danger",
+        },
+      ]}
+    />
   );
 }
 

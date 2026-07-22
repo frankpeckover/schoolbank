@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { listUsers } from "@/lib/actions";
-import { UserFiltersPanel } from "@/components/admin-users/user-filters";
+import { listUsers, setUserActive } from "@/lib/actions";
 import { matchesUserFilters } from "@/components/admin-users/user-filter-utils";
 import {
   emptyFilters,
@@ -14,7 +13,7 @@ import { UsersTable } from "@/components/admin-users/users-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
 import { IconButton } from "@/components/ui/icon-button";
-import { FileDownIcon, FileUpIcon, FilterIcon, PlusIcon, UsersIcon } from "@/components/ui/icons";
+import { FileDownIcon, FileUpIcon, PlusIcon, UsersIcon } from "@/components/ui/icons";
 import {
   ListPagination,
   usePagedList,
@@ -37,7 +36,6 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
     useState<Partial<UserFormState> | null>(null);
   const [editingUser, setEditingUser] = useState<UserListItem | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -114,6 +112,21 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
     }
   }
 
+  async function handleSetUserActive(user: UserListItem, isActive: boolean) {
+    setError(null);
+    setMessage(null);
+
+    const result = await setUserActive(user.id, isActive);
+
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+
+    setMessage(isActive ? "User enabled." : "User disabled.");
+    await refreshUsers();
+  }
+
   const filteredUsers = useMemo(
     () =>
       users.filter((user) =>
@@ -133,14 +146,6 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
       <PanelToolbar
         actions={
           <>
-            <IconButton
-              ariaExpanded={areFiltersOpen}
-              label={areFiltersOpen ? "Hide filters" : "Show filters"}
-              onClick={() => setAreFiltersOpen((isOpen) => !isOpen)}
-              text="Filters"
-            >
-              <FilterIcon />
-            </IconButton>
             <IconButton
               disabled={filteredUsers.length === 0}
               label="Export users"
@@ -176,17 +181,6 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
         )}
       </PanelToolbar>
 
-      <div>
-        {areFiltersOpen && (
-          <UserFiltersPanel
-            filters={filters}
-            onFiltersChange={setFilters}
-            onShowInactiveUsersChange={setShowInactiveUsers}
-            showInactiveUsers={showInactiveUsers}
-          />
-        )}
-      </div>
-
       <div className="mt-5">
         {isLoading && <p className="text-sm text-text-muted">Loading users...</p>}
         {error && (
@@ -202,8 +196,13 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
         {!isLoading && !error && filteredUsers.length > 0 && (
           <>
             <UsersTable
+              filters={filters}
+              onFiltersChange={setFilters}
               onDuplicate={handleDuplicateUser}
               onEdit={setEditingUser}
+              onShowInactiveUsersChange={setShowInactiveUsers}
+              onUserActiveChange={handleSetUserActive}
+              showInactiveUsers={showInactiveUsers}
               users={visibleUsers}
             />
             <ListPagination

@@ -1,22 +1,26 @@
 "use client";
 
-import { IconButton } from "@/components/ui/icon-button";
-import { CopyIcon, EyeIcon, PencilIcon } from "@/components/ui/icons";
+import { CheckIcon, CopyIcon, EyeIcon, PencilIcon, XIcon } from "@/components/ui/icons";
 import {
   ListPagination,
   usePagedList,
 } from "@/components/ui/list-pagination";
-import { SearchInput } from "@/components/ui/search-input";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { TableActionMenu } from "@/components/ui/table-action-menu";
+import {
+  TableHeaderFilter,
+  TableHeaderFilterInput,
+  TableHeaderFilterSelect,
+} from "@/components/ui/table-header-filter";
 import type { GroupListItem } from "@/services/group-service";
 
 type GroupListPanelProps = {
-  areFiltersOpen: boolean;
   groups: GroupListItem[];
   isLoading: boolean;
   onDuplicateGroup: (group: GroupListItem) => void;
   onEditGroup: (group: GroupListItem) => void;
   onGroupSelect: (group: GroupListItem) => void;
+  onGroupStatusChange: (group: GroupListItem) => void;
   onSearchChange: (value: string) => void;
   onShowArchivedChange: (showArchived: boolean) => void;
   search: string;
@@ -25,12 +29,12 @@ type GroupListPanelProps = {
 };
 
 export function GroupListPanel({
-  areFiltersOpen,
   groups,
   isLoading,
   onDuplicateGroup,
   onEditGroup,
   onGroupSelect,
+  onGroupStatusChange,
   onSearchChange,
   onShowArchivedChange,
   search,
@@ -46,16 +50,7 @@ export function GroupListPanel({
 
   return (
     <div className="mt-5">
-      {areFiltersOpen && (
-        <GroupFilters
-          onSearchChange={onSearchChange}
-          onShowArchivedChange={onShowArchivedChange}
-          search={search}
-          showArchived={showArchived}
-        />
-      )}
-
-      <div className={areFiltersOpen ? "mt-5" : ""}>
+      <div>
         {isLoading && (
           <p className="text-sm text-text-muted">Loading groups...</p>
         )}
@@ -69,7 +64,12 @@ export function GroupListPanel({
               onDuplicateGroup={onDuplicateGroup}
               onEditGroup={onEditGroup}
               onGroupSelect={onGroupSelect}
+              onGroupStatusChange={onGroupStatusChange}
+              onSearchChange={onSearchChange}
+              onShowArchivedChange={onShowArchivedChange}
+              search={search}
               selectedGroupId={selectedGroupId}
+              showArchived={showArchived}
             />
             <ListPagination
               onPageChange={setPage}
@@ -84,58 +84,28 @@ export function GroupListPanel({
   );
 }
 
-function GroupFilters({
-  onSearchChange,
-  onShowArchivedChange,
-  search,
-  showArchived,
-}: {
-  onSearchChange: (value: string) => void;
-  onShowArchivedChange: (showArchived: boolean) => void;
-  search: string;
-  showArchived: boolean;
-}) {
-  return (
-    <div className="theme-subpanel p-4">
-      <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-        <div>
-          <label className="text-sm font-semibold text-text-control" htmlFor="groupSearch">
-            Search groups
-          </label>
-          <SearchInput
-            className="mt-2"
-            id="groupSearch"
-            onChange={onSearchChange}
-            placeholder="Search by group name or description"
-            value={search}
-          />
-        </div>
-        <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-surface px-3 py-3 text-sm font-semibold text-text-control">
-          <input
-            checked={showArchived}
-            className="h-4 w-4"
-            onChange={(event) => onShowArchivedChange(event.target.checked)}
-            type="checkbox"
-          />
-          Show archived
-        </label>
-      </div>
-    </div>
-  );
-}
-
 function GroupList({
   groups,
   onDuplicateGroup,
   onEditGroup,
   onGroupSelect,
+  onGroupStatusChange,
+  onSearchChange,
+  onShowArchivedChange,
+  search,
   selectedGroupId,
+  showArchived,
 }: {
   groups: GroupListItem[];
   onDuplicateGroup: (group: GroupListItem) => void;
   onEditGroup: (group: GroupListItem) => void;
   onGroupSelect: (group: GroupListItem) => void;
+  onGroupStatusChange: (group: GroupListItem) => void;
+  onSearchChange: (value: string) => void;
+  onShowArchivedChange: (showArchived: boolean) => void;
+  search: string;
   selectedGroupId: string;
+  showArchived: boolean;
 }) {
   return (
     <>
@@ -148,6 +118,7 @@ function GroupList({
             onDuplicateGroup={onDuplicateGroup}
             onEditGroup={onEditGroup}
             onGroupSelect={onGroupSelect}
+            onGroupStatusChange={onGroupStatusChange}
           />
         ))}
       </div>
@@ -155,10 +126,52 @@ function GroupList({
       <table className="hidden w-full border-collapse text-left text-sm md:table">
         <thead>
           <tr className="border-b border-border-subtle text-text-muted">
-            <th className="py-2 pr-4 font-semibold">Name</th>
-            <th className="py-2 pr-4 font-semibold">Description</th>
+            <th className="py-2 pr-4 font-semibold">
+              <TableHeaderFilter
+                isActive={Boolean(search)}
+                label="Name"
+                onClear={() => onSearchChange("")}
+              >
+                <TableHeaderFilterInput
+                  label="Search groups"
+                  onChange={onSearchChange}
+                  value={search}
+                />
+              </TableHeaderFilter>
+            </th>
+            <th className="py-2 pr-4 font-semibold">
+              <TableHeaderFilter
+                isActive={Boolean(search)}
+                label="Description"
+                onClear={() => onSearchChange("")}
+              >
+                <TableHeaderFilterInput
+                  label="Search groups"
+                  onChange={onSearchChange}
+                  value={search}
+                />
+              </TableHeaderFilter>
+            </th>
             <th className="py-2 pr-4 font-semibold">Members</th>
-            <th className="py-2 pr-4 font-semibold">Status</th>
+            <th className="py-2 pr-4 font-semibold">
+              <TableHeaderFilter
+                isActive={showArchived}
+                label="Status"
+                onClear={() => onShowArchivedChange(false)}
+              >
+                <TableHeaderFilterSelect
+                  label="Status"
+                  onChange={(value) =>
+                    onShowArchivedChange(value === "includeArchived")
+                  }
+                  options={[
+                    { label: "Active only", value: "activeOnly" },
+                    { label: "Include archived", value: "includeArchived" },
+                  ]}
+                  value={showArchived ? "includeArchived" : "activeOnly"}
+                />
+              </TableHeaderFilter>
+            </th>
             <th className="py-2 font-semibold">Actions</th>
           </tr>
         </thead>
@@ -181,17 +194,13 @@ function GroupList({
                 <GroupStatusBadge group={group} />
               </td>
               <td className="py-3">
-                <div className="flex gap-2">
-                  <IconButton label={`View ${group.name}`} onClick={() => onGroupSelect(group)}>
-                    <EyeIcon />
-                  </IconButton>
-                  <IconButton label={`Duplicate ${group.name}`} onClick={() => onDuplicateGroup(group)}>
-                    <CopyIcon />
-                  </IconButton>
-                  <IconButton label={`Edit ${group.name}`} onClick={() => onEditGroup(group)}>
-                    <PencilIcon />
-                  </IconButton>
-                </div>
+                <GroupActions
+                  group={group}
+                  onDuplicateGroup={onDuplicateGroup}
+                  onEditGroup={onEditGroup}
+                  onGroupSelect={onGroupSelect}
+                  onGroupStatusChange={onGroupStatusChange}
+                />
               </td>
             </tr>
           ))}
@@ -207,12 +216,14 @@ function GroupCard({
   onDuplicateGroup,
   onEditGroup,
   onGroupSelect,
+  onGroupStatusChange,
 }: {
   group: GroupListItem;
   isSelected: boolean;
   onDuplicateGroup: (group: GroupListItem) => void;
   onEditGroup: (group: GroupListItem) => void;
   onGroupSelect: (group: GroupListItem) => void;
+  onGroupStatusChange: (group: GroupListItem) => void;
 }) {
   return (
     <article
@@ -233,21 +244,62 @@ function GroupCard({
             {group.description || "No description"}
           </p>
         </button>
-        <IconButton label={`View ${group.name}`} onClick={() => onGroupSelect(group)}>
-          <EyeIcon />
-        </IconButton>
-        <IconButton label={`Duplicate ${group.name}`} onClick={() => onDuplicateGroup(group)}>
-          <CopyIcon />
-        </IconButton>
-        <IconButton label={`Edit ${group.name}`} onClick={() => onEditGroup(group)}>
-          <PencilIcon />
-        </IconButton>
+        <GroupActions
+          group={group}
+          onDuplicateGroup={onDuplicateGroup}
+          onEditGroup={onEditGroup}
+          onGroupSelect={onGroupSelect}
+          onGroupStatusChange={onGroupStatusChange}
+        />
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-text-muted">
         <span>{group.memberCount} members</span>
         <GroupStatusBadge group={group} />
       </div>
     </article>
+  );
+}
+
+function GroupActions({
+  group,
+  onDuplicateGroup,
+  onEditGroup,
+  onGroupSelect,
+  onGroupStatusChange,
+}: {
+  group: GroupListItem;
+  onDuplicateGroup: (group: GroupListItem) => void;
+  onEditGroup: (group: GroupListItem) => void;
+  onGroupSelect: (group: GroupListItem) => void;
+  onGroupStatusChange: (group: GroupListItem) => void;
+}) {
+  return (
+    <TableActionMenu
+      label={`Open actions for ${group.name}`}
+      items={[
+        {
+          icon: <EyeIcon />,
+          label: "View",
+          onSelect: () => onGroupSelect(group),
+        },
+        {
+          icon: <CopyIcon />,
+          label: "Duplicate",
+          onSelect: () => onDuplicateGroup(group),
+        },
+        {
+          icon: <PencilIcon />,
+          label: "Edit",
+          onSelect: () => onEditGroup(group),
+        },
+        {
+          icon: group.isActive ? <XIcon /> : <CheckIcon />,
+          label: group.isActive ? "Archive" : "Reactivate",
+          onSelect: () => onGroupStatusChange(group),
+          tone: group.isActive ? "danger" : "primary",
+        },
+      ]}
+    />
   );
 }
 

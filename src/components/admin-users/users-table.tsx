@@ -1,17 +1,48 @@
-import { IconButton } from "@/components/ui/icon-button";
-import { CopyIcon, PencilIcon } from "@/components/ui/icons";
+import type { Role } from "@/lib/session";
+import {
+  type UserFilters,
+  userRoles,
+} from "@/components/admin-users/user-management-types";
+import { CheckIcon, CopyIcon, PencilIcon, XIcon } from "@/components/ui/icons";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { TableActionMenu } from "@/components/ui/table-action-menu";
+import {
+  TableHeaderFilter,
+  TableHeaderFilterInput,
+  TableHeaderFilterSelect,
+} from "@/components/ui/table-header-filter";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatDateTime } from "@/lib/formatters";
 import type { UserListItem } from "@/services/user-service";
 
 type UsersTableProps = {
+  filters: UserFilters;
+  onFiltersChange: (filters: UserFilters) => void;
   onDuplicate: (user: UserListItem) => void;
   onEdit: (user: UserListItem) => void;
+  onShowInactiveUsersChange: (showInactiveUsers: boolean) => void;
+  onUserActiveChange: (user: UserListItem, isActive: boolean) => void;
+  showInactiveUsers: boolean;
   users: UserListItem[];
 };
 
-export function UsersTable({ onDuplicate, onEdit, users }: UsersTableProps) {
+export function UsersTable({
+  filters,
+  onFiltersChange,
+  onDuplicate,
+  onEdit,
+  onShowInactiveUsersChange,
+  onUserActiveChange,
+  showInactiveUsers,
+  users,
+}: UsersTableProps) {
+  function updateFilter<Field extends keyof UserFilters>(
+    field: Field,
+    value: UserFilters[Field],
+  ) {
+    onFiltersChange({ ...filters, [field]: value });
+  }
+
   return (
     <>
       <div className="grid gap-3 md:hidden">
@@ -20,6 +51,7 @@ export function UsersTable({ onDuplicate, onEdit, users }: UsersTableProps) {
             key={user.id}
             onDuplicate={onDuplicate}
             onEdit={onEdit}
+            onUserActiveChange={onUserActiveChange}
             user={user}
           />
         ))}
@@ -28,12 +60,116 @@ export function UsersTable({ onDuplicate, onEdit, users }: UsersTableProps) {
       <table className="hidden w-full border-collapse text-left text-sm md:table">
         <thead>
           <tr className="border-b border-border-subtle text-text-muted">
-            <th className="py-3 pr-4 font-semibold">Name</th>
-            <th className="py-3 pr-4 font-semibold">Username</th>
-            <th className="py-3 pr-4 font-semibold">Email</th>
-            <th className="py-3 pr-4 font-semibold">Role</th>
-            <th className="py-3 pr-4 font-semibold">Last activity</th>
-            <th className="py-3 pr-4 font-semibold">Status</th>
+            <th className="py-3 pr-4 font-semibold">
+              <TableHeaderFilter
+                isActive={Boolean(filters.firstName || filters.lastName)}
+                label="Name"
+                onClear={() =>
+                  onFiltersChange({ ...filters, firstName: "", lastName: "" })
+                }
+              >
+                <div className="grid gap-3">
+                  <TableHeaderFilterInput
+                    label="First name"
+                    onChange={(value) => updateFilter("firstName", value)}
+                    value={filters.firstName}
+                  />
+                  <TableHeaderFilterInput
+                    label="Last name"
+                    onChange={(value) => updateFilter("lastName", value)}
+                    value={filters.lastName}
+                  />
+                </div>
+              </TableHeaderFilter>
+            </th>
+            <th className="py-3 pr-4 font-semibold">
+              <TableHeaderFilter
+                isActive={Boolean(filters.username)}
+                label="Username"
+                onClear={() => updateFilter("username", "")}
+              >
+                <TableHeaderFilterInput
+                  label="Username"
+                  onChange={(value) => updateFilter("username", value)}
+                  value={filters.username}
+                />
+              </TableHeaderFilter>
+            </th>
+            <th className="py-3 pr-4 font-semibold">
+              <TableHeaderFilter
+                isActive={Boolean(filters.email)}
+                label="Email"
+                onClear={() => updateFilter("email", "")}
+              >
+                <TableHeaderFilterInput
+                  label="Email"
+                  onChange={(value) => updateFilter("email", value)}
+                  value={filters.email}
+                />
+              </TableHeaderFilter>
+            </th>
+            <th className="py-3 pr-4 font-semibold">
+              <TableHeaderFilter
+                isActive={Boolean(filters.role)}
+                label="Role"
+                onClear={() => updateFilter("role", "")}
+              >
+                <TableHeaderFilterSelect
+                  label="Role"
+                  onChange={(value) => updateFilter("role", value as Role | "")}
+                  options={[
+                    { label: "Any role", value: "" },
+                    ...userRoles.map((role) => ({
+                      label: role,
+                      value: role,
+                    })),
+                  ]}
+                  value={filters.role}
+                />
+              </TableHeaderFilter>
+            </th>
+            <th className="py-3 pr-4 font-semibold">
+              <TableHeaderFilter
+                isActive={Boolean(filters.lastActivity)}
+                label="Last activity"
+                onClear={() => updateFilter("lastActivity", "")}
+              >
+                <TableHeaderFilterSelect
+                  label="Last activity"
+                  onChange={(value) =>
+                    updateFilter(
+                      "lastActivity",
+                      value as UserFilters["lastActivity"],
+                    )
+                  }
+                  options={[
+                    { label: "Any activity", value: "" },
+                    { label: "Has activity", value: "active" },
+                    { label: "Never active", value: "never" },
+                  ]}
+                  value={filters.lastActivity}
+                />
+              </TableHeaderFilter>
+            </th>
+            <th className="py-3 pr-4 font-semibold">
+              <TableHeaderFilter
+                isActive={showInactiveUsers}
+                label="Status"
+                onClear={() => onShowInactiveUsersChange(false)}
+              >
+                <TableHeaderFilterSelect
+                  label="Status"
+                  onChange={(value) =>
+                    onShowInactiveUsersChange(value === "includeInactive")
+                  }
+                  options={[
+                    { label: "Active only", value: "activeOnly" },
+                    { label: "Include inactive", value: "includeInactive" },
+                  ]}
+                  value={showInactiveUsers ? "includeInactive" : "activeOnly"}
+                />
+              </TableHeaderFilter>
+            </th>
             <th className="py-3 font-semibold">Actions</th>
           </tr>
         </thead>
@@ -56,6 +192,7 @@ export function UsersTable({ onDuplicate, onEdit, users }: UsersTableProps) {
                 <UserActions
                   onDuplicate={onDuplicate}
                   onEdit={onEdit}
+                  onUserActiveChange={onUserActiveChange}
                   user={user}
                 />
               </td>
@@ -70,10 +207,12 @@ export function UsersTable({ onDuplicate, onEdit, users }: UsersTableProps) {
 function UserCard({
   onDuplicate,
   onEdit,
+  onUserActiveChange,
   user,
 }: {
   onDuplicate: (user: UserListItem) => void;
   onEdit: (user: UserListItem) => void;
+  onUserActiveChange: (user: UserListItem, isActive: boolean) => void;
   user: UserListItem;
 }) {
   return (
@@ -92,6 +231,7 @@ function UserCard({
         <UserActions
           onDuplicate={onDuplicate}
           onEdit={onEdit}
+          onUserActiveChange={onUserActiveChange}
           user={user}
         />
       </div>
@@ -112,24 +252,36 @@ function UserCard({
 function UserActions({
   onDuplicate,
   onEdit,
+  onUserActiveChange,
   user,
 }: {
   onDuplicate: (user: UserListItem) => void;
   onEdit: (user: UserListItem) => void;
+  onUserActiveChange: (user: UserListItem, isActive: boolean) => void;
   user: UserListItem;
 }) {
   return (
-    <div className="flex gap-2">
-      <IconButton
-        label={`Duplicate ${user.displayName}`}
-        onClick={() => onDuplicate(user)}
-      >
-        <CopyIcon />
-      </IconButton>
-      <IconButton label={`Edit ${user.displayName}`} onClick={() => onEdit(user)}>
-        <PencilIcon />
-      </IconButton>
-    </div>
+    <TableActionMenu
+      label={`Open actions for ${user.displayName}`}
+      items={[
+        {
+          icon: <CopyIcon />,
+          label: "Duplicate",
+          onSelect: () => onDuplicate(user),
+        },
+        {
+          icon: <PencilIcon />,
+          label: "Edit",
+          onSelect: () => onEdit(user),
+        },
+        {
+          icon: user.isActive ? <XIcon /> : <CheckIcon />,
+          label: user.isActive ? "Disable" : "Enable",
+          onSelect: () => onUserActiveChange(user, !user.isActive),
+          tone: user.isActive ? "danger" : "primary",
+        },
+      ]}
+    />
   );
 }
 

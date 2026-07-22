@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { TimetableEntryModal } from "@/components/admin-timetable/timetable-entry-modal";
 import { TimetableEntryTable } from "@/components/admin-timetable/timetable-entry-table";
 import { downloadTimetableEntries } from "@/components/admin-timetable/timetable-export";
-import { TimetableFilters } from "@/components/admin-timetable/timetable-filters";
 import { TimetableImportModal } from "@/components/admin-timetable/timetable-import-modal";
 import {
   defaultTimetableDayIndex,
@@ -19,7 +18,6 @@ import { IconButton } from "@/components/ui/icon-button";
 import {
   FileDownIcon,
   FileUpIcon,
-  FilterIcon,
   PlusIcon,
 } from "@/components/ui/icons";
 import {
@@ -59,7 +57,6 @@ export function AdminTimetablePanel() {
   const [filters, setFilters] =
     useState<TimetableFiltersState>(emptyTimetableFilters);
   const [editingEntry, setEditingEntry] = useState<TimetableEntry | null>(null);
-  const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -232,14 +229,6 @@ export function AdminTimetablePanel() {
         actions={
           <>
             <IconButton
-              ariaExpanded={areFiltersOpen}
-              label={areFiltersOpen ? "Hide filters" : "Show filters"}
-              onClick={() => setAreFiltersOpen((isOpen) => !isOpen)}
-              text="Filters"
-            >
-              <FilterIcon />
-            </IconButton>
-            <IconButton
               disabled={filteredEntries.length === 0}
               label="Export timetable"
               onClick={() => downloadTimetableEntries(filteredEntries)}
@@ -272,15 +261,6 @@ export function AdminTimetablePanel() {
           </p>
         )}
       </PanelToolbar>
-
-      {areFiltersOpen && (
-        <TimetableFilters
-          filters={filters}
-          groups={groups}
-          onFiltersChange={setFilters}
-          teachers={teachers}
-        />
-      )}
 
       {isCreateModalOpen && (
         <TimetableEntryModal
@@ -344,9 +324,13 @@ export function AdminTimetablePanel() {
           <>
             <TimetableEntryTable
               entries={visibleEntries}
+              filters={filters}
+              groups={groups}
               onDeleteEntry={handleDeleteEntry}
               onDuplicateEntry={handleDuplicateEntry}
               onEditEntry={handleEditEntry}
+              onFiltersChange={setFilters}
+              teachers={teachers}
             />
             <ListPagination
               onPageChange={setPage}
@@ -368,6 +352,8 @@ function matchesTimetableFilters(
   return (
     (!filters.teacherUserId || entry.teacherUserId === filters.teacherUserId) &&
     (!filters.groupId || entry.groupId === filters.groupId) &&
-    (!filters.dayOfWeek || entry.dayOfWeek === Number(filters.dayOfWeek))
+    (!filters.dayOfWeek || entry.dayOfWeek === Number(filters.dayOfWeek)) &&
+    (!filters.status ||
+      (filters.status === "active" ? entry.isActive : !entry.isActive))
   );
 }

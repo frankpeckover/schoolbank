@@ -466,6 +466,12 @@ html[data-theme="dark"] .professional-shell {
 }
 
 table {
+  background: var(--surface);
+  border: 1px solid var(--border-muted);
+  border-collapse: separate !important;
+  border-radius: var(--radius-card);
+  border-spacing: 0;
+  overflow: visible;
   width: 100%;
 }
 
@@ -479,8 +485,23 @@ table td {
   border-bottom: 1px solid var(--border-subtle);
 }
 
+table th:first-child,
+table td:first-child {
+  padding-left: 1.25rem !important;
+}
+
+table th:last-child,
+table td:last-child {
+  padding-right: 1.25rem !important;
+}
+
 table thead th {
-  border-bottom: 2px solid var(--border);
+  background: color-mix(in srgb, var(--panel-soft) 74%, var(--surface));
+  border-bottom: 2px solid var(--border-strong);
+}
+
+table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .professional-shell .theme-panel {
@@ -518,7 +539,7 @@ table thead th {
 }
 
 .professional-shell table {
-  border-collapse: collapse;
+  border-collapse: separate !important;
   font-variant-numeric: tabular-nums;
   line-height: 1.25;
 }
@@ -537,6 +558,16 @@ table thead th {
   padding-bottom: 0.35rem !important;
   padding-top: 0.35rem !important;
   vertical-align: middle;
+}
+
+.professional-shell table th:first-child,
+.professional-shell table td:first-child {
+  padding-left: 1.25rem !important;
+}
+
+.professional-shell table th:last-child,
+.professional-shell table td:last-child {
+  padding-right: 1.25rem !important;
 }
 
 .professional-shell table tbody tr {

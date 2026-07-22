@@ -119,7 +119,7 @@ function AccountFields({
         onChange={onProfileImageChange}
       />
 
-      {mode === "create" ? (
+      {mode === "create" && (
         <TextField
           id="password"
           label="Password"
@@ -127,16 +127,6 @@ function AccountFields({
           type="password"
           value={form.password}
         />
-      ) : (
-        <label className="flex items-center gap-2 text-sm font-semibold text-text-control">
-          <input
-            checked={form.isActive}
-            className="h-4 w-4"
-            onChange={(event) => onChange("isActive", event.target.checked)}
-            type="checkbox"
-          />
-          Active user
-        </label>
       )}
     </>
   );

@@ -19,7 +19,6 @@ type GroupEditModalProps = {
   onAddSelectedStudents: () => void;
   onAddStudent: (student: StudentListItem) => void;
   onClose: () => void;
-  onGroupStatusChange: () => void;
   onMemberSelectionToggle: (memberId: string) => void;
   onRemoveSelectedMembers: () => void;
   onRemoveStudent: (member: GroupMemberItem) => void;
@@ -40,7 +39,6 @@ export function GroupEditModal({
   onAddSelectedStudents,
   onAddStudent,
   onClose,
-  onGroupStatusChange,
   onMemberSelectionToggle,
   onRemoveSelectedMembers,
   onRemoveStudent,
@@ -84,7 +82,7 @@ export function GroupEditModal({
           <div className="min-w-0">
             <h3 className="text-2xl font-semibold">Edit Group</h3>
             <p className="mt-1 text-sm text-text-muted">
-              Update group details, status, and student membership.
+              Update group details and student membership.
             </p>
           </div>
           <ModalCloseButton onClick={onClose} />
@@ -128,8 +126,6 @@ export function GroupEditModal({
           </div>
         </form>
 
-        <GroupStatusControl group={group} onStatusChange={onGroupStatusChange} />
-
         <GroupMemberManagement
           availableStudents={availableStudents}
           isLoadingMembers={isLoadingMembers}
@@ -147,40 +143,6 @@ export function GroupEditModal({
           selectedStudentIds={selectedStudentIds}
           studentQuery={studentQuery}
         />
-      </div>
-    </div>
-  );
-}
-
-function GroupStatusControl({
-  group,
-  onStatusChange,
-}: {
-  group: GroupListItem;
-  onStatusChange: () => void;
-}) {
-  return (
-    <div className="theme-subpanel mt-5 p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold text-text-control">Status</p>
-          <p className="mt-1 text-sm text-text-muted">
-            {group.isActive
-              ? "This group is active and can be used."
-              : "This group is archived and hidden by default."}
-          </p>
-        </div>
-        <button
-          className={`rounded-md border px-3 py-2 text-sm font-semibold transition ${
-            group.isActive
-              ? "border-danger-button-border text-danger-strong hover:bg-danger-soft"
-              : "border-button-border text-text-control hover:bg-surface"
-          }`}
-          onClick={onStatusChange}
-          type="button"
-        >
-          {group.isActive ? "Archive" : "Reactivate"}
-        </button>
       </div>
     </div>
   );

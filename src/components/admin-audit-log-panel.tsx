@@ -7,15 +7,19 @@ import { formatDateTime } from "@/lib/formatters";
 import type { AuditLogItem } from "@/services/audit-service";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
 import { IconButton } from "@/components/ui/icon-button";
-import { EyeIcon, FileDownIcon, FilterIcon } from "@/components/ui/icons";
+import { EyeIcon, FileDownIcon } from "@/components/ui/icons";
 import {
   ListPagination,
   usePagedList,
 } from "@/components/ui/list-pagination";
 import { ModalShell } from "@/components/ui/modal-shell";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
-import { SearchInput } from "@/components/ui/search-input";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
+import { TableActionMenu } from "@/components/ui/table-action-menu";
+import {
+  TableHeaderFilter,
+  TableHeaderFilterInput,
+} from "@/components/ui/table-header-filter";
 
 type AuditFilters = {
   action: string;
@@ -35,7 +39,6 @@ export function AdminAuditLogPanel() {
   const [entries, setEntries] = useState<AuditLogItem[]>([]);
   const [filters, setFilters] = useState<AuditFilters>(emptyAuditFilters);
   const [error, setError] = useState<string | null>(null);
-  const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [viewingEntry, setViewingEntry] = useState<AuditLogItem | null>(null);
 
@@ -85,14 +88,6 @@ export function AdminAuditLogPanel() {
         actions={
           <>
             <IconButton
-              ariaExpanded={areFiltersOpen}
-              label={areFiltersOpen ? "Hide filters" : "Show filters"}
-              onClick={() => setAreFiltersOpen((isOpen) => !isOpen)}
-              text="Filters"
-            >
-              <FilterIcon />
-            </IconButton>
-            <IconButton
               label="Export audit log"
               onClick={() => {
                 if (isLoading || filteredEntries.length === 0) {
@@ -115,10 +110,6 @@ export function AdminAuditLogPanel() {
         )}
       </PanelToolbar>
 
-      {areFiltersOpen && (
-        <AuditFilterPanel filters={filters} onFiltersChange={setFilters} />
-      )}
-
       <div className="mt-5">
         {isLoading && (
           <p className="text-sm text-text-muted">Loading audit log...</p>
@@ -140,7 +131,9 @@ export function AdminAuditLogPanel() {
           <>
             <AuditLogList
               entries={visibleEntries}
+              filters={filters}
               onDetailsClick={setViewingEntry}
+              onFiltersChange={setFilters}
             />
             <ListPagination
               onPageChange={setPage}
@@ -162,80 +155,21 @@ export function AdminAuditLogPanel() {
   );
 }
 
-function AuditFilterPanel({
+function AuditLogList({
+  entries,
   filters,
+  onDetailsClick,
   onFiltersChange,
 }: {
+  entries: AuditLogItem[];
   filters: AuditFilters;
+  onDetailsClick: (entry: AuditLogItem) => void;
   onFiltersChange: (filters: AuditFilters) => void;
 }) {
   function updateFilter(field: keyof AuditFilters, value: string) {
     onFiltersChange({ ...filters, [field]: value });
   }
 
-  return (
-    <div className="theme-subpanel mt-4 grid gap-3 p-3 md:grid-cols-2 xl:grid-cols-4">
-      <AuditFilterInput
-        id="auditAction"
-        label="Action"
-        onChange={(value) => updateFilter("action", value)}
-        value={filters.action}
-      />
-      <AuditFilterInput
-        id="auditActor"
-        label="Actor"
-        onChange={(value) => updateFilter("actor", value)}
-        value={filters.actor}
-      />
-      <AuditFilterInput
-        id="auditRecord"
-        label="Record"
-        onChange={(value) => updateFilter("record", value)}
-        value={filters.record}
-      />
-      <AuditFilterInput
-        id="auditDetails"
-        label="Details"
-        onChange={(value) => updateFilter("details", value)}
-        value={filters.details}
-      />
-    </div>
-  );
-}
-
-function AuditFilterInput({
-  id,
-  label,
-  onChange,
-  value,
-}: {
-  id: string;
-  label: string;
-  onChange: (value: string) => void;
-  value: string;
-}) {
-  return (
-    <div>
-      <label className="text-sm font-semibold text-text-control" htmlFor={id}>
-        {label}
-      </label>
-      <SearchInput
-        className="mt-2"
-        id={id}
-        onChange={onChange}
-        value={value}
-      />
-    </div>
-  );
-}
-
-function AuditLogList({
-  entries,
-  onDetailsClick,
-}: {
-  entries: AuditLogItem[];
-  onDetailsClick: (entry: AuditLogItem) => void;
-}) {
   return (
     <>
       <div className="grid gap-2 md:hidden">
@@ -253,10 +187,58 @@ function AuditLogList({
           <thead>
             <tr className="border-b border-border-subtle text-text-muted">
               <th className="py-2 pr-4 font-semibold">Time</th>
-              <th className="py-2 pr-4 font-semibold">Action</th>
-              <th className="py-2 pr-4 font-semibold">Actor</th>
-              <th className="py-2 pr-4 font-semibold">Record</th>
-              <th className="py-2 pr-4 font-semibold">Details</th>
+              <th className="py-2 pr-4 font-semibold">
+                <TableHeaderFilter
+                  isActive={Boolean(filters.action)}
+                  label="Action"
+                  onClear={() => updateFilter("action", "")}
+                >
+                  <TableHeaderFilterInput
+                    label="Action"
+                    onChange={(value) => updateFilter("action", value)}
+                    value={filters.action}
+                  />
+                </TableHeaderFilter>
+              </th>
+              <th className="py-2 pr-4 font-semibold">
+                <TableHeaderFilter
+                  isActive={Boolean(filters.actor)}
+                  label="Actor"
+                  onClear={() => updateFilter("actor", "")}
+                >
+                  <TableHeaderFilterInput
+                    label="Actor"
+                    onChange={(value) => updateFilter("actor", value)}
+                    value={filters.actor}
+                  />
+                </TableHeaderFilter>
+              </th>
+              <th className="py-2 pr-4 font-semibold">
+                <TableHeaderFilter
+                  isActive={Boolean(filters.record)}
+                  label="Record"
+                  onClear={() => updateFilter("record", "")}
+                >
+                  <TableHeaderFilterInput
+                    label="Record"
+                    onChange={(value) => updateFilter("record", value)}
+                    value={filters.record}
+                  />
+                </TableHeaderFilter>
+              </th>
+              <th className="py-2 pr-4 font-semibold">
+                <TableHeaderFilter
+                  isActive={Boolean(filters.details)}
+                  label="Details"
+                  onClear={() => updateFilter("details", "")}
+                >
+                  <TableHeaderFilterInput
+                    label="Details"
+                    onChange={(value) => updateFilter("details", value)}
+                    value={filters.details}
+                  />
+                </TableHeaderFilter>
+              </th>
               <th className="py-2 font-semibold">Actions</th>
             </tr>
           </thead>
@@ -282,12 +264,16 @@ function AuditLogList({
                   {formatDetails(entry.details)}
                 </td>
                 <td className="py-3">
-                  <IconButton
-                    label="Audit event details"
-                    onClick={() => onDetailsClick(entry)}
-                  >
-                    <EyeIcon />
-                  </IconButton>
+                  <TableActionMenu
+                    label="Open audit event actions"
+                    items={[
+                      {
+                        icon: <EyeIcon />,
+                        label: "View details",
+                        onSelect: () => onDetailsClick(entry),
+                      },
+                    ]}
+                  />
                 </td>
               </tr>
             ))}
