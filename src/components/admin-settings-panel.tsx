@@ -30,6 +30,7 @@ import {
   UsersIcon,
   WalletIcon,
 } from "@/components/ui/icons";
+import { FixedNotification } from "@/components/ui/fixed-notification";
 import { SchoolLogo } from "@/components/ui/school-logo";
 import type { SchoolInfo } from "@/services/school-service";
 import type { SsoProviderSettings, SsoProviderType } from "@/lib/sso-types";
@@ -818,20 +819,7 @@ function SettingsMessages({
   error: string | null;
   message: string | null;
 }) {
-  return (
-    <div className="min-h-10 flex-1">
-      {message && (
-        <p className="rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
-          {message}
-        </p>
-      )}
-      {error && (
-        <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-          {error}
-        </p>
-      )}
-    </div>
-  );
+  return <FixedNotification error={error} message={message} />;
 }
 
 function downloadBase64File(filename: string, dataBase64: string, type: string) {

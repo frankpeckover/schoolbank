@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Role } from "@/lib/session";
 import {
   type UserFilters,
@@ -23,6 +24,7 @@ type UsersTableProps = {
   onShowInactiveUsersChange: (showInactiveUsers: boolean) => void;
   onUserActiveChange: (user: UserListItem, isActive: boolean) => void;
   showInactiveUsers: boolean;
+  toolbar?: ReactNode;
   users: UserListItem[];
 };
 
@@ -34,6 +36,7 @@ export function UsersTable({
   onShowInactiveUsersChange,
   onUserActiveChange,
   showInactiveUsers,
+  toolbar,
   users,
 }: UsersTableProps) {
   function updateFilter<Field extends keyof UserFilters>(
@@ -45,6 +48,7 @@ export function UsersTable({
 
   return (
     <>
+      {toolbar && <div className="mb-3 md:hidden">{toolbar}</div>}
       <div className="grid gap-3 md:hidden">
         {users.map((user) => (
           <UserCard
@@ -57,6 +61,7 @@ export function UsersTable({
         ))}
       </div>
 
+      {toolbar && <div className="hidden md:block">{toolbar}</div>}
       <table className="hidden w-full border-collapse text-left text-sm md:table">
         <thead>
           <tr className="border-b border-border-subtle text-text-muted">

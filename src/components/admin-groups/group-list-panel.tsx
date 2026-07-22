@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { CheckIcon, CopyIcon, EyeIcon, PencilIcon, XIcon } from "@/components/ui/icons";
 import {
   ListPagination,
@@ -26,6 +27,7 @@ type GroupListPanelProps = {
   search: string;
   selectedGroupId: string;
   showArchived: boolean;
+  toolbar?: ReactNode;
 };
 
 export function GroupListPanel({
@@ -40,6 +42,7 @@ export function GroupListPanel({
   search,
   selectedGroupId,
   showArchived,
+  toolbar,
 }: GroupListPanelProps) {
   const {
     page,
@@ -49,7 +52,7 @@ export function GroupListPanel({
   } = usePagedList(groups);
 
   return (
-    <div className="mt-5">
+    <div>
       <div>
         {isLoading && (
           <p className="text-sm text-text-muted">Loading groups...</p>
@@ -70,6 +73,7 @@ export function GroupListPanel({
               search={search}
               selectedGroupId={selectedGroupId}
               showArchived={showArchived}
+              toolbar={toolbar}
             />
             <ListPagination
               onPageChange={setPage}
@@ -95,6 +99,7 @@ function GroupList({
   search,
   selectedGroupId,
   showArchived,
+  toolbar,
 }: {
   groups: GroupListItem[];
   onDuplicateGroup: (group: GroupListItem) => void;
@@ -106,9 +111,11 @@ function GroupList({
   search: string;
   selectedGroupId: string;
   showArchived: boolean;
+  toolbar?: ReactNode;
 }) {
   return (
     <>
+      {toolbar && <div className="mb-3 md:hidden">{toolbar}</div>}
       <div className="grid gap-3 md:hidden">
         {groups.map((group) => (
           <GroupCard
@@ -123,6 +130,7 @@ function GroupList({
         ))}
       </div>
 
+      {toolbar && <div className="hidden md:block">{toolbar}</div>}
       <table className="hidden w-full border-collapse text-left text-sm md:table">
         <thead>
           <tr className="border-b border-border-subtle text-text-muted">

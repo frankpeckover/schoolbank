@@ -13,6 +13,7 @@ import {
 import { StudentShopRequestsPanel } from "@/components/shop/student-shop-requests-panel";
 import { StudentGoalCard } from "@/components/student-goal-card";
 import { TransactionLogPanel } from "@/components/transactions/transaction-log-panel";
+import { FixedNotification } from "@/components/ui/fixed-notification";
 import { getStudentBalance, listTransactionLog } from "@/lib/actions";
 import {
   buildBalanceTimeSeries,
@@ -77,6 +78,7 @@ export function StudentDashboardPanel({
 
   return (
     <>
+      <FixedNotification error={error} />
       <section className="dashboard-grid motion-panel mt-2">
         <StudentWalletCard
           balance={balance}
@@ -90,11 +92,6 @@ export function StudentDashboardPanel({
           currencyName={currencyName}
         />
 
-        {error && (
-          <p className="dashboard-unit-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-            {error}
-          </p>
-        )}
       </section>
 
       <StudentShopRequestsPanel

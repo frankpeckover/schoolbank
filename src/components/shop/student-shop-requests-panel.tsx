@@ -5,6 +5,7 @@ import { listStudentShopRequests } from "@/lib/actions";
 import type { StudentShopRequest } from "@/services/shop-service";
 import { formatCurrencyAmount, formatDateTime } from "@/lib/formatters";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
+import { FixedNotification } from "@/components/ui/fixed-notification";
 import { ClockIcon, PackageIcon, ShoppingBagIcon } from "@/components/ui/icons";
 
 type StudentShopRequestsPanelProps = {
@@ -49,6 +50,7 @@ export function StudentShopRequestsPanel({
 
   return (
     <section className="theme-panel motion-panel mt-5 p-4 sm:p-5">
+      <FixedNotification error={error} />
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent">
           <ShoppingBagIcon />
@@ -61,11 +63,6 @@ export function StudentShopRequestsPanel({
       <div className="mt-4">
         {isLoading && (
           <p className="text-sm text-text-muted">Loading requests...</p>
-        )}
-        {error && (
-          <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-            {error}
-          </p>
         )}
         {!isLoading && !error && requests.length === 0 && (
           <p className="theme-subpanel px-3 py-4 text-sm text-text-muted">

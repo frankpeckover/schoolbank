@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { listTransactionLog, voidTransaction } from "@/lib/actions";
 import { downloadCsv } from "@/lib/client-csv";
 import {
@@ -22,6 +23,7 @@ import {
 } from "@/components/transactions/transaction-log-types";
 import { TransactionStatusBadge } from "@/components/transactions/transaction-status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FixedNotification } from "@/components/ui/fixed-notification";
 import { IconButton } from "@/components/ui/icon-button";
 import {
   EyeIcon,
@@ -34,7 +36,6 @@ import {
   ListPagination,
   usePagedList,
 } from "@/components/ui/list-pagination";
-import { PanelToolbar } from "@/components/ui/panel-toolbar";
 import {
   TableActionMenu,
   type TableActionMenuItem,
@@ -44,6 +45,7 @@ import {
   TableHeaderFilterInput,
   TableHeaderFilterSelect,
 } from "@/components/ui/table-header-filter";
+import { TableToolbar } from "@/components/ui/table-toolbar";
 import { TextReasonModal } from "@/components/ui/text-reason-modal";
 
 type TransactionLogPanelProps = {
@@ -180,46 +182,11 @@ export function TransactionLogPanel({
   } = usePagedList(filteredTransactions);
 
   return (
-    <section className="theme-panel motion-panel mt-5 min-w-0 p-4">
-      <PanelToolbar
-        actions={
-          <>
-            <IconButton
-              label="Export transactions"
-              onClick={() => {
-                if (isLoading || filteredTransactions.length === 0) {
-                  return;
-                }
-
-                downloadTransactions(filteredTransactions, currencyName);
-              }}
-              text="Export"
-            >
-              <FileDownIcon />
-            </IconButton>
-          </>
-        }
-      >
-        {!isLoading && !error && filteredTransactions.length > 0 && (
-          <p className="text-sm font-semibold text-text-muted">
-            Showing {visibleTransactions.length} of {filteredTransactions.length} transactions.
-          </p>
-        )}
-      </PanelToolbar>
-
-      <div className="mt-5">
+    <section className="theme-panel motion-panel mt-5 min-w-0 p-0">
+      <FixedNotification error={error} message={message} />
+      <div>
         {isLoading && (
           <p className="text-sm text-text-muted">Loading transactions...</p>
-        )}
-        {error && (
-          <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-            {error}
-          </p>
-        )}
-        {message && (
-          <p className="mb-4 rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
-            {message}
-          </p>
         )}
         {!isLoading && !error && transactions.length === 0 && (
           <EmptyState
@@ -244,6 +211,32 @@ export function TransactionLogPanel({
               onDetailsClick={setViewingTransaction}
               onFiltersChange={setFilters}
               onVoidClick={setVoidingTransaction}
+              toolbar={
+                <TableToolbar
+                  actions={
+                    <TableActionMenu
+                      label="Open transaction log tools"
+                      items={[
+                        {
+                          disabled:
+                            isLoading || filteredTransactions.length === 0,
+                          icon: <FileDownIcon />,
+                          label: "Export transactions",
+                          onSelect: () =>
+                            downloadTransactions(
+                              filteredTransactions,
+                              currencyName,
+                            ),
+                        },
+                      ]}
+                    />
+                  }
+                >
+                  <p className="text-sm font-semibold text-text-muted">
+                    Showing {visibleTransactions.length} of {filteredTransactions.length} transactions.
+                  </p>
+                </TableToolbar>
+              }
               transactions={visibleTransactions}
             />
             <ListPagination
@@ -285,6 +278,7 @@ function TransactionList({
   onDetailsClick,
   onFiltersChange,
   onVoidClick,
+  toolbar,
   transactions,
 }: {
   canViewAllTransactions: boolean;
@@ -293,6 +287,7 @@ function TransactionList({
   onDetailsClick: (transaction: TransactionLogItem) => void;
   onFiltersChange: (filters: TransactionFilters) => void;
   onVoidClick: (transaction: TransactionLogItem) => void;
+  toolbar?: ReactNode;
   transactions: TransactionLogItem[];
 }) {
   function updateFilter<Field extends keyof TransactionFilters>(
@@ -304,6 +299,7 @@ function TransactionList({
 
   return (
     <>
+      {toolbar && <div className="mb-3 md:hidden">{toolbar}</div>}
       <div className="grid w-full min-w-0 gap-2 md:hidden">
         {transactions.map((transaction) => (
           <TransactionMobileRow
@@ -315,6 +311,7 @@ function TransactionList({
       </div>
 
       <div className="hidden w-full min-w-0 max-w-full overflow-x-auto md:block">
+        {toolbar}
         <table className="w-full min-w-full table-fixed border-collapse text-left text-sm">
           <TransactionTableColumnGroup
             canViewAllTransactions={canViewAllTransactions}

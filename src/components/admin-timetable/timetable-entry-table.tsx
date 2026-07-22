@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { weekDays } from "@/components/admin-timetable/timetable-constants";
 import { CopyIcon, PencilIcon, TrashIcon } from "@/components/ui/icons";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -20,6 +21,7 @@ export function TimetableEntryTable({
   onEditEntry,
   onFiltersChange,
   teachers,
+  toolbar,
 }: {
   entries: TimetableEntry[];
   filters: TimetableFiltersState;
@@ -29,6 +31,7 @@ export function TimetableEntryTable({
   onEditEntry: (entry: TimetableEntry) => void;
   onFiltersChange: (filters: TimetableFiltersState) => void;
   teachers: TimetableTeacher[];
+  toolbar?: ReactNode;
 }) {
   function updateFilter<Field extends keyof TimetableFiltersState>(
     field: Field,
@@ -39,6 +42,7 @@ export function TimetableEntryTable({
 
   return (
     <>
+      {toolbar && <div className="mb-3 md:hidden">{toolbar}</div>}
       <div className="grid gap-3 md:hidden">
         {entries.map((entry) => (
           <TimetableEntryMobileRow
@@ -51,6 +55,7 @@ export function TimetableEntryTable({
         ))}
       </div>
 
+      {toolbar && <div className="hidden md:block">{toolbar}</div>}
       <table className="hidden w-full border-collapse text-left text-sm md:table">
         <thead>
           <tr className="border-b border-border-subtle text-text-muted">

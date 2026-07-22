@@ -15,6 +15,7 @@ import { ShopItemCard } from "@/components/shop/shop-item-card";
 import { ShopItemDetailsModal } from "@/components/shop/shop-item-details-modal";
 import { ShopItemModal } from "@/components/shop/shop-item-modal";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FixedNotification } from "@/components/ui/fixed-notification";
 import { IconButton } from "@/components/ui/icon-button";
 import { FileDownIcon, FilterIcon, PlusIcon, ShoppingBagIcon, WalletIcon } from "@/components/ui/icons";
 import {
@@ -204,6 +205,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
 
   return (
     <section className="motion-panel mt-5">
+      <FixedNotification error={error} message={message} />
       {canManage ? (
         <ShopPanelHeader
           areFiltersOpen={areFiltersOpen}
@@ -224,8 +226,6 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
           showArchivedItems={showArchivedItems}
         />
       )}
-      <ShopMessages error={error} message={message} />
-
       <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {isLoading && (
           <p className="text-sm text-text-muted">Loading shop...</p>
@@ -430,29 +430,6 @@ function ShopFilters({
         </label>
       </div>
     </div>
-  );
-}
-
-function ShopMessages({
-  error,
-  message,
-}: {
-  error: string | null;
-  message: string | null;
-}) {
-  return (
-    <>
-      {message && (
-        <p className="mt-4 rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
-          {message}
-        </p>
-      )}
-      {error && (
-        <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-          {error}
-        </p>
-      )}
-    </>
   );
 }
 

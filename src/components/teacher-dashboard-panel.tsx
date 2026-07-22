@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { ShopRequestsPanel } from "@/components/shop/shop-requests-panel";
 import { StudentBalanceCard } from "@/components/student-balance-card";
 import { LedgerAdjustmentForm } from "@/components/transactions/ledger-adjustment-form";
+import { FixedNotification } from "@/components/ui/fixed-notification";
 import {
   PlusIcon,
   SparkleIcon,
@@ -173,19 +174,10 @@ export function TeacherDashboardPanel({
 
   return (
     <>
+      <FixedNotification error={error} message={message} />
     <section className="motion-panel mt-2">
         {isLoading && (
           <p className="mt-4 text-sm text-text-muted">Loading students...</p>
-        )}
-        {error && (
-          <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-            {error}
-          </p>
-        )}
-        {message && (
-          <p className="mt-4 rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
-            {message}
-          </p>
         )}
 
         {!isLoading && !error && (

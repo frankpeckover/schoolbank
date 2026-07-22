@@ -16,8 +16,12 @@ import { GroupEditModal } from "@/components/admin-groups/group-edit-modal";
 import { GroupImportModal } from "@/components/admin-groups/group-import-modal";
 import { GroupListPanel } from "@/components/admin-groups/group-list-panel";
 import { GroupModal } from "@/components/admin-groups/group-modal";
-import { GroupsPageHeader } from "@/components/admin-groups/groups-page-header";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
+import { FixedNotification } from "@/components/ui/fixed-notification";
+import { IconButton } from "@/components/ui/icon-button";
+import { FileDownIcon, FileUpIcon, PlusIcon } from "@/components/ui/icons";
+import { TableActionMenu } from "@/components/ui/table-action-menu";
+import { TableToolbar } from "@/components/ui/table-toolbar";
 import { downloadCsv } from "@/lib/client-csv";
 import { formatDateTime } from "@/lib/formatters";
 import type {
@@ -390,18 +394,8 @@ export function AdminGroupsPanel() {
   }
 
   return (
-    <AdminPageSection>
-      <GroupsPageHeader
-        count={filteredGroups.length}
-        onExportClick={() => downloadGroups(filteredGroups)}
-        onImportClick={() => setIsImportModalOpen(true)}
-        onNewGroupClick={() => {
-          setDuplicatingGroup(null);
-          setIsCreateModalOpen(true);
-        }}
-        totalCount={groups.length}
-      />
-
+    <AdminPageSection isFlush>
+      <FixedNotification error={error} message={message} />
       <GroupListPanel
         groups={filteredGroups}
         isLoading={isLoadingGroups}
@@ -414,6 +408,47 @@ export function AdminGroupsPanel() {
         search={groupSearch}
         selectedGroupId={selectedGroupId}
         showArchived={showInactiveGroups}
+        toolbar={
+          <TableToolbar
+            actions={
+              <>
+                <IconButton
+                  label="New group"
+                  onClick={() => {
+                    setDuplicatingGroup(null);
+                    setIsCreateModalOpen(true);
+                  }}
+                  text="New Group"
+                  tone="primary"
+                >
+                  <PlusIcon />
+                </IconButton>
+                <TableActionMenu
+                  label="Open group table tools"
+                  items={[
+                    {
+                      disabled: filteredGroups.length === 0,
+                      icon: <FileDownIcon />,
+                      label: "Export groups",
+                      onSelect: () => downloadGroups(filteredGroups),
+                    },
+                    {
+                      icon: <FileUpIcon />,
+                      label: "Import groups from CSV",
+                      onSelect: () => setIsImportModalOpen(true),
+                    },
+                  ]}
+                />
+              </>
+            }
+          >
+            {groups.length > 0 && (
+              <p className="text-sm font-semibold text-text-muted">
+                Showing {filteredGroups.length} of {groups.length} groups.
+              </p>
+            )}
+          </TableToolbar>
+        }
       />
 
       {selectedGroup && !editingGroup && (
@@ -423,17 +458,6 @@ export function AdminGroupsPanel() {
           onClose={closeGroupDetails}
           selectedGroup={selectedGroup}
         />
-      )}
-
-      {message && (
-        <p className="mt-4 rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
-          {message}
-        </p>
-      )}
-      {error && (
-        <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-          {error}
-        </p>
       )}
 
       {isCreateModalOpen && (

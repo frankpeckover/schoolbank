@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { listErrorLog } from "@/lib/actions";
 import { formatDateTime } from "@/lib/formatters";
 import type { ErrorLogItem } from "@/services/error-log-service";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
+import { FixedNotification } from "@/components/ui/fixed-notification";
 import { IconButton } from "@/components/ui/icon-button";
 import { EyeIcon } from "@/components/ui/icons";
 import {
@@ -12,12 +14,12 @@ import {
   usePagedList,
 } from "@/components/ui/list-pagination";
 import { ModalShell } from "@/components/ui/modal-shell";
-import { PanelToolbar } from "@/components/ui/panel-toolbar";
 import { TableActionMenu } from "@/components/ui/table-action-menu";
 import {
   TableHeaderFilter,
   TableHeaderFilterInput,
 } from "@/components/ui/table-header-filter";
+import { TableToolbar } from "@/components/ui/table-toolbar";
 
 type ErrorFilters = {
   message: string;
@@ -76,23 +78,11 @@ export function AdminErrorLogPanel() {
   }, []);
 
   return (
-    <AdminPageSection>
-      {!isLoading && !error && filteredEntries.length > 0 && (
-        <PanelToolbar>
-          <p className="text-sm font-semibold text-text-muted">
-            Showing {visibleEntries.length} of {filteredEntries.length} errors.
-          </p>
-        </PanelToolbar>
-      )}
-
-      <div className={!isLoading && !error && filteredEntries.length > 0 ? "mt-5" : ""}>
+    <AdminPageSection isFlush>
+      <FixedNotification error={error} />
+      <div>
         {isLoading && (
           <p className="text-sm text-text-muted">Loading error log...</p>
-        )}
-        {error && (
-          <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-            {error}
-          </p>
         )}
         {!isLoading && !error && entries.length === 0 && (
           <p className="text-sm text-text-muted">No server errors recorded.</p>
@@ -109,6 +99,13 @@ export function AdminErrorLogPanel() {
               filters={filters}
               onDetailsClick={setViewingEntry}
               onFiltersChange={setFilters}
+              toolbar={
+                <TableToolbar>
+                  <p className="text-sm font-semibold text-text-muted">
+                    Showing {visibleEntries.length} of {filteredEntries.length} errors.
+                  </p>
+                </TableToolbar>
+              }
             />
             <ListPagination
               onPageChange={setPage}
@@ -135,11 +132,13 @@ function ErrorLogList({
   filters,
   onDetailsClick,
   onFiltersChange,
+  toolbar,
 }: {
   entries: ErrorLogItem[];
   filters: ErrorFilters;
   onDetailsClick: (entry: ErrorLogItem) => void;
   onFiltersChange: (filters: ErrorFilters) => void;
+  toolbar?: ReactNode;
 }) {
   function updateFilter(field: keyof ErrorFilters, value: string) {
     onFiltersChange({ ...filters, [field]: value });
@@ -147,6 +146,7 @@ function ErrorLogList({
 
   return (
     <>
+      {toolbar && <div className="mb-3 md:hidden">{toolbar}</div>}
       <div className="grid w-full min-w-0 gap-2 md:hidden">
         {entries.map((entry) => (
           <ErrorLogMobileRow
@@ -158,6 +158,7 @@ function ErrorLogList({
       </div>
 
       <div className="hidden w-full min-w-0 max-w-full overflow-x-auto md:block">
+        {toolbar}
         <table className="w-full min-w-[760px] table-fixed border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-border-subtle text-text-muted">

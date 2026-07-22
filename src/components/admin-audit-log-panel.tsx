@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { listAuditLog } from "@/lib/actions";
 import { downloadCsv } from "@/lib/client-csv";
 import { formatDateTime } from "@/lib/formatters";
 import type { AuditLogItem } from "@/services/audit-service";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
+import { FixedNotification } from "@/components/ui/fixed-notification";
 import { IconButton } from "@/components/ui/icon-button";
 import { EyeIcon, FileDownIcon } from "@/components/ui/icons";
 import {
@@ -13,13 +15,13 @@ import {
   usePagedList,
 } from "@/components/ui/list-pagination";
 import { ModalShell } from "@/components/ui/modal-shell";
-import { PanelToolbar } from "@/components/ui/panel-toolbar";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
 import { TableActionMenu } from "@/components/ui/table-action-menu";
 import {
   TableHeaderFilter,
   TableHeaderFilterInput,
 } from "@/components/ui/table-header-filter";
+import { TableToolbar } from "@/components/ui/table-toolbar";
 
 type AuditFilters = {
   action: string;
@@ -83,41 +85,11 @@ export function AdminAuditLogPanel() {
   } = usePagedList(filteredEntries);
 
   return (
-    <AdminPageSection>
-      <PanelToolbar
-        actions={
-          <>
-            <IconButton
-              label="Export audit log"
-              onClick={() => {
-                if (isLoading || filteredEntries.length === 0) {
-                  return;
-                }
-
-                downloadAuditLog(filteredEntries);
-              }}
-              text="Export"
-            >
-              <FileDownIcon />
-            </IconButton>
-          </>
-        }
-      >
-        {!isLoading && !error && filteredEntries.length > 0 && (
-          <p className="text-sm font-semibold text-text-muted">
-            Showing {visibleEntries.length} of {filteredEntries.length} audit events.
-          </p>
-        )}
-      </PanelToolbar>
-
-      <div className="mt-5">
+    <AdminPageSection isFlush>
+      <FixedNotification error={error} />
+      <div>
         {isLoading && (
           <p className="text-sm text-text-muted">Loading audit log...</p>
-        )}
-        {error && (
-          <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-            {error}
-          </p>
         )}
         {!isLoading && !error && entries.length === 0 && (
           <p className="text-sm text-text-muted">No audit events recorded yet.</p>
@@ -134,6 +106,27 @@ export function AdminAuditLogPanel() {
               filters={filters}
               onDetailsClick={setViewingEntry}
               onFiltersChange={setFilters}
+              toolbar={
+                <TableToolbar
+                  actions={
+                    <TableActionMenu
+                      label="Open audit log tools"
+                      items={[
+                        {
+                          disabled: isLoading || filteredEntries.length === 0,
+                          icon: <FileDownIcon />,
+                          label: "Export audit log",
+                          onSelect: () => downloadAuditLog(filteredEntries),
+                        },
+                      ]}
+                    />
+                  }
+                >
+                  <p className="text-sm font-semibold text-text-muted">
+                    Showing {visibleEntries.length} of {filteredEntries.length} audit events.
+                  </p>
+                </TableToolbar>
+              }
             />
             <ListPagination
               onPageChange={setPage}
@@ -160,11 +153,13 @@ function AuditLogList({
   filters,
   onDetailsClick,
   onFiltersChange,
+  toolbar,
 }: {
   entries: AuditLogItem[];
   filters: AuditFilters;
   onDetailsClick: (entry: AuditLogItem) => void;
   onFiltersChange: (filters: AuditFilters) => void;
+  toolbar?: ReactNode;
 }) {
   function updateFilter(field: keyof AuditFilters, value: string) {
     onFiltersChange({ ...filters, [field]: value });
@@ -172,6 +167,7 @@ function AuditLogList({
 
   return (
     <>
+      {toolbar && <div className="mb-3 md:hidden">{toolbar}</div>}
       <div className="grid gap-2 md:hidden">
         {entries.map((entry) => (
           <AuditLogMobileRow
@@ -183,6 +179,7 @@ function AuditLogList({
       </div>
 
       <div className="hidden w-full min-w-0 max-w-full overflow-x-auto md:block">
+        {toolbar}
         <table className="w-full min-w-[760px] table-fixed border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-border-subtle text-text-muted">

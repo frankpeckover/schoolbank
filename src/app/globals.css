@@ -468,6 +468,7 @@ html[data-theme="dark"] .professional-shell {
 table {
   background: var(--surface);
   border: 1px solid var(--border-muted);
+  border-top: 0 !important;
   border-collapse: separate !important;
   border-radius: var(--radius-card);
   border-spacing: 0;
@@ -475,9 +476,43 @@ table {
   width: 100%;
 }
 
+.table-toolbar-band {
+  background: color-mix(in srgb, var(--panel-soft) 74%, var(--surface));
+  border: 0;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  padding: 0.7rem 1.25rem;
+}
+
+.table-toolbar-band + table {
+  border-top: 0 !important;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  margin-top: 0;
+}
+
+.theme-panel > div > .table-toolbar-band:first-child,
+.theme-panel > .table-toolbar-band:first-child {
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+}
+
+.theme-panel > div > .table-toolbar-band:first-child + table,
+.theme-panel > .table-toolbar-band:first-child + table {
+  border-bottom: 0;
+  border-left: 0;
+  border-right: 0;
+}
+
 table thead tr,
 table tbody tr {
   border-bottom: 0 !important;
+}
+
+table thead,
+table thead tr,
+table thead th {
+  border-top: 0 !important;
 }
 
 table th,

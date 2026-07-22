@@ -33,6 +33,7 @@ import {
   UsersIcon,
   WalletIcon,
 } from "@/components/ui/icons";
+import { FixedNotification } from "@/components/ui/fixed-notification";
 import { MetricCard } from "@/components/ui/metric-card";
 import { SearchInput } from "@/components/ui/search-input";
 import {
@@ -171,6 +172,7 @@ export function CreditAnalyticsPanel({
 
   return (
     <div className="mt-5">
+      <FixedNotification error={error} />
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">
           <AnalyticsScopePicker
@@ -350,12 +352,6 @@ function BalanceHistoryCard({
           {scopeLabel}
         </span>
       </div>
-
-      {error && (
-        <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-          {error}
-        </p>
-      )}
 
       {!error && isLoading && (
         <div className="flex h-64 items-center justify-center">
@@ -561,12 +557,6 @@ function BalanceDistributionCard({
         </span>
       </div>
 
-      {error && (
-        <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-          {error}
-        </p>
-      )}
-
       {!error && isLoading && (
         <div className="flex h-64 items-center justify-center">
           <p className="text-sm text-text-muted">Loading analytics...</p>
@@ -657,12 +647,6 @@ function PurchaseTrendCard({
           {scopeLabel}
         </span>
       </div>
-
-      {error && (
-        <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-          {error}
-        </p>
-      )}
 
       {!error && isLoading && (
         <div className="flex h-64 items-center justify-center">

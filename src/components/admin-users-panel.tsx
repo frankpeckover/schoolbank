@@ -11,6 +11,7 @@ import { UserImportModal } from "@/components/admin-users/user-import-modal";
 import { UserModal } from "@/components/admin-users/user-modal";
 import { UsersTable } from "@/components/admin-users/users-table";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FixedNotification } from "@/components/ui/fixed-notification";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
 import { IconButton } from "@/components/ui/icon-button";
 import { FileDownIcon, FileUpIcon, PlusIcon, UsersIcon } from "@/components/ui/icons";
@@ -18,7 +19,8 @@ import {
   ListPagination,
   usePagedList,
 } from "@/components/ui/list-pagination";
-import { PanelToolbar } from "@/components/ui/panel-toolbar";
+import { TableActionMenu } from "@/components/ui/table-action-menu";
+import { TableToolbar } from "@/components/ui/table-toolbar";
 import { downloadCsv } from "@/lib/client-csv";
 import { formatDateTime } from "@/lib/formatters";
 import type { UserListItem } from "@/services/user-service";
@@ -142,57 +144,10 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
   } = usePagedList(filteredUsers);
 
   return (
-    <AdminPageSection ariaLabel={`${schoolName} users`}>
-      <PanelToolbar
-        actions={
-          <>
-            <IconButton
-              disabled={filteredUsers.length === 0}
-              label="Export users"
-              onClick={() => downloadUsers(filteredUsers)}
-              text="Export"
-            >
-              <FileDownIcon />
-            </IconButton>
-            <IconButton
-              label="Import users from CSV"
-              onClick={() => setIsImportModalOpen(true)}
-              text="Import CSV"
-            >
-              <FileUpIcon />
-            </IconButton>
-            <IconButton
-              label="New user"
-              onClick={() => setIsCreateModalOpen(true)}
-              text="New User"
-              tone="primary"
-            >
-              <PlusIcon />
-            </IconButton>
-          </>
-        }
-      >
-        {!isLoading && !error && filteredUsers.length > 0 && (
-          <ListCount
-            count={visibleUsers.length}
-            label="users"
-            totalCount={filteredUsers.length}
-          />
-        )}
-      </PanelToolbar>
-
-      <div className="mt-5">
+    <AdminPageSection ariaLabel={`${schoolName} users`} isFlush>
+      <FixedNotification error={error} message={message} />
+      <div>
         {isLoading && <p className="text-sm text-text-muted">Loading users...</p>}
-        {error && (
-          <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-            {error}
-          </p>
-        )}
-        {message && (
-          <p className="mb-4 rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
-            {message}
-          </p>
-        )}
         {!isLoading && !error && filteredUsers.length > 0 && (
           <>
             <UsersTable
@@ -203,6 +158,44 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
               onShowInactiveUsersChange={setShowInactiveUsers}
               onUserActiveChange={handleSetUserActive}
               showInactiveUsers={showInactiveUsers}
+              toolbar={
+                <TableToolbar
+                  actions={
+                    <>
+                      <IconButton
+                        label="New user"
+                        onClick={() => setIsCreateModalOpen(true)}
+                        text="New User"
+                        tone="primary"
+                      >
+                        <PlusIcon />
+                      </IconButton>
+                      <TableActionMenu
+                        label="Open user table tools"
+                        items={[
+                          {
+                            disabled: filteredUsers.length === 0,
+                            icon: <FileDownIcon />,
+                            label: "Export users",
+                            onSelect: () => downloadUsers(filteredUsers),
+                          },
+                          {
+                            icon: <FileUpIcon />,
+                            label: "Import users from CSV",
+                            onSelect: () => setIsImportModalOpen(true),
+                          },
+                        ]}
+                      />
+                    </>
+                  }
+                >
+                  <ListCount
+                    count={visibleUsers.length}
+                    label="users"
+                    totalCount={filteredUsers.length}
+                  />
+                </TableToolbar>
+              }
               users={visibleUsers}
             />
             <ListPagination

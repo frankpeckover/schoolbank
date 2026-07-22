@@ -14,6 +14,7 @@ import {
   type TimetableFiltersState,
 } from "@/components/admin-timetable/timetable-types";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
+import { FixedNotification } from "@/components/ui/fixed-notification";
 import { IconButton } from "@/components/ui/icon-button";
 import {
   FileDownIcon,
@@ -24,7 +25,8 @@ import {
   ListPagination,
   usePagedList,
 } from "@/components/ui/list-pagination";
-import { PanelToolbar } from "@/components/ui/panel-toolbar";
+import { TableActionMenu } from "@/components/ui/table-action-menu";
+import { TableToolbar } from "@/components/ui/table-toolbar";
 import {
   createTimetableEntry,
   deleteTimetableEntry,
@@ -224,44 +226,8 @@ export function AdminTimetablePanel() {
   }
 
   return (
-    <AdminPageSection>
-      <PanelToolbar
-        actions={
-          <>
-            <IconButton
-              disabled={filteredEntries.length === 0}
-              label="Export timetable"
-              onClick={() => downloadTimetableEntries(filteredEntries)}
-              text="Export"
-            >
-              <FileDownIcon />
-            </IconButton>
-            <IconButton
-              label="Import timetable"
-              onClick={() => setIsImportModalOpen(true)}
-              text="Import CSV"
-            >
-              <FileUpIcon />
-            </IconButton>
-            <IconButton
-              ariaExpanded={isCreateModalOpen}
-              label="Add timetable entry"
-              onClick={handleNewEntryToggle}
-              text="New Entry"
-              tone="primary"
-            >
-              <PlusIcon />
-            </IconButton>
-          </>
-        }
-      >
-        {!isLoading && entries.length > 0 && (
-          <p className="text-sm font-semibold text-text-muted">
-            Showing {visibleEntries.length} of {filteredEntries.length} timetable entries.
-          </p>
-        )}
-      </PanelToolbar>
-
+    <AdminPageSection isFlush>
+      <FixedNotification error={error} message={message} />
       {isCreateModalOpen && (
         <TimetableEntryModal
           form={form}
@@ -295,18 +261,7 @@ export function AdminTimetablePanel() {
         />
       )}
 
-      {message && (
-        <p className="mt-4 rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
-          {message}
-        </p>
-      )}
-      {error && (
-        <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-          {error}
-        </p>
-      )}
-
-      <div className="mt-5">
+      <div>
         {isLoading && (
           <p className="text-sm text-text-muted">Loading timetable...</p>
         )}
@@ -331,6 +286,44 @@ export function AdminTimetablePanel() {
               onEditEntry={handleEditEntry}
               onFiltersChange={setFilters}
               teachers={teachers}
+              toolbar={
+                <TableToolbar
+                  actions={
+                    <>
+                      <IconButton
+                        ariaExpanded={isCreateModalOpen}
+                        label="Add timetable entry"
+                        onClick={handleNewEntryToggle}
+                        text="New Entry"
+                        tone="primary"
+                      >
+                        <PlusIcon />
+                      </IconButton>
+                      <TableActionMenu
+                        label="Open timetable tools"
+                        items={[
+                          {
+                            disabled: filteredEntries.length === 0,
+                            icon: <FileDownIcon />,
+                            label: "Export timetable",
+                            onSelect: () =>
+                              downloadTimetableEntries(filteredEntries),
+                          },
+                          {
+                            icon: <FileUpIcon />,
+                            label: "Import timetable",
+                            onSelect: () => setIsImportModalOpen(true),
+                          },
+                        ]}
+                      />
+                    </>
+                  }
+                >
+                  <p className="text-sm font-semibold text-text-muted">
+                    Showing {visibleEntries.length} of {filteredEntries.length} timetable entries.
+                  </p>
+                </TableToolbar>
+              }
             />
             <ListPagination
               onPageChange={setPage}

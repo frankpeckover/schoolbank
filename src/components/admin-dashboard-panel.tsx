@@ -22,6 +22,7 @@ import {
 } from "@/lib/chart-time-scale";
 import { formatCurrencyAmount } from "@/lib/formatters";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FixedNotification } from "@/components/ui/fixed-notification";
 import {
   RecentAuditActivity,
   RecentLedgerActivity,
@@ -95,15 +96,11 @@ export function AdminDashboardPanel({
 
   return (
     <>
+      <FixedNotification error={error} />
       <div className="dashboard-grid mt-2">
         <section className="dashboard-unit-2 section-highlight theme-panel min-w-0 p-4">
           {isLoading && (
             <p className="text-sm text-text-muted">Loading overview...</p>
-          )}
-          {error && (
-            <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-              {error}
-            </p>
           )}
 
           {summary && (

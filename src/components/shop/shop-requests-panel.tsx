@@ -8,6 +8,7 @@ import {
 } from "@/lib/actions";
 import type { ShopPurchaseRequest } from "@/services/shop-service";
 import { formatAmount, formatDateTime } from "@/lib/formatters";
+import { FixedNotification } from "@/components/ui/fixed-notification";
 import { CheckIcon, ShoppingBagIcon, XIcon } from "@/components/ui/icons";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
 import { TableActionMenu } from "@/components/ui/table-action-menu";
@@ -154,6 +155,7 @@ export function ShopRequestsPanel({
           : "theme-panel"
       } motion-panel p-4 ${className}`}
     >
+      <FixedNotification error={error} message={message} />
       <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-panel-soft text-text-muted">
@@ -187,17 +189,6 @@ export function ShopRequestsPanel({
           </div>
         )}
       </div>
-
-      {message && (
-        <p className="mt-4 rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
-          {message}
-        </p>
-      )}
-      {error && (
-        <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-          {error}
-        </p>
-      )}
 
       <div className="relative z-10 mt-4">
         {isLoading && (
