@@ -22,9 +22,10 @@ import type { StudentListItem } from "@/services/user-service";
 
 type LedgerAdjustmentFormProps = {
   currencyName: string;
-  onCreated: (message: string) => void;
+  onCreated: (message: string) => Promise<void> | void;
   onError: (message: string | null) => void;
   preferredDirection?: AdjustmentDirection;
+  preferredGroup?: GroupListItem | null;
   preferredGroupId?: string;
   preferredGroupSelectionVersion?: number;
   preferredStudent?: StudentListItem | null;
@@ -43,6 +44,7 @@ export function LedgerAdjustmentForm({
   onCreated,
   onError,
   preferredDirection = "add",
+  preferredGroup = null,
   preferredGroupId = "",
   preferredGroupSelectionVersion = 0,
   preferredStudent = null,
@@ -50,11 +52,17 @@ export function LedgerAdjustmentForm({
   preferredStudentSelectionVersion = 0,
 }: LedgerAdjustmentFormProps) {
   const [amount, setAmount] = useState("");
-  const [direction, setDirection] = useState<AdjustmentDirection>("add");
-  const [target, setTarget] = useState<AdjustmentTarget>("student");
+  const initialStudents = getPreferredStudents(preferredStudents, preferredStudent);
+  const hasPreferredRecipient =
+    Boolean(preferredGroupId) || initialStudents.length > 0;
+  const [direction, setDirection] =
+    useState<AdjustmentDirection>(preferredDirection);
+  const [target, setTarget] = useState<AdjustmentTarget>(
+    preferredGroupId ? "group" : "student",
+  );
   const [reason, setReason] = useState("");
   const [groups, setGroups] = useState<GroupListItem[]>(emptyGroupResults);
-  const [selectedGroupId, setSelectedGroupId] = useState("");
+  const [selectedGroupId, setSelectedGroupId] = useState(preferredGroupId);
   const [studentQuery, setStudentQuery] = useState("");
   const [studentResults, setStudentResults] = useState<StudentListItem[]>(
     emptyStudentResults,
@@ -62,16 +70,20 @@ export function LedgerAdjustmentForm({
   const [presets, setPresets] = useState<TransactionPresets>(
     defaultTransactionPresets,
   );
-  const [step, setStep] = useState<AdjustmentStep>("recipient");
-  const [selectedStudents, setSelectedStudents] = useState<StudentListItem[]>(
-    [],
+  const [step, setStep] = useState<AdjustmentStep>(
+    hasPreferredRecipient ? "amount" : "recipient",
   );
-  const [isLoadingGroups, setIsLoadingGroups] = useState(true);
+  const [selectedStudents, setSelectedStudents] = useState<StudentListItem[]>(
+    initialStudents,
+  );
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const selectedGroup =
-    groups.find((group) => group.id === selectedGroupId) ?? null;
+    selectedGroupId && preferredGroup?.id === selectedGroupId
+      ? preferredGroup
+      : groups.find((group) => group.id === selectedGroupId) ?? null;
   const selectedAmount = Number(amount);
   const hasTarget =
     target === "student" ? selectedStudents.length > 0 : Boolean(selectedGroup);
@@ -92,7 +104,16 @@ export function LedgerAdjustmentForm({
   useEffect(() => {
     let isActive = true;
 
+    if (!shouldLoadGroups(step, target, selectedGroupId, selectedGroup)) {
+      setIsLoadingGroups(false);
+      return () => {
+        isActive = false;
+      };
+    }
+
     async function loadGroups() {
+      setIsLoadingGroups(true);
+
       try {
         const loadedGroups = await listGroups(false);
 
@@ -117,7 +138,7 @@ export function LedgerAdjustmentForm({
     return () => {
       isActive = false;
     };
-  }, [onError]);
+  }, [onError, selectedGroup, selectedGroupId, step, target]);
 
   useEffect(() => {
     let isActive = true;
@@ -256,6 +277,8 @@ export function LedgerAdjustmentForm({
       recipientLabel,
     });
 
+    onError(null);
+    await onCreated(result.message ?? successMessage);
     setAmount("");
     setDirection("add");
     setReason("");
@@ -264,8 +287,6 @@ export function LedgerAdjustmentForm({
     setStudentQuery("");
     setStep("recipient");
     setIsSaving(false);
-    onError(null);
-    onCreated(successMessage);
   }
 
   function selectStudent(student: StudentListItem) {
@@ -683,6 +704,34 @@ function getRecipientLabel(
   }
 
   return "";
+}
+
+function getPreferredStudents(
+  preferredStudents: StudentListItem[],
+  preferredStudent: StudentListItem | null,
+) {
+  if (preferredStudents.length > 0) {
+    return preferredStudents;
+  }
+
+  return preferredStudent ? [preferredStudent] : [];
+}
+
+function shouldLoadGroups(
+  step: AdjustmentStep,
+  target: AdjustmentTarget,
+  selectedGroupId: string,
+  selectedGroup: GroupListItem | null,
+) {
+  if (target !== "group") {
+    return false;
+  }
+
+  if (selectedGroupId && !selectedGroup) {
+    return true;
+  }
+
+  return step === "recipient";
 }
 
 function getAdjustmentSuccessMessage({

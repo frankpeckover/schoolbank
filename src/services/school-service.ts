@@ -12,7 +12,6 @@ export type SchoolInfo = {
   name: string;
   address: string;
   contactEmail: string;
-  planType: string;
   currencyName: string;
   logoUrl: string;
   phone: string;
@@ -20,7 +19,7 @@ export type SchoolInfo = {
   timezone: string;
 };
 
-export type UpdateSchoolInfoInput = Omit<SchoolInfo, "planType">;
+export type UpdateSchoolInfoInput = SchoolInfo;
 
 export type UploadSchoolLogoResult =
   | {
@@ -36,7 +35,6 @@ type SchoolInfoRow = {
   name: string;
   address: string;
   contact_email: string;
-  plan_type: string;
   currency_name: string;
   logo_url: string;
   phone: string;
@@ -66,7 +64,6 @@ export class SchoolService {
         name,
         address,
         contact_email,
-        plan_type,
         currency_name,
         logo_url,
         phone,
@@ -84,7 +81,6 @@ export class SchoolService {
         name: appConfig.defaultSchoolName,
         address: "",
         contactEmail: "",
-        planType: "trial",
         currencyName: defaultCurrencyName,
         logoUrl: "",
         phone: "",
@@ -239,7 +235,6 @@ export class SchoolService {
       name: row.name,
       address: row.address,
       contactEmail: row.contact_email,
-      planType: row.plan_type,
       currencyName: row.currency_name,
       logoUrl: row.logo_url,
       phone: row.phone,

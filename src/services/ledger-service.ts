@@ -39,7 +39,6 @@ type LedgerEntryRow = {
 };
 
 const primaryAccountName = "Primary account";
-let hasEnsuredLedgerSourceIndex = false;
 
 export class LedgerService {
   async ensureStudentAccount(client: PoolClient, userId: string) {
@@ -102,8 +101,6 @@ export class LedgerService {
   }
 
   async createEntry(client: PoolClient, input: CreateLedgerEntryInput) {
-    await ensureLedgerSourceUniqueIndex(client);
-
     const accountId = await this.ensureStudentAccount(client, input.userId);
 
     const result = await client.query<{ id: string }>(
@@ -291,20 +288,4 @@ export class LedgerService {
       ],
     );
   }
-}
-
-async function ensureLedgerSourceUniqueIndex(client: PoolClient) {
-  if (hasEnsuredLedgerSourceIndex) {
-    return;
-  }
-
-  await client.query("drop index if exists ledger_entries_source_unique_idx");
-  await client.query(`
-    create unique index if not exists ledger_entries_source_unique_idx
-      on ledger_entries(related_entity_type, related_entity_id, entry_type)
-      where reversal_of_ledger_entry_id is null
-        and related_entity_type = 'shop_purchase'
-  `);
-
-  hasEnsuredLedgerSourceIndex = true;
 }

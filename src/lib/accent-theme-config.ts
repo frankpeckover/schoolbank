@@ -11,8 +11,8 @@ export type AccentThemeOption = {
   value: AccentTheme;
 };
 
-export const accentThemeStorageKey = "schoolbank-accent-theme";
-export const customAccentColorStorageKey = "schoolbank-custom-accent-color";
+export const accentThemeStorageKey = "app-accent-theme";
+export const customAccentColorStorageKey = "app-custom-accent-color";
 export const defaultAccentTheme: AccentTheme = "teal";
 export const defaultCustomAccentColor = "#2563eb";
 

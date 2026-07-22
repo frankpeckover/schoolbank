@@ -6,18 +6,22 @@ import {
   loginUser,
   requestPasswordReset,
 } from "@/lib/actions";
-import { appConfig } from "@/lib/app-config";
 import { type SessionUser } from "@/lib/session";
 import type { PublicSsoProvider } from "@/lib/sso-types";
+import { AppBrand } from "@/components/ui/app-brand";
 import { AppFooter } from "@/components/ui/app-footer";
 import { GlobalMaintenanceBanner } from "@/components/ui/global-maintenance-banner";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 
 type LoginCardProps = {
+  maintenanceMessage: string;
   onLogin: (user: SessionUser) => void;
 };
 
-export function LoginCard({ onLogin }: LoginCardProps) {
+export function LoginCard({
+  maintenanceMessage,
+  onLogin,
+}: LoginCardProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -96,59 +100,48 @@ export function LoginCard({ onLogin }: LoginCardProps) {
 
   return (
     <main className="flex min-h-screen flex-col bg-background text-foreground">
-      <GlobalMaintenanceBanner />
-      <div className="mx-auto grid w-full max-w-6xl flex-1 content-center gap-5 px-4 py-5 sm:gap-8 sm:px-6 lg:grid-cols-[1fr_420px] lg:items-center lg:px-8">
-        <div className="max-w-2xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-text-kicker">
-            {appConfig.name}
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-normal sm:text-5xl">
-            Sign in to your school economy
-          </h1>
-          <p className="mt-3 text-base leading-7 text-text-label sm:mt-4 sm:text-lg sm:leading-8">
-            Earn wisely. Spend purposefully. Grow together.
-          </p>
-        </div>
-
-        <section className="theme-panel p-5">
-          <h2 className="text-2xl font-semibold">Log in</h2>
-          <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+      <GlobalMaintenanceBanner message={maintenanceMessage} />
+      <div className="mx-auto flex w-full max-w-md flex-1 items-center px-4 py-5 sm:px-6 lg:px-8">
+        <section className="login-panel w-full p-2 sm:p-0">
+          <div className="mb-4 flex justify-start">
+            <AppBrand showNameOnMobile />
+          </div>
+          <div className="mb-5 flex justify-start">
+            <h1 className="text-3xl font-semibold tracking-normal">Sign In</h1>
+          </div>
+          <form className="space-y-3" onSubmit={handleSubmit}>
             <div>
-              <label
-                className="text-sm font-semibold text-text-control"
-                htmlFor="username"
-              >
-                Username
-              </label>
-              <input
-                autoComplete="username"
-                className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition focus:ring-2"
-                disabled={isSubmitting}
-                id="username"
-                onChange={(event) => setUsername(event.target.value)}
-                placeholder="Username"
-                type="text"
-                value={username}
-              />
+              <div className="relative">
+                <UserFieldIcon />
+                <input
+                  aria-label="Username"
+                  autoComplete="username"
+                  className="w-full rounded-md border border-border bg-surface py-3.5 pl-10 pr-3 text-sm outline-none ring-brand transition placeholder:text-text-muted focus:border-brand focus:ring-2"
+                  disabled={isSubmitting}
+                  id="username"
+                  onChange={(event) => setUsername(event.target.value)}
+                  placeholder="Username"
+                  type="text"
+                  value={username}
+                />
+              </div>
             </div>
 
             <div>
-              <label
-                className="text-sm font-semibold text-text-control"
-                htmlFor="password"
-              >
-                Password
-              </label>
-              <input
-                autoComplete="current-password"
-                className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition focus:ring-2"
-                disabled={isSubmitting}
-                id="password"
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Enter password"
-                type="password"
-                value={password}
-              />
+              <div className="relative">
+                <PasswordFieldIcon />
+                <input
+                  aria-label="Password"
+                  autoComplete="current-password"
+                  className="w-full rounded-md border border-border bg-surface py-3.5 pl-10 pr-3 text-sm outline-none ring-brand transition placeholder:text-text-muted focus:border-brand focus:ring-2"
+                  disabled={isSubmitting}
+                  id="password"
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Password"
+                  type="password"
+                  value={password}
+                />
+              </div>
             </div>
 
             {error && (
@@ -163,7 +156,7 @@ export function LoginCard({ onLogin }: LoginCardProps) {
             )}
 
             <button
-              className="w-full rounded-md bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70"
+              className="w-full rounded-md bg-brand px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70"
               disabled={isSubmitting}
               type="submit"
             >
@@ -196,6 +189,42 @@ export function LoginCard({ onLogin }: LoginCardProps) {
         <ForgotPasswordModal onClose={() => setIsForgotPasswordOpen(false)} />
       )}
     </main>
+  );
+}
+
+function UserFieldIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+    >
+      <path d="M20 21a8 8 0 0 0-16 0" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+
+function PasswordFieldIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+    >
+      <rect height="11" rx="2" width="18" x="3" y="11" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
   );
 }
 
@@ -279,7 +308,7 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="theme-panel motion-pop w-full max-w-md p-5 shadow-lg">
+      <div className="theme-panel login-panel motion-pop w-full max-w-md p-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2 className="text-2xl font-semibold">Reset password</h2>

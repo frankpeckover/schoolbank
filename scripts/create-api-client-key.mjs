@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHmac, randomBytes } from "node:crypto";
 
 const allowedScopes = new Set([
   "balances:read",
@@ -9,7 +9,13 @@ const allowedScopes = new Set([
 ]);
 const apiKeyPrefixLength = 12;
 const apiKey = `sbk_${randomBytes(32).toString("base64url")}`;
+const apiKeyHashSecret = process.env.API_KEY_HASH_SECRET?.trim();
 const parsedArgs = parseArgs(process.argv.slice(2));
+
+if (!apiKeyHashSecret) {
+  console.error("Missing required environment variable: API_KEY_HASH_SECRET");
+  process.exit(1);
+}
 
 if (!parsedArgs.name || parsedArgs.scopes.length === 0) {
   printUsageAndExit();
@@ -24,7 +30,9 @@ if (invalidScopes.length > 0) {
   printUsageAndExit();
 }
 
-const keyHash = createHash("sha256").update(apiKey).digest("hex");
+const keyHash = createHmac("sha256", apiKeyHashSecret)
+  .update(apiKey)
+  .digest("hex");
 const keyPrefix = apiKey.slice(0, apiKeyPrefixLength);
 
 console.log("API key. Store this in the external app now; it is not stored again.");

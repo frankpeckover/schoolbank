@@ -24,7 +24,7 @@ const secondsPerMillisecond = 1000;
 const fallbackIpAddress = "unknown";
 
 declare global {
-  var schoolbankRateLimitBuckets: Map<string, RateLimitBucket> | undefined;
+  var appRateLimitBuckets: Map<string, RateLimitBucket> | undefined;
 }
 
 export async function consumeRateLimit(
@@ -74,9 +74,9 @@ async function getRequestIpAddress() {
 }
 
 function getRateLimitBuckets() {
-  if (!globalThis.schoolbankRateLimitBuckets) {
-    globalThis.schoolbankRateLimitBuckets = new Map();
+  if (!globalThis.appRateLimitBuckets) {
+    globalThis.appRateLimitBuckets = new Map();
   }
 
-  return globalThis.schoolbankRateLimitBuckets;
+  return globalThis.appRateLimitBuckets;
 }

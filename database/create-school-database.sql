@@ -1,9 +1,9 @@
--- SchoolBank school database setup for DBeaver or any normal SQL editor.
+-- App school database setup for DBeaver or any normal SQL editor.
 --
 -- Before running this file:
---   1. Create the school database, for example schoolbank.
+--   1. Create the school database, for example app_dev.
 --   2. Connect DBeaver to that school database as a PostgreSQL admin or owner.
---   3. Change the setup values noted below.
+--   3. Change the PostgreSQL app user/password near the bottom if needed.
 --   4. Run this whole file.
 --
 -- This creates the app tables, default roles/permissions, one school_info row,
@@ -13,33 +13,24 @@
 --   username: admin
 --   password: admin
 --
--- Setup values:
---   Change these before running for a real school.
---   school_app_user/password are the database login the web app will use.
---
---   Search in this file for:
---     school_app_user text := 'schoolbank_app';
---     school_app_password text := 'change_this_password';
---     seeded_school_name text := 'SchoolBank School';
---     seeded_currency_name text := 'credits';
---
 -- Defaults seeded by this file:
---   school name: SchoolBank School
+--   school name: Demo School
 --   currency name: credits
 --
 -- The script is safe to run again during development. Existing operational
 -- data is left in place, while seeded lookup/config rows may be refreshed.
+begin;
+
 create extension if not exists pgcrypto;
 
 create table if not exists school_info (
   id integer primary key default 1 check (id = 1),
-  name text not null default 'SchoolBank School',
+  name text not null default 'Demo School',
   address text not null default '',
   contact_email text not null default '',
   phone text not null default '',
   website text not null default '',
   timezone text not null default '',
-  plan_type text not null default 'trial',
   currency_name text not null default 'credits',
   logo_url text not null default '',
   created_at timestamptz not null default now(),
@@ -367,7 +358,7 @@ insert into school_info (id, name, currency_name)
 select 1, setup.seeded_school_name, setup.seeded_currency_name
 from (
   select
-    'SchoolBank School'::text as seeded_school_name,
+    'Demo School'::text as seeded_school_name,
     'credits'::text as seeded_currency_name
 ) setup
 on conflict (id) do update
@@ -495,14 +486,14 @@ values (
   'Admin',
   'User',
   'admin@demo.school',
-  'scrypt:v1:7363686f6f6c62616e6b2d61646d696e:6ae5e6009523abd6d721a2cd383d621fa57471cd3614fac43f8cb74d328a6590597f91511dedb2fa3c41159bfa93ae05fafb2ad058c815432e339a82683e2cd1'
+  'scrypt:v1:6d6572697462616e6b2d61646d696e:21932a14193b7515acb1ed5aa028cbdf9ca413fec34f8ac30b41403d38506e1f4f8989f3dbfdbe00f7216153e448f3e91b2ea9c0b8af0862c80d91a232c54cb2'
 )
 on conflict (username) do nothing;
 
 do $$
 declare
-  school_app_user text := 'schoolbank_app';
-  school_app_password text := 'change_this_password';
+  school_app_user text := 'dev_app_user';
+  school_app_password text := 'gB6eYM688eR';
 begin
   if exists (
     select 1

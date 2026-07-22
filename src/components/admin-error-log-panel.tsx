@@ -7,6 +7,10 @@ import type { ErrorLogItem } from "@/services/error-log-service";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
 import { IconButton } from "@/components/ui/icon-button";
 import { EyeIcon } from "@/components/ui/icons";
+import {
+  ListPagination,
+  usePagedList,
+} from "@/components/ui/list-pagination";
 import { ModalShell } from "@/components/ui/modal-shell";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
 
@@ -15,6 +19,12 @@ export function AdminErrorLogPanel() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [viewingEntry, setViewingEntry] = useState<ErrorLogItem | null>(null);
+  const {
+    page,
+    pageItems: visibleEntries,
+    setPage,
+    totalPages,
+  } = usePagedList(entries);
 
   useEffect(() => {
     let isMounted = true;
@@ -50,7 +60,7 @@ export function AdminErrorLogPanel() {
       {!isLoading && !error && entries.length > 0 && (
         <PanelToolbar>
           <p className="text-sm font-semibold text-text-muted">
-            Showing {entries.length} most recent errors.
+            Showing {visibleEntries.length} of {entries.length} errors.
           </p>
         </PanelToolbar>
       )}
@@ -68,7 +78,18 @@ export function AdminErrorLogPanel() {
           <p className="text-sm text-text-muted">No server errors recorded.</p>
         )}
         {!isLoading && !error && entries.length > 0 && (
-          <ErrorLogList entries={entries} onDetailsClick={setViewingEntry} />
+          <>
+            <ErrorLogList
+              entries={visibleEntries}
+              onDetailsClick={setViewingEntry}
+            />
+            <ListPagination
+              onPageChange={setPage}
+              page={page}
+              totalCount={entries.length}
+              totalPages={totalPages}
+            />
+          </>
         )}
       </div>
 

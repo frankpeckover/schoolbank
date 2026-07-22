@@ -1,17 +1,17 @@
--- SchoolBank platform database setup for DBeaver or any normal SQL editor.
+-- App platform database setup for DBeaver or any normal SQL editor.
 --
 -- Before running this file:
---   1. Create the platform database, for example schoolbank_platform.
+--   1. Create the platform database, for example app_platform.
 --   2. Connect DBeaver to that platform database as a PostgreSQL admin or owner.
---   3. Change the setup values near the bottom of this file.
+--   3. Change the seeded organisation and platform app user values if needed.
 --   4. Run this whole file.
 --
 -- This creates the platform lookup table and seeds one development organisation.
 --
 -- First seeded organisation:
 --   slug: local
---   domain: dev.schoolbank.local
---   school database: schoolbank
+--   domain: dev.app.local
+--   school database: app_dev
 --
 -- The platform_app_user/password values are the one database login the web app
 -- needs in .env.local to find all school database connection details.
@@ -50,11 +50,11 @@ insert into organisations (
 values (
   'local',
   'Development School',
-  'dev.schoolbank.local',
+  'dev.app.local',
   'localhost',
   5432,
-  'schoolbank',
-  'schoolbank_app',
+  'app_dev',
+  'school_app_user',
   'change_me_to_match_school_database_password'
 )
 on conflict (slug) do update
@@ -70,8 +70,8 @@ set name = excluded.name,
 
 do $$
 declare
-  platform_app_user text := 'schoolbank_platform_app';
-  platform_app_password text := 'change_this_password';
+  platform_app_user text := 'platform_app_user';
+  platform_app_password text := 'pg^ma@i45AB20G%';
 begin
   if exists (
     select 1

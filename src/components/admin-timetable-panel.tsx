@@ -22,6 +22,10 @@ import {
   FilterIcon,
   PlusIcon,
 } from "@/components/ui/icons";
+import {
+  ListPagination,
+  usePagedList,
+} from "@/components/ui/list-pagination";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
 import {
   createTimetableEntry,
@@ -71,6 +75,12 @@ export function AdminTimetablePanel() {
     () => entries.filter((entry) => matchesTimetableFilters(entry, filters)),
     [entries, filters],
   );
+  const {
+    page,
+    pageItems: visibleEntries,
+    setPage,
+    totalPages,
+  } = usePagedList(filteredEntries);
 
   useEffect(() => {
     refreshTimetable();
@@ -258,7 +268,7 @@ export function AdminTimetablePanel() {
       >
         {!isLoading && entries.length > 0 && (
           <p className="text-sm font-semibold text-text-muted">
-            Showing {filteredEntries.length} of {entries.length} timetable entries.
+            Showing {visibleEntries.length} of {filteredEntries.length} timetable entries.
           </p>
         )}
       </PanelToolbar>
@@ -331,12 +341,20 @@ export function AdminTimetablePanel() {
           </p>
         )}
         {!isLoading && filteredEntries.length > 0 && (
-          <TimetableEntryTable
-            entries={filteredEntries}
-            onDeleteEntry={handleDeleteEntry}
-            onDuplicateEntry={handleDuplicateEntry}
-            onEditEntry={handleEditEntry}
-          />
+          <>
+            <TimetableEntryTable
+              entries={visibleEntries}
+              onDeleteEntry={handleDeleteEntry}
+              onDuplicateEntry={handleDuplicateEntry}
+              onEditEntry={handleEditEntry}
+            />
+            <ListPagination
+              onPageChange={setPage}
+              page={page}
+              totalCount={filteredEntries.length}
+              totalPages={totalPages}
+            />
+          </>
         )}
       </div>
     </AdminPageSection>

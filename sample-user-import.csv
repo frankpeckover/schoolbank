@@ -1,0 +1,13 @@
+username,first_name,last_name,email,role
+demo.teacher,Demo,Teacher,demo.teacher@example.school,teacher
+demo.admin,Demo,Admin,demo.admin@example.school,admin
+student.0001,Ava,Nguyen,student.0001@example.school,student
+student.0002,Noah,Patel,student.0002@example.school,student
+student.0003,Mia,Thompson,student.0003@example.school,student
+student.0004,Lucas,Williams,student.0004@example.school,student
+student.0005,Isla,Chen,student.0005@example.school,student
+student.0006,Oliver,Brown,student.0006@example.school,student
+student.0007,Amelia,Singh,student.0007@example.school,student
+student.0008,Henry,Wilson,student.0008@example.school,student
+student.0009,Sophia,Martin,student.0009@example.school,student
+student.0010,Leo,Anderson,student.0010@example.school,student

@@ -1,5 +1,6 @@
-import { createHash, randomBytes } from "crypto";
+import { randomBytes } from "crypto";
 import { db } from "@/lib/db";
+import { hashServerSecret } from "@/lib/server-hash";
 import type { ApiClient, ApiScope } from "@/lib/api/api-types";
 
 type ApiClientRow = {
@@ -9,6 +10,7 @@ type ApiClientRow = {
 };
 
 const bearerPrefix = "Bearer ";
+const apiKeyHashSecretEnv = "API_KEY_HASH_SECRET";
 const apiKeyBytes = 32;
 const apiKeyPrefixLength = 12;
 
@@ -61,7 +63,7 @@ export function getApiKeyPrefix(apiKey: string) {
 }
 
 export function hashApiKey(apiKey: string) {
-  return createHash("sha256").update(apiKey).digest("hex");
+  return hashServerSecret(apiKey, apiKeyHashSecretEnv);
 }
 
 function getBearerToken(authorizationHeader: string | null) {

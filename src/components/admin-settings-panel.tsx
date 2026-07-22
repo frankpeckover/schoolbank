@@ -42,7 +42,6 @@ const fallbackSchoolInfo: SchoolInfo = {
   name: appConfig.defaultSchoolName,
   address: "",
   contactEmail: "",
-  planType: "trial",
   currencyName: defaultCurrencyName,
   logoUrl: "",
   phone: "",
@@ -339,7 +338,6 @@ export function AdminSettingsPanel({
                 placeholder="Australia/Brisbane"
                 value={form.timezone}
               />
-              <ReadOnlyField label="Plan type" value={formatPlanType(form.planType)} />
             </div>
           </div>
         </SettingsPanel>
@@ -809,25 +807,6 @@ function QuickReasonFields({
           />
         ))}
       </div>
-    </div>
-  );
-}
-
-function formatPlanType(planType: string) {
-  return planType
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(" ");
-}
-
-function ReadOnlyField({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0">
-      <p className="text-sm font-semibold text-text-control">{label}</p>
-      <p className="theme-subpanel mt-2 truncate px-3 py-3 text-sm text-text-muted">
-        {value}
-      </p>
     </div>
   );
 }

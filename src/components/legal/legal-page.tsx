@@ -11,9 +11,11 @@ type LegalPageProps = {
 };
 
 export function LegalPage({ children, description, title }: LegalPageProps) {
+  const maintenanceMessage = process.env.MAINTENANCE_MESSAGE?.trim() ?? "";
+
   return (
     <main className="flex min-h-screen flex-col bg-background text-foreground">
-      <GlobalMaintenanceBanner />
+      <GlobalMaintenanceBanner message={maintenanceMessage} />
       <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
         <header className="flex items-center justify-between gap-4 py-3">
           <Link

@@ -126,6 +126,14 @@ type GroupAdjustmentMemberRow = {
   user_id: string;
 };
 
+type AdjustmentRecipient = {
+  balance: number;
+  firstName: string;
+  lastName: string;
+  userId: string;
+  username: string;
+};
+
 const ledgerService = new LedgerService();
 const auditService = new AuditService();
 const errorLogService = new ErrorLogService();
@@ -389,8 +397,18 @@ export class TransactionService {
     try {
       await client.query("begin");
 
+      let adjustmentRecipients: AdjustmentRecipient[] = studentUserIds.map(
+        (studentUserId) => ({
+          balance: 0,
+          firstName: "",
+          lastName: "",
+          userId: studentUserId,
+          username: "",
+        }),
+      );
+
       if (input.amount < 0) {
-        const balancesResult = await client.query<{
+        const studentsResult = await client.query<{
           first_name: string;
           last_name: string;
           user_id: string;
@@ -407,7 +425,7 @@ export class TransactionService {
           [studentUserIds],
         );
 
-        if (balancesResult.rows.length !== studentUserIds.length) {
+        if (studentsResult.rows.length !== studentUserIds.length) {
           await client.query("rollback");
           return {
             ok: false,
@@ -415,32 +433,46 @@ export class TransactionService {
           };
         }
 
-        for (const student of balancesResult.rows) {
-          const balance = await ledgerService.getAvailableBalance(
-            client,
-            student.user_id,
-          );
-
-          if (balance + input.amount < 0) {
-            await client.query("rollback");
-            return {
-              ok: false,
-              message: `${formatDisplayName(student.first_name, student.last_name)} (${student.username}) does not have enough balance for this transaction.`,
-            };
-          }
-        }
+        adjustmentRecipients = await Promise.all(
+          studentsResult.rows.map(async (student) => ({
+            balance: await ledgerService.getAvailableBalance(
+              client,
+              student.user_id,
+            ),
+            firstName: student.first_name,
+            lastName: student.last_name,
+            userId: student.user_id,
+            username: student.username,
+          })),
+        );
       }
 
       const createdLedgerEntryIds: string[] = [];
+      let skippedZeroBalanceCount = 0;
+      let reducedToZeroCount = 0;
 
-      for (const studentUserId of studentUserIds) {
+      for (const recipient of adjustmentRecipients) {
+        const actualAmount = getActualAdjustmentAmount(
+          input.amount,
+          recipient.balance,
+        );
+
+        if (actualAmount === 0) {
+          skippedZeroBalanceCount += 1;
+          continue;
+        }
+
+        if (input.amount < 0 && actualAmount !== input.amount) {
+          reducedToZeroCount += 1;
+        }
+
         const ledgerEntryId = await ledgerService.createEntry(client, {
-          amount: input.amount,
+          amount: actualAmount,
           createdByUserId: currentUser.id,
           description: reason,
-          entryType: input.amount > 0 ? "reward" : "penalty",
+          entryType: actualAmount > 0 ? "reward" : "penalty",
           status: "posted",
-          userId: studentUserId,
+          userId: recipient.userId,
         });
 
         createdLedgerEntryIds.push(ledgerEntryId);
@@ -456,6 +488,8 @@ export class TransactionService {
           amount: input.amount,
           ledgerEntryIds: createdLedgerEntryIds,
           reason,
+          reducedToZeroCount,
+          skippedZeroBalanceCount,
           studentUserIds,
         },
         entityId: createdLedgerEntryIds[0],
@@ -463,7 +497,23 @@ export class TransactionService {
       });
 
       await client.query("commit");
-      return { ok: true };
+      return {
+        ok: true,
+        message: getAdjustmentResultMessage({
+          amount: input.amount,
+          createdCount: createdLedgerEntryIds.length,
+          reason,
+          reducedToZeroCount,
+          skippedZeroBalanceCount,
+          targetLabel:
+            studentUserIds.length === 1
+              ? formatDisplayName(
+                  adjustmentRecipients[0]?.firstName ?? "",
+                  adjustmentRecipients[0]?.lastName ?? "",
+                ) || "student"
+              : `${studentUserIds.length} students`,
+        }),
+      };
     } catch (error) {
       await client.query("rollback");
       console.error("Create ledger adjustment failed", error);
@@ -542,31 +592,31 @@ export class TransactionService {
       const groupName = membersResult.rows[0].group_name;
       const description = `${reason} (Group: ${groupName})`;
 
-      if (input.amount < 0) {
-        for (const member of membersResult.rows) {
-          const balance = await ledgerService.getAvailableBalance(
-            client,
-            member.user_id,
-          );
-
-          if (balance + input.amount < 0) {
-            await client.query("rollback");
-            return {
-              ok: false,
-              message: `${formatDisplayName(member.first_name, member.last_name)} (${member.username}) does not have enough balance for this group transaction.`,
-            };
-          }
-        }
-      }
-
       const createdLedgerEntryIds: string[] = [];
+      let skippedZeroBalanceCount = 0;
+      let reducedToZeroCount = 0;
 
       for (const member of membersResult.rows) {
+        const balance =
+          input.amount < 0
+            ? await ledgerService.getAvailableBalance(client, member.user_id)
+            : 0;
+        const actualAmount = getActualAdjustmentAmount(input.amount, balance);
+
+        if (actualAmount === 0) {
+          skippedZeroBalanceCount += 1;
+          continue;
+        }
+
+        if (input.amount < 0 && actualAmount !== input.amount) {
+          reducedToZeroCount += 1;
+        }
+
         const ledgerEntryId = await ledgerService.createEntry(client, {
-          amount: input.amount,
+          amount: actualAmount,
           createdByUserId: currentUser.id,
           description,
-          entryType: input.amount > 0 ? "reward" : "penalty",
+          entryType: actualAmount > 0 ? "reward" : "penalty",
           relatedEntityId: input.groupId,
           relatedEntityType: "student_group",
           status: "posted",
@@ -586,13 +636,25 @@ export class TransactionService {
           ledgerEntryIds: createdLedgerEntryIds,
           memberCount: membersResult.rows.length,
           reason,
+          reducedToZeroCount,
+          skippedZeroBalanceCount,
         },
         entityId: input.groupId,
         entityType: "student_group",
       });
 
       await client.query("commit");
-      return { ok: true };
+      return {
+        ok: true,
+        message: getAdjustmentResultMessage({
+          amount: input.amount,
+          createdCount: createdLedgerEntryIds.length,
+          reason,
+          reducedToZeroCount,
+          skippedZeroBalanceCount,
+          targetLabel: groupName,
+        }),
+      };
     } catch (error) {
       await client.query("rollback");
       console.error("Create group ledger adjustment failed", error);
@@ -716,6 +778,53 @@ function mapStudentBalanceRow(row: StudentBalanceRow): StudentBalanceItem {
 
 function formatDisplayName(firstName: string, lastName: string) {
   return `${firstName} ${lastName}`.trim();
+}
+
+function getActualAdjustmentAmount(requestedAmount: number, currentBalance: number) {
+  if (requestedAmount >= 0) {
+    return requestedAmount;
+  }
+
+  const requestedRemoval = Math.abs(requestedAmount);
+  const actualRemoval = Math.min(Math.max(currentBalance, 0), requestedRemoval);
+
+  return actualRemoval === 0 ? 0 : -actualRemoval;
+}
+
+function getAdjustmentResultMessage({
+  amount,
+  createdCount,
+  reason,
+  reducedToZeroCount,
+  skippedZeroBalanceCount,
+  targetLabel,
+}: {
+  amount: number;
+  createdCount: number;
+  reason: string;
+  reducedToZeroCount: number;
+  skippedZeroBalanceCount: number;
+  targetLabel: string;
+}) {
+  if (amount > 0 || (reducedToZeroCount === 0 && skippedZeroBalanceCount === 0)) {
+    return undefined;
+  }
+
+  const requestedRemoval = Math.abs(amount);
+
+  if (createdCount === 0) {
+    return `No value removed from ${targetLabel}; all selected students were already at zero.`;
+  }
+
+  const summaryParts = [
+    `${createdCount} adjusted`,
+    reducedToZeroCount > 0 ? `${reducedToZeroCount} reduced to zero` : "",
+    skippedZeroBalanceCount > 0
+      ? `${skippedZeroBalanceCount} already at zero`
+      : "",
+  ].filter(Boolean);
+
+  return `Removed up to ${requestedRemoval} from ${targetLabel} for ${reason}. ${summaryParts.join(", ")}.`;
 }
 
 function formatReference(row: TransactionLogRow) {

@@ -37,11 +37,13 @@ import { type SessionUser } from "@/lib/session";
 import type { SchoolInfo } from "@/services/school-service";
 
 type DashboardShellProps = {
+  maintenanceMessage: string;
   user: SessionUser;
   onLogout: () => void;
 };
 
 export function DashboardShell({
+  maintenanceMessage,
   user,
   onLogout,
 }: DashboardShellProps) {
@@ -53,7 +55,6 @@ export function DashboardShell({
     name: appConfig.defaultSchoolName,
     address: "",
     contactEmail: "",
-    planType: "trial",
     currencyName: defaultCurrencyName,
     logoUrl: "",
     phone: "",
@@ -94,7 +95,7 @@ export function DashboardShell({
 
   return (
     <main className={`app-shell-surface min-h-screen overflow-x-hidden bg-background text-foreground ${shellRoleClassName}`}>
-      <GlobalMaintenanceBanner />
+      <GlobalMaintenanceBanner message={maintenanceMessage} />
       <div className="mx-auto flex min-h-screen w-full max-w-7xl min-w-0 flex-col overflow-x-hidden px-4 py-4 sm:px-6 lg:px-8">
         <header className="relative z-50 py-3">
           <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-3">

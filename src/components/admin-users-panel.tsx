@@ -15,6 +15,10 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
 import { IconButton } from "@/components/ui/icon-button";
 import { FileDownIcon, FileUpIcon, FilterIcon, PlusIcon, UsersIcon } from "@/components/ui/icons";
+import {
+  ListPagination,
+  usePagedList,
+} from "@/components/ui/list-pagination";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
 import { downloadCsv } from "@/lib/client-csv";
 import { formatDateTime } from "@/lib/formatters";
@@ -24,8 +28,6 @@ import type { UserFormState } from "@/components/admin-users/user-modal-types";
 type AdminUsersPanelProps = {
   schoolName: string;
 };
-
-const visibleUserLimit = 100;
 
 export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
   const [users, setUsers] = useState<UserListItem[]>([]);
@@ -119,7 +121,12 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
       ),
     [filters, showInactiveUsers, users],
   );
-  const visibleUsers = filteredUsers.slice(0, visibleUserLimit);
+  const {
+    page,
+    pageItems: visibleUsers,
+    setPage,
+    totalPages,
+  } = usePagedList(filteredUsers);
 
   return (
     <AdminPageSection ariaLabel={`${schoolName} users`}>
@@ -193,11 +200,19 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
           </p>
         )}
         {!isLoading && !error && filteredUsers.length > 0 && (
-          <UsersTable
-            onDuplicate={handleDuplicateUser}
-            onEdit={setEditingUser}
-            users={visibleUsers}
-          />
+          <>
+            <UsersTable
+              onDuplicate={handleDuplicateUser}
+              onEdit={setEditingUser}
+              users={visibleUsers}
+            />
+            <ListPagination
+              onPageChange={setPage}
+              page={page}
+              totalCount={filteredUsers.length}
+              totalPages={totalPages}
+            />
+          </>
         )}
         {!isLoading && !error && filteredUsers.length === 0 && (
           <EmptyState

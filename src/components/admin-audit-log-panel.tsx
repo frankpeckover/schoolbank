@@ -8,6 +8,10 @@ import type { AuditLogItem } from "@/services/audit-service";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
 import { IconButton } from "@/components/ui/icon-button";
 import { EyeIcon, FileDownIcon, FilterIcon } from "@/components/ui/icons";
+import {
+  ListPagination,
+  usePagedList,
+} from "@/components/ui/list-pagination";
 import { ModalShell } from "@/components/ui/modal-shell";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
 import { SearchInput } from "@/components/ui/search-input";
@@ -26,7 +30,6 @@ const emptyAuditFilters: AuditFilters = {
   details: "",
   record: "",
 };
-const visibleAuditLimit = 100;
 
 export function AdminAuditLogPanel() {
   const [entries, setEntries] = useState<AuditLogItem[]>([]);
@@ -69,7 +72,12 @@ export function AdminAuditLogPanel() {
     () => entries.filter((entry) => matchesAuditFilters(entry, filters)),
     [entries, filters],
   );
-  const visibleEntries = filteredEntries.slice(0, visibleAuditLimit);
+  const {
+    page,
+    pageItems: visibleEntries,
+    setPage,
+    totalPages,
+  } = usePagedList(filteredEntries);
 
   return (
     <AdminPageSection>
@@ -129,10 +137,18 @@ export function AdminAuditLogPanel() {
           </p>
         )}
         {!isLoading && !error && filteredEntries.length > 0 && (
-          <AuditLogList
-            entries={visibleEntries}
-            onDetailsClick={setViewingEntry}
-          />
+          <>
+            <AuditLogList
+              entries={visibleEntries}
+              onDetailsClick={setViewingEntry}
+            />
+            <ListPagination
+              onPageChange={setPage}
+              page={page}
+              totalCount={filteredEntries.length}
+              totalPages={totalPages}
+            />
+          </>
         )}
       </div>
 

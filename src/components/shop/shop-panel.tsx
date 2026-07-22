@@ -17,6 +17,10 @@ import { ShopItemModal } from "@/components/shop/shop-item-modal";
 import { EmptyState } from "@/components/ui/empty-state";
 import { IconButton } from "@/components/ui/icon-button";
 import { FileDownIcon, FilterIcon, PlusIcon, ShoppingBagIcon, WalletIcon } from "@/components/ui/icons";
+import {
+  ListPagination,
+  usePagedList,
+} from "@/components/ui/list-pagination";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
 import { SearchInput } from "@/components/ui/search-input";
 import { downloadCsv } from "@/lib/client-csv";
@@ -191,13 +195,19 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
       ),
     [canManage, items, search, showArchivedItems],
   );
+  const {
+    page,
+    pageItems,
+    setPage,
+    totalPages,
+  } = usePagedList(visibleItems);
 
   return (
     <section className="motion-panel mt-5">
       {canManage ? (
         <ShopPanelHeader
           areFiltersOpen={areFiltersOpen}
-          count={visibleItems.length}
+          count={pageItems.length}
           onFilterToggle={() => setAreFiltersOpen((isOpen) => !isOpen)}
           onItemsExport={() => downloadShopItems(visibleItems)}
           onNewItem={openNewItemModal}
@@ -221,7 +231,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
           <p className="text-sm text-text-muted">Loading shop...</p>
         )}
         {!isLoading &&
-          visibleItems.map((item) => (
+          pageItems.map((item) => (
             <ShopItemCard
               canManage={canManage}
               currencyName={currencyName}
@@ -251,6 +261,15 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
           </div>
         )}
       </div>
+
+      {!isLoading && visibleItems.length > 0 && (
+        <ListPagination
+          onPageChange={setPage}
+          page={page}
+          totalCount={visibleItems.length}
+          totalPages={totalPages}
+        />
+      )}
 
       {isModalOpen && (
         <ShopItemModal

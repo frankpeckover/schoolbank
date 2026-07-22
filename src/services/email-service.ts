@@ -1,4 +1,5 @@
 import type { ActionResult } from "@/lib/action-results";
+import { appConfig } from "@/lib/app-config";
 import { getRequiredServerEnvInProduction } from "@/lib/server-env";
 
 type SendEmailInput = {
@@ -9,7 +10,7 @@ type SendEmailInput = {
 };
 
 const resendApiUrl = "https://api.resend.com/emails";
-const defaultFromAddress = "SchoolBank <onboarding@resend.dev>";
+const defaultFromAddress = `${appConfig.name} <onboarding@resend.dev>`;
 
 export class EmailService {
   async sendEmail(input: SendEmailInput): Promise<ActionResult> {

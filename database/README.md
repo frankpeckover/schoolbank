@@ -1,4 +1,4 @@
-# SchoolBank Database Setup
+# App Database Setup
 
 This folder has two DBeaver-friendly PostgreSQL setup scripts:
 
@@ -28,10 +28,10 @@ database/create-platform-database.sql
 
 In DBeaver:
 
-1. Create a database, for example `schoolbank_platform`.
-2. Connect to `schoolbank_platform` as a PostgreSQL admin or database owner.
+1. Create a database, for example `app_platform`.
+2. Connect to `app_platform` as a PostgreSQL admin or database owner.
 3. Open `create-platform-database.sql`.
-4. Change the seeded organisation and `platform_app_user` values near the bottom.
+4. Change the seeded organisation values if needed.
 5. Run the whole file.
 
 The script creates:
@@ -46,10 +46,10 @@ The app expects these environment variables for the platform database:
 ```txt
 PLATFORM_POSTGRES_HOST=
 PLATFORM_POSTGRES_PORT=5432
-PLATFORM_POSTGRES_DATABASE=schoolbank_platform
-PLATFORM_POSTGRES_USER=schoolbank_platform_app
+PLATFORM_POSTGRES_DATABASE=app_platform
+PLATFORM_POSTGRES_USER=platform_app_user
 PLATFORM_POSTGRES_PASSWORD=
-SCHOOLBANK_ROOT_DOMAIN=schoolbank.com
+APP_ROOT_DOMAIN=app.example.com
 LOCAL_ORGANISATION_SLUG=local
 ```
 
@@ -65,10 +65,10 @@ database/create-school-database.sql
 
 In DBeaver:
 
-1. Create a database, for example `schoolbank_dev`.
-2. Connect to `schoolbank_dev` as a PostgreSQL admin or database owner.
+1. Create a database, for example `app_dev`.
+2. Connect to `app_dev` as a PostgreSQL admin or database owner.
 3. Open `create-school-database.sql`.
-4. Change the seeded school values and `school_app_user` values near the bottom.
+4. Change the `school_app_user` and `school_app_password` values near the bottom if needed.
 5. Run the whole file.
 
 The script creates:
@@ -93,9 +93,9 @@ password: admin
 Use a different database login per school when you move beyond local development, for example:
 
 ```txt
-schoolbank_user_dev
-schoolbank_user_springfield
-schoolbank_user_riverside
+school_app_user_dev
+school_app_user_springfield
+school_app_user_riverside
 ```
 
 Then add that username and password to the matching `organisations` row in the platform database.
@@ -113,7 +113,7 @@ order by slug;
 School database:
 
 ```sql
-select name, address, plan_type, currency_name, logo_url
+select name, address, currency_name, logo_url
 from school_info;
 
 select
@@ -139,7 +139,7 @@ External apps use API keys stored in the school database as hashed values. Gener
 npm run create-api-client -- --name "Shop app" --scopes balances:read,ledger:hold,ledger:void
 ```
 
-The command prints the raw key once, then prints SQL you can run against the school database in DBeaver. Store the raw key in the external app, not in SchoolBank.
+The command prints the raw key once, then prints SQL you can run against the school database in DBeaver. Store the raw key in the external app, not in this app.
 
 Available scopes:
 

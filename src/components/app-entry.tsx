@@ -6,11 +6,15 @@ import type { SessionUser } from "@/lib/session";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { LoginCard } from "@/components/login-card";
 
-type SchoolBankAppProps = {
+type AppEntryProps = {
   initialUser: SessionUser | null;
+  maintenanceMessage: string;
 };
 
-export function SchoolBankApp({ initialUser }: SchoolBankAppProps) {
+export function AppEntry({
+  initialUser,
+  maintenanceMessage,
+}: AppEntryProps) {
   const [user, setUser] = useState<SessionUser | null>(initialUser);
 
   async function handleLogout() {
@@ -19,8 +23,19 @@ export function SchoolBankApp({ initialUser }: SchoolBankAppProps) {
   }
 
   if (user === null) {
-    return <LoginCard onLogin={setUser} />;
+    return (
+      <LoginCard
+        maintenanceMessage={maintenanceMessage}
+        onLogin={setUser}
+      />
+    );
   }
 
-  return <DashboardShell user={user} onLogout={handleLogout} />;
+  return (
+    <DashboardShell
+      maintenanceMessage={maintenanceMessage}
+      onLogout={handleLogout}
+      user={user}
+    />
+  );
 }

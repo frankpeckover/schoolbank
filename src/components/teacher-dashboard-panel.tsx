@@ -11,6 +11,10 @@ import {
   UsersIcon,
   XIcon,
 } from "@/components/ui/icons";
+import {
+  ListPagination,
+  usePagedList,
+} from "@/components/ui/list-pagination";
 import { SearchInput } from "@/components/ui/search-input";
 import {
   getCurrentTeacherClass,
@@ -53,6 +57,7 @@ export function TeacherDashboardPanel({
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const [selection, setSelection] =
     useState<AdjustmentTargetSelection | null>(null);
 
@@ -100,12 +105,19 @@ export function TeacherDashboardPanel({
     () => getVisibleGroups(search, groups),
     [groups, search],
   );
+  const {
+    page: studentPage,
+    pageItems: visibleStudentPage,
+    setPage: setStudentPage,
+    totalPages: studentTotalPages,
+  } = usePagedList(visibleStudents);
   const isDefaultingToCurrentClass = search.trim().length === 0;
 
   function handleStudentsSelected(
     students: StudentListItem[],
     direction: AdjustmentDirection,
   ) {
+    setMessage(null);
     setSelection({
       direction,
       kind: "students",
@@ -118,6 +130,7 @@ export function TeacherDashboardPanel({
     group: GroupListItem,
     direction: AdjustmentDirection,
   ) {
+    setMessage(null);
     setSelection({
       direction,
       group,
@@ -134,6 +147,30 @@ export function TeacherDashboardPanel({
     handleStudentsSelected(visibleStudents.map(toStudentListItem), "add");
   }
 
+  async function refreshStudentData() {
+    const [loadedCurrentClass, loadedBalances] = await Promise.all([
+      getCurrentTeacherClass(),
+      listStudentBalances(),
+    ]);
+
+    setCurrentClass(loadedCurrentClass);
+    setStudentBalances(loadedBalances.filter((student) => student.isActive));
+  }
+
+  async function handleAdjustmentCreated(messageText: string) {
+    setMessage(messageText);
+
+    try {
+      await refreshStudentData();
+      setError(null);
+    } catch {
+      setError(null);
+      setMessage(`${messageText} Refresh the page if balances look stale.`);
+    } finally {
+      setSelection(null);
+    }
+  }
+
   return (
     <>
     <section className="motion-panel mt-5">
@@ -143,6 +180,11 @@ export function TeacherDashboardPanel({
         {error && (
           <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
             {error}
+          </p>
+        )}
+        {message && (
+          <p className="mt-4 rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
+            {message}
           </p>
         )}
 
@@ -201,24 +243,32 @@ export function TeacherDashboardPanel({
             </div>
 
             {visibleStudents.length > 0 && (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {visibleStudents.map((student) => (
-                  <StudentBalanceCard
-                    currencyName={currencyName}
-                    key={student.id}
-                    onAdd={() =>
-                      handleStudentsSelected([toStudentListItem(student)], "add")
-                    }
-                    onRemove={() =>
-                      handleStudentsSelected(
-                        [toStudentListItem(student)],
-                        "remove",
-                      )
-                    }
-                    student={student}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {visibleStudentPage.map((student) => (
+                    <StudentBalanceCard
+                      currencyName={currencyName}
+                      key={student.id}
+                      onAdd={() =>
+                        handleStudentsSelected([toStudentListItem(student)], "add")
+                      }
+                      onRemove={() =>
+                        handleStudentsSelected(
+                          [toStudentListItem(student)],
+                          "remove",
+                        )
+                      }
+                      student={student}
+                    />
+                  ))}
+                </div>
+                <ListPagination
+                  onPageChange={setStudentPage}
+                  page={studentPage}
+                  totalCount={visibleStudents.length}
+                  totalPages={studentTotalPages}
+                />
+              </>
             )}
 
             {visibleGroups.length > 0 && (
@@ -248,6 +298,7 @@ export function TeacherDashboardPanel({
       {selection && (
         <QuickAdjustmentModal
           currencyName={currencyName}
+          onCreated={handleAdjustmentCreated}
           onClose={() => setSelection(null)}
           selection={selection}
         />
@@ -317,18 +368,16 @@ function GroupCreditCard({
 
 function QuickAdjustmentModal({
   currencyName,
+  onCreated,
   onClose,
   selection,
 }: {
   currencyName: string;
+  onCreated: (message: string) => Promise<void> | void;
   onClose: () => void;
   selection: AdjustmentTargetSelection;
 }) {
   const [error, setError] = useState<string | null>(null);
-
-  function handleCreated() {
-    onClose();
-  }
 
   const targetName =
     selection.kind === "group"
@@ -360,9 +409,12 @@ function QuickAdjustmentModal({
 
         <LedgerAdjustmentForm
           currencyName={currencyName}
-          onCreated={handleCreated}
+          onCreated={onCreated}
           onError={setError}
           preferredDirection={selection.direction}
+          preferredGroup={
+            selection.kind === "group" ? selection.group : undefined
+          }
           preferredGroupId={
             selection.kind === "group" ? selection.group.id : undefined
           }

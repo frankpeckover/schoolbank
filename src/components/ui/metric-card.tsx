@@ -31,19 +31,19 @@ export function MetricCard({
   }
 
   return (
-    <article className="theme-card min-w-0 p-4">
+    <article className="theme-card min-w-0 p-3 sm:p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-3xl font-semibold leading-none text-foreground">
+          <p className="break-words text-xl font-semibold leading-tight text-foreground sm:text-3xl sm:leading-none">
             {value}
           </p>
-          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.08em] text-text-kicker">
+          <p className="mt-2 whitespace-normal break-words text-[0.68rem] font-semibold uppercase leading-snug tracking-[0.08em] text-text-kicker sm:truncate sm:text-xs">
             {label}
           </p>
         </div>
         {icon && (
           <span
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${getMetricToneClassName(tone)}`}
+            className={`hidden h-9 w-9 shrink-0 items-center justify-center rounded-md sm:flex ${getMetricToneClassName(tone)}`}
           >
             {icon}
           </span>

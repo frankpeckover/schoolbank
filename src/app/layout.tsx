@@ -8,6 +8,7 @@ import {
 } from "@/lib/accent-theme-config";
 import { themeStorageKey } from "@/lib/theme-config";
 import "./globals.css";
+import { SessionChecker } from "@/components/session-checker";
 
 const themeInitScript = `
 (() => {
@@ -69,7 +70,10 @@ export default function RootLayout({
         />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <SessionChecker />
+        {children}
+      </body>
     </html>
   );
 }

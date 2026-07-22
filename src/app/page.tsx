@@ -1,8 +1,14 @@
-import { SchoolBankApp } from "@/components/school-bank-app";
+import { AppEntry } from "@/components/app-entry";
 import { getCurrentSessionUser } from "@/lib/actions";
 
 export default async function Home() {
   const currentUser = await getCurrentSessionUser();
+  const maintenanceMessage = process.env.MAINTENANCE_MESSAGE?.trim() ?? "";
 
-  return <SchoolBankApp initialUser={currentUser} />;
+  return (
+    <AppEntry
+      initialUser={currentUser}
+      maintenanceMessage={maintenanceMessage}
+    />
+  );
 }

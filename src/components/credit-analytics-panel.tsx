@@ -243,7 +243,7 @@ function AnalyticsMetricGrid({
   summary: CreditAnalyticsSummary | null;
 }) {
   return (
-    <section className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <section className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
       <MetricCard
         icon={<UsersIcon />}
         label={`Active in last ${selectedWindowDays} days`}

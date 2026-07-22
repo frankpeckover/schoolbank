@@ -1,5 +1,11 @@
+"use client";
+
 import { IconButton } from "@/components/ui/icon-button";
 import { CopyIcon, EyeIcon, PencilIcon } from "@/components/ui/icons";
+import {
+  ListPagination,
+  usePagedList,
+} from "@/components/ui/list-pagination";
 import { SearchInput } from "@/components/ui/search-input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { GroupListItem } from "@/services/group-service";
@@ -31,6 +37,13 @@ export function GroupListPanel({
   selectedGroupId,
   showArchived,
 }: GroupListPanelProps) {
+  const {
+    page,
+    pageItems: visibleGroups,
+    setPage,
+    totalPages,
+  } = usePagedList(groups);
+
   return (
     <div className="mt-5">
       {areFiltersOpen && (
@@ -50,13 +63,21 @@ export function GroupListPanel({
           <p className="text-sm text-text-muted">No groups match these filters.</p>
         )}
         {!isLoading && groups.length > 0 && (
-          <GroupList
-            groups={groups}
-            onDuplicateGroup={onDuplicateGroup}
-            onEditGroup={onEditGroup}
-            onGroupSelect={onGroupSelect}
-            selectedGroupId={selectedGroupId}
-          />
+          <>
+            <GroupList
+              groups={visibleGroups}
+              onDuplicateGroup={onDuplicateGroup}
+              onEditGroup={onEditGroup}
+              onGroupSelect={onGroupSelect}
+              selectedGroupId={selectedGroupId}
+            />
+            <ListPagination
+              onPageChange={setPage}
+              page={page}
+              totalCount={groups.length}
+              totalPages={totalPages}
+            />
+          </>
         )}
       </div>
     </div>

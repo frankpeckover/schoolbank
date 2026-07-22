@@ -159,14 +159,14 @@ export function UserModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="theme-panel motion-pop w-full max-w-lg p-5 shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3 py-2 sm:px-4 sm:py-6">
+      <div className="theme-panel motion-pop max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto p-4 shadow-lg sm:max-h-[90vh] sm:p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h3 className="text-2xl font-semibold">
+            <h3 className="text-xl font-semibold sm:text-2xl">
               {mode === "create" ? "New User" : "Edit User"}
             </h3>
-            <p className="mt-1 text-sm text-text-muted">
+            <p className="mt-1 hidden text-sm text-text-muted sm:block">
               {mode === "create"
                 ? "Create a user for this school."
                 : "Update user details and access."}
@@ -175,7 +175,7 @@ export function UserModal({
           <ModalCloseButton onClick={onClose} />
         </div>
 
-        <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+        <form className="mt-4 space-y-3 sm:mt-5 sm:space-y-4" onSubmit={handleSubmit}>
           <UserFormFields
             imageFileName={profileImageFile?.name ?? ""}
             form={form}

@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { Pool, type PoolClient, type QueryResult, type QueryResultRow } from "pg";
 import {
   getRequiredServerEnv,
+  getRequiredServerEnvInProduction,
   getServerEnvNumber,
 } from "@/lib/server-env";
 
@@ -29,16 +30,22 @@ type TenantLookup = {
   slug: string;
 };
 
-const rootDomain = process.env.SCHOOLBANK_ROOT_DOMAIN ?? "schoolbank.com";
-const localOrganisationSlug = process.env.LOCAL_ORGANISATION_SLUG ?? "local";
+const rootDomain = getRequiredServerEnvInProduction(
+  "APP_ROOT_DOMAIN",
+  "app.local",
+);
+const localOrganisationSlug = getRequiredServerEnvInProduction(
+  "LOCAL_ORGANISATION_SLUG",
+  "local",
+);
 const defaultPostgresPort = 5432;
 const allowOrganisationHeaderOverride =
   process.env.NODE_ENV !== "production" ||
   process.env.ALLOW_ORGANISATION_HEADER_OVERRIDE === "true";
 
 declare global {
-  var schoolbankTenantPools: Map<string, Pool> | undefined;
-  var schoolbankPlatformPool: Pool | undefined;
+  var appTenantPools: Map<string, Pool> | undefined;
+  var appPlatformPool: Pool | undefined;
 }
 
 export const db = {
@@ -89,7 +96,7 @@ async function resolveTenantDatabaseConfig(): Promise<TenantDatabaseConfig> {
 
 async function resolveTenantLookup(): Promise<TenantLookup> {
   const requestHeaders = await headers();
-  const overrideSlug = requestHeaders.get("x-schoolbank-org");
+  const overrideSlug = requestHeaders.get("x-organisation-slug");
   const host = getHostname(requestHeaders.get("host"));
 
   if (overrideSlug && allowOrganisationHeaderOverride) {
@@ -168,8 +175,8 @@ async function getOrganisationDatabaseConfig(lookup: TenantLookup) {
 }
 
 function getPlatformPool() {
-  if (globalThis.schoolbankPlatformPool) {
-    return globalThis.schoolbankPlatformPool;
+  if (globalThis.appPlatformPool) {
+    return globalThis.appPlatformPool;
   }
 
   const platformPool = new Pool({
@@ -181,7 +188,7 @@ function getPlatformPool() {
   });
 
   if (process.env.NODE_ENV !== "production") {
-    globalThis.schoolbankPlatformPool = platformPool;
+    globalThis.appPlatformPool = platformPool;
   }
 
   return platformPool;
@@ -207,11 +214,11 @@ function validateOrganisationDatabaseConfig(
 }
 
 function getTenantPools() {
-  if (!globalThis.schoolbankTenantPools) {
-    globalThis.schoolbankTenantPools = new Map<string, Pool>();
+  if (!globalThis.appTenantPools) {
+    globalThis.appTenantPools = new Map<string, Pool>();
   }
 
-  return globalThis.schoolbankTenantPools;
+  return globalThis.appTenantPools;
 }
 
 function getTenantPoolKey(config: TenantDatabaseConfig) {

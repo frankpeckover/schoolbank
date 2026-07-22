@@ -1,6 +1,12 @@
-const maintenanceMessage = process.env.NEXT_PUBLIC_MAINTENANCE_MESSAGE?.trim();
+type GlobalMaintenanceBannerProps = {
+  message: string;
+};
 
-export function GlobalMaintenanceBanner() {
+export function GlobalMaintenanceBanner({
+  message,
+}: GlobalMaintenanceBannerProps) {
+  const maintenanceMessage = message.trim();
+
   if (!maintenanceMessage) {
     return null;
   }

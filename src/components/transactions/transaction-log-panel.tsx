@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { listTransactionLog, voidTransaction } from "@/lib/actions";
 import { downloadCsv } from "@/lib/client-csv";
 import {
@@ -30,6 +30,10 @@ import {
   ListIcon,
   XIcon,
 } from "@/components/ui/icons";
+import {
+  ListPagination,
+  usePagedList,
+} from "@/components/ui/list-pagination";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
 import { SearchInput } from "@/components/ui/search-input";
 import { TextReasonModal } from "@/components/ui/text-reason-modal";
@@ -121,9 +125,19 @@ export function TransactionLogPanel({
     refreshTransactions();
   }
 
-  const filteredTransactions = transactions.filter((transaction) =>
-    matchesTransactionFilters(transaction, filters),
+  const filteredTransactions = useMemo(
+    () =>
+      transactions.filter((transaction) =>
+        matchesTransactionFilters(transaction, filters),
+      ),
+    [filters, transactions],
   );
+  const {
+    page,
+    pageItems: visibleTransactions,
+    setPage,
+    totalPages,
+  } = usePagedList(filteredTransactions);
 
   return (
     <section className="theme-panel motion-panel mt-5 min-w-0 p-4">
@@ -156,7 +170,7 @@ export function TransactionLogPanel({
       >
         {!isLoading && !error && filteredTransactions.length > 0 && (
           <p className="text-sm font-semibold text-text-muted">
-            Showing {filteredTransactions.length} of {transactions.length} transactions.
+            Showing {visibleTransactions.length} of {filteredTransactions.length} transactions.
           </p>
         )}
       </PanelToolbar>
@@ -200,13 +214,21 @@ export function TransactionLogPanel({
           />
         )}
         {!isLoading && !error && filteredTransactions.length > 0 && (
-          <TransactionList
-            canViewAllTransactions={canViewAllTransactionsForUser}
-            canVoidTransactions={canVoidTransactionsForUser}
-            onDetailsClick={setViewingTransaction}
-            onVoidClick={setVoidingTransaction}
-            transactions={filteredTransactions}
-          />
+          <>
+            <TransactionList
+              canViewAllTransactions={canViewAllTransactionsForUser}
+              canVoidTransactions={canVoidTransactionsForUser}
+              onDetailsClick={setViewingTransaction}
+              onVoidClick={setVoidingTransaction}
+              transactions={visibleTransactions}
+            />
+            <ListPagination
+              onPageChange={setPage}
+              page={page}
+              totalCount={filteredTransactions.length}
+              totalPages={totalPages}
+            />
+          </>
         )}
       </div>
 

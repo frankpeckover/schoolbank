@@ -11,7 +11,8 @@ export function AppFooter({
   schoolName = "",
 }: AppFooterProps) {
   const displaySchoolName = schoolName.trim();
-  const displayContactEmail = contactEmail.trim();
+  const supportEmail = contactEmail.trim() || appConfig.supportEmail;
+  const supportSubject = encodeURIComponent(`${appConfig.name} support request`);
 
   return (
     <footer className="mt-auto pt-8">
@@ -32,16 +33,15 @@ export function AppFooter({
             <FooterLink href="/privacy">Privacy</FooterLink>
             <FooterLink href="/terms">Terms</FooterLink>
             <FooterLink href="/data-retention">Data retention</FooterLink>
-            {displayContactEmail ? (
-              <a
-                className="font-semibold text-text-control underline-offset-4 transition hover:text-brand hover:underline"
-                href={`mailto:${displayContactEmail}`}
-              >
-                Support
-              </a>
-            ) : (
-              <span>Support</span>
-            )}
+            <a
+              className="font-semibold text-text-control underline-offset-4 transition hover:text-brand hover:underline"
+              href={`mailto:${supportEmail}?subject=${supportSubject}`}
+            >
+              Support
+            </a>
+            <span className="text-text-subtle">
+              Version {appConfig.version}
+            </span>
             <span className="text-text-subtle">
               Copyright {appConfig.name}. All rights reserved.
             </span>

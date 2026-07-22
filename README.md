@@ -1,6 +1,6 @@
-# SchoolBank
+# MeritBank
 
-SchoolBank is a seedling-stage school economy app. The first build focuses on a small, useful loop:
+MeritBank is a seedling-stage school economy app. The first build focuses on a small, useful loop:
 
 - teachers award or deduct fake currency
 - students see balances, goals, and store options
@@ -25,14 +25,17 @@ Planned next additions:
 
 Install Node.js 22 LTS or newer. Next.js also supports Node 20.9+, but the local machine should be upgraded from Node 20.7 before regular development.
 
-Create `.env.local` from `.env.example` and adjust the credentials for your Postgres container:
+Create `.env.local` from `.env.example` and adjust the platform database credentials:
 
 ```txt
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-POSTGRES_DATABASE=schoolbank
-POSTGRES_USER=schoolbank_app
-POSTGRES_PASSWORD=change_me
+PLATFORM_POSTGRES_HOST=localhost
+PLATFORM_POSTGRES_PORT=5432
+PLATFORM_POSTGRES_DATABASE=app_platform
+PLATFORM_POSTGRES_USER=platform_app_user
+PLATFORM_POSTGRES_PASSWORD=change_me
+
+LOCAL_ORGANISATION_SLUG=dev
+APP_ROOT_DOMAIN=app.local
 ```
 
 ```bash
@@ -42,18 +45,11 @@ npm run dev
 
 Open http://localhost:3000.
 
-Demo password for seeded local database accounts:
+Initial admin login after running the school database setup script:
 
 ```txt
-demo123
-```
-
-Demo usernames:
-
-```txt
-admin
-teacher
-ava.patel
+username: admin
+password: admin
 ```
 
 ## Early Roadmap

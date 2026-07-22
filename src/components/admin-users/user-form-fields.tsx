@@ -47,7 +47,7 @@ function NameFields({
   onChange: UserFormFieldChange;
 }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
       <TextField
         id="firstName"
         label="First Name"
@@ -79,7 +79,7 @@ function AccountFields({
 }) {
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
         <TextField
           id="username"
           label="Username"
@@ -91,7 +91,7 @@ function AccountFields({
             Role
           </label>
           <select
-            className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition focus:ring-2"
+            className="mt-1.5 w-full rounded-md border border-border bg-surface px-3 py-2.5 text-sm outline-none ring-brand transition focus:ring-2 sm:mt-2 sm:py-3"
             id="role"
             onChange={(event) => onChange("role", event.target.value as Role)}
             value={form.role}
@@ -158,7 +158,7 @@ function ProfileImageUploadField({
       <span className="text-sm font-semibold text-text-control">
         Profile Image
       </span>
-      <div className="theme-subpanel mt-2 flex items-center gap-3 p-3">
+      <div className="theme-subpanel mt-1.5 flex items-center gap-3 p-2.5 sm:mt-2 sm:p-3">
         <UserAvatar
           displayName={displayName || "User"}
           imageUrl={currentImageUrl}
@@ -174,13 +174,13 @@ function ProfileImageUploadField({
             type="file"
           />
           <label
-            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-button-border bg-surface text-text-control transition hover:bg-panel-soft"
+            className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-button-border bg-surface text-text-control transition hover:bg-panel-soft sm:h-10 sm:w-10"
             htmlFor="profileImage"
             title="Upload profile image"
           >
             <PlusIcon />
           </label>
-          <p className="mt-2 truncate text-sm text-text-muted">
+          <p className="mt-1 truncate text-xs text-text-muted sm:mt-2 sm:text-sm">
             {fileName || profileImageHelpText}
           </p>
         </div>
@@ -208,7 +208,7 @@ function TextField({
         {label}
       </label>
       <input
-        className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition focus:ring-2"
+        className="mt-1.5 w-full rounded-md border border-border bg-surface px-3 py-2.5 text-sm outline-none ring-brand transition focus:ring-2 sm:mt-2 sm:py-3"
         id={id}
         onChange={(event) => onChange(event.target.value)}
         type={type}

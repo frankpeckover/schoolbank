@@ -2,7 +2,7 @@
 
 @font-face {
   font-display: swap;
-  font-family: "SchoolBank Numerals";
+  font-family: "App Numerals";
   font-style: normal;
   font-weight: 400;
   src: url("https://fonts.gstatic.com/s/sora/v17/xMQOuFFYT72X5wkB_18qmnndmSdSnn-K.ttf") format("truetype");
@@ -11,7 +11,7 @@
 
 @font-face {
   font-display: swap;
-  font-family: "SchoolBank Numerals";
+  font-family: "App Numerals";
   font-style: normal;
   font-weight: 500;
   src: url("https://fonts.gstatic.com/s/sora/v17/xMQOuFFYT72X5wkB_18qmnndmSdgnn-K.ttf") format("truetype");
@@ -20,7 +20,7 @@
 
 @font-face {
   font-display: swap;
-  font-family: "SchoolBank Numerals";
+  font-family: "App Numerals";
   font-style: normal;
   font-weight: 600;
   src: url("https://fonts.gstatic.com/s/sora/v17/xMQOuFFYT72X5wkB_18qmnndmSeMmX-K.ttf") format("truetype");
@@ -29,7 +29,7 @@
 
 @font-face {
   font-display: swap;
-  font-family: "SchoolBank Numerals";
+  font-family: "App Numerals";
   font-style: normal;
   font-weight: 700;
   src: url("https://fonts.gstatic.com/s/sora/v17/xMQOuFFYT72X5wkB_18qmnndmSe1mX-K.ttf") format("truetype");
@@ -38,7 +38,7 @@
 
 @font-face {
   font-display: swap;
-  font-family: "SchoolBank Numerals";
+  font-family: "App Numerals";
   font-style: normal;
   font-weight: 800;
   src: url("https://fonts.gstatic.com/s/sora/v17/xMQOuFFYT72X5wkB_18qmnndmSfSmX-K.ttf") format("truetype");
@@ -107,7 +107,7 @@
   --radius-control: 0.75rem;
   --radius-card: 1rem;
   --radius-panel: 1.25rem;
-  --font-numeric: "SchoolBank Numerals", Sora, Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
+  --font-numeric: "App Numerals", Sora, Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
   --motion-fast: 140ms;
   --motion-standard: 180ms;
   --motion-ease: cubic-bezier(0.2, 0, 0, 1);
@@ -237,7 +237,7 @@ html[data-accent="custom"] {
   --color-wallet-highlight: var(--wallet-highlight);
   --color-progress-track: var(--progress-track);
   --color-activity-meta: var(--activity-meta);
-  --font-numeric: "SchoolBank Numerals", Sora, Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
+  --font-numeric: "App Numerals", Sora, Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
   --font-sans: var(--font-numeric);
   --font-heading: Sora, Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
   --font-mono: "Cascadia Code", Consolas, monospace;
@@ -249,6 +249,7 @@ body {
     var(--background);
   color: var(--foreground);
   font-family: var(--font-numeric), Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
+  font-weight: 400;
 }
 
 h1,
@@ -258,6 +259,14 @@ h4,
 h5,
 h6 {
   font-family: Sora, Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
+}
+
+.font-semibold {
+  font-weight: 550;
+}
+
+.font-bold {
+  font-weight: 650;
 }
 
 button,
@@ -433,6 +442,17 @@ html[data-theme="dark"] .professional-shell {
   box-shadow: 0 1px 2px var(--shadow-panel), 0 10px 28px rgba(31, 37, 35, 0.035);
 }
 
+.login-panel {
+  border-radius: 8px;
+}
+
+.login-panel input,
+.login-panel button,
+.login-panel a,
+.login-panel p[class*="border"] {
+  border-radius: 8px;
+}
+
 .theme-card {
   background: var(--surface);
   border: 1px solid var(--border-subtle);
@@ -443,6 +463,20 @@ html[data-theme="dark"] .professional-shell {
   background: var(--panel-soft);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
+}
+
+table {
+  width: 100%;
+}
+
+table thead tr,
+table tbody tr {
+  border-bottom: 0 !important;
+}
+
+table th,
+table td {
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .professional-shell .theme-panel {

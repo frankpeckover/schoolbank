@@ -12,7 +12,7 @@ type SessionUserRow = {
   username: string;
 };
 
-const sessionCookieName = "schoolbank_session";
+const sessionCookieName = "session_69";
 const sessionTokenBytes = 32;
 const sessionLengthDays = 7;
 const idleSessionTimeoutHours = 8;

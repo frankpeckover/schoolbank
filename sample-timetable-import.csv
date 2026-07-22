@@ -1,0 +1,6 @@
+teacher_username,group_name,day,start_time,end_time
+demo.teacher,Grade 4,monday,09:00,10:00
+demo.teacher,Grade 4,tuesday,09:00,10:00
+demo.teacher,Music,wednesday,11:30,12:30
+demo.teacher,Homework Support,thursday,13:30,14:15
+demo.teacher,Robotics,friday,14:30,15:30

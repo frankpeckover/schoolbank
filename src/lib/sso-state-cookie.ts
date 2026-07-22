@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { decryptServerSecret, encryptServerSecret } from "@/lib/server-crypto";
 import type { SsoState } from "@/services/sso-auth-service";
 
-const ssoStateCookieName = "schoolbank_sso_state";
+const ssoStateCookieName = "app_sso_state";
 const ssoStateMaxAgeSeconds = 10 * 60;
 const millisecondsPerSecond = 1000;
 
