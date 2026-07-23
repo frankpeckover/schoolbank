@@ -73,6 +73,7 @@ create table if not exists users (
   last_name text not null,
   email text not null unique,
   profile_image_url text not null default '',
+  card_number text not null default '',
   password_hash text not null,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),

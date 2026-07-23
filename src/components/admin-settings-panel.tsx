@@ -55,7 +55,6 @@ const emptySsoSecrets: Record<SsoProviderType, string> = {
   google: "",
   microsoft_entra: "",
 };
-
 export function AdminSettingsPanel({
   onSchoolInfoUpdated,
 }: AdminSettingsPanelProps) {

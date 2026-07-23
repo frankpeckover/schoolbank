@@ -29,7 +29,7 @@ type ParseResult =
       message: string;
     };
 
-const csvHeaders = "username,first_name,last_name,email,role";
+const csvHeaders = "username,first_name,last_name,email,role,card_number";
 const validRoles: Role[] = ["admin", "teacher", "student"];
 
 export function UserImportModal({
@@ -342,6 +342,7 @@ function parseUsersCsv(text: string): ParseResult {
     }
 
     const user = {
+      cardNumber: values.cardnumber?.trim() ?? "",
       email: values.email?.trim() ?? "",
       firstName: values.firstname?.trim() ?? "",
       lastName: values.lastname?.trim() ?? "",

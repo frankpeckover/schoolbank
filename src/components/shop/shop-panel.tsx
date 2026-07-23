@@ -7,6 +7,7 @@ import {
   removeShopItem,
   requestShopItem,
 } from "@/lib/actions";
+import { downloadCsv } from "@/lib/client-csv";
 import { formatCurrencyAmount } from "@/lib/formatters";
 import { canManageShopItems } from "@/lib/permissions";
 import type { SessionUser } from "@/lib/session";
@@ -19,11 +20,15 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { FixedNotification } from "@/components/ui/fixed-notification";
 import { IconButton } from "@/components/ui/icon-button";
 import {
+  CopyIcon,
+  EyeIcon,
   FileDownIcon,
   FileUpIcon,
-  FilterIcon,
+  PackageIcon,
+  PencilIcon,
   PlusIcon,
   ShoppingBagIcon,
+  TrashIcon,
   WalletIcon,
 } from "@/components/ui/icons";
 import {
@@ -31,28 +36,39 @@ import {
   usePagedList,
 } from "@/components/ui/list-pagination";
 import { PanelToolbar } from "@/components/ui/panel-toolbar";
-import { SearchInput } from "@/components/ui/search-input";
 import { TableActionMenu } from "@/components/ui/table-action-menu";
-import { downloadCsv } from "@/lib/client-csv";
+import {
+  TableHeaderFilter,
+  TableHeaderFilterInput,
+  TableHeaderFilterSelect,
+} from "@/components/ui/table-header-filter";
 
 type ShopPanelProps = {
   currencyName: string;
   currentUser: SessionUser;
 };
 
+type ShopFiltersState = {
+  priceMax: string;
+  priceMin: string;
+  search: string;
+  showArchivedItems: boolean;
+};
+
 export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   const canManage = canManageShopItems(currentUser);
   const [items, setItems] = useState<ShopItem[]>([]);
-  const [priceMax, setPriceMax] = useState("");
-  const [priceMin, setPriceMin] = useState("");
-  const [search, setSearch] = useState("");
-  const [showArchivedItems, setShowArchivedItems] = useState(false);
+  const [filters, setFilters] = useState<ShopFiltersState>({
+    priceMax: "",
+    priceMin: "",
+    search: "",
+    showArchivedItems: false,
+  });
   const [balance, setBalance] = useState<number | null>(null);
   const [requestedItemIds, setRequestedItemIds] = useState<string[]>([]);
   const [duplicatingItem, setDuplicatingItem] = useState<ShopItem | null>(null);
   const [editingItem, setEditingItem] = useState<ShopItem | null>(null);
   const [viewingItem, setViewingItem] = useState<ShopItem | null>(null);
-  const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -143,6 +159,16 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
     };
   }, [canManage, currentUser]);
 
+  function updateFilter<Field extends keyof ShopFiltersState>(
+    field: Field,
+    value: ShopFiltersState[Field],
+  ) {
+    setFilters((currentFilters) => ({
+      ...currentFilters,
+      [field]: value,
+    }));
+  }
+
   function openNewItemModal() {
     setDuplicatingItem(null);
     setEditingItem(null);
@@ -157,9 +183,9 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   }
 
   function openDuplicateItemModal(item: ShopItem) {
+    setDuplicatingItem(item);
     setEditingItem(null);
     setViewingItem(null);
-    setDuplicatingItem(item);
     setIsModalOpen(true);
   }
 
@@ -184,11 +210,15 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
     }
 
     setMessage("Request submitted.");
-    setViewingItem((current) =>
-      current?.id === itemId ? { ...current, quantity: current.quantity - 1 } : current,
+    setViewingItem((currentItem) =>
+      currentItem?.id === itemId
+        ? { ...currentItem, quantity: currentItem.quantity - 1 }
+        : currentItem,
     );
-    setRequestedItemIds((current) =>
-      current.includes(itemId) ? current : [...current, itemId],
+    setRequestedItemIds((currentItemIds) =>
+      currentItemIds.includes(itemId)
+        ? currentItemIds
+        : [...currentItemIds, itemId],
     );
     refreshBalance();
     refreshItems();
@@ -205,13 +235,11 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
     () =>
       items.filter((item) =>
         matchesShopFilters(item, {
-          priceMax,
-          priceMin,
-          search,
-          showArchivedItems: canManage && showArchivedItems,
+          ...filters,
+          showArchivedItems: canManage && filters.showArchivedItems,
         }),
       ),
-    [canManage, items, priceMax, priceMin, search, showArchivedItems],
+    [canManage, filters, items],
   );
   const {
     page,
@@ -223,66 +251,52 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   return (
     <section className="motion-panel mt-5">
       <FixedNotification error={error} message={message} />
+
       {canManage ? (
         <ShopPanelHeader
-          areFiltersOpen={areFiltersOpen}
           count={pageItems.length}
-          onFilterToggle={() => setAreFiltersOpen((isOpen) => !isOpen)}
           onImportItems={() => setIsImportModalOpen(true)}
           onItemsExport={() => downloadShopItems(visibleItems)}
           onNewItem={openNewItemModal}
-          totalCount={items.length}
+          totalCount={visibleItems.length}
         />
       ) : (
         <StudentShopWallet balance={balance} currencyName={currencyName} />
       )}
-      {canManage && areFiltersOpen && (
-        <ShopFilters
-          onPriceMaxChange={setPriceMax}
-          onPriceMinChange={setPriceMin}
-          onSearchChange={setSearch}
-          onShowArchivedItemsChange={setShowArchivedItems}
-          priceMax={priceMax}
-          priceMin={priceMin}
-          search={search}
-          showArchivedItems={showArchivedItems}
+
+      {canManage ? (
+        <ShopManagementList
+          currencyName={currencyName}
+          filters={filters}
+          isLoading={isLoading}
+          items={pageItems}
+          onDuplicate={openDuplicateItemModal}
+          onEdit={openEditItemModal}
+          onPriceMaxChange={(value) => updateFilter("priceMax", value)}
+          onPriceMinChange={(value) => updateFilter("priceMin", value)}
+          onRemove={handleRemove}
+          onSearchChange={(value) => updateFilter("search", value)}
+          onShowArchivedItemsChange={(value) =>
+            updateFilter("showArchivedItems", value)
+          }
+          onView={setViewingItem}
+          totalItemCount={items.length}
+          visibleItemCount={visibleItems.length}
+        />
+      ) : (
+        <StudentShopGrid
+          currencyName={currencyName}
+          isLoading={isLoading}
+          items={items}
+          onEdit={openEditItemModal}
+          onPurchase={handlePurchase}
+          onRemove={handleRemove}
+          onView={setViewingItem}
+          pageItems={pageItems}
+          requestedItemIds={requestedItemIds}
+          visibleItemCount={visibleItems.length}
         />
       )}
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {isLoading && (
-          <p className="text-sm text-text-muted">Loading shop...</p>
-        )}
-        {!isLoading &&
-          pageItems.map((item) => (
-            <ShopItemCard
-              canManage={canManage}
-              currencyName={currencyName}
-              item={item}
-              key={item.id}
-              onDuplicate={canManage ? openDuplicateItemModal : undefined}
-              onEdit={openEditItemModal}
-              onPurchase={handlePurchase}
-              onRemove={handleRemove}
-              onView={setViewingItem}
-              requested={requestedItemIds.includes(item.id)}
-            />
-          ))}
-        {!isLoading && visibleItems.length === 0 && (
-          <div className="sm:col-span-2 lg:col-span-4">
-            <EmptyState
-              description={
-                items.length === 0
-                  ? canManage
-                    ? "Create the first reward item so students have something to request."
-                    : "Rewards will appear here once staff add them."
-                  : "Try changing the search or archived-item filter."
-              }
-              icon={<ShoppingBagIcon />}
-              title={items.length === 0 ? "No shop items yet" : "No matching shop items"}
-            />
-          </div>
-        )}
-      </div>
 
       {!isLoading && visibleItems.length > 0 && (
         <ListPagination
@@ -344,17 +358,13 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
 }
 
 function ShopPanelHeader({
-  areFiltersOpen,
   count,
-  onFilterToggle,
   onImportItems,
   onItemsExport,
   onNewItem,
   totalCount,
 }: {
-  areFiltersOpen: boolean;
   count: number;
-  onFilterToggle: () => void;
   onImportItems: () => void;
   onItemsExport: () => void;
   onNewItem: () => void;
@@ -364,14 +374,6 @@ function ShopPanelHeader({
     <PanelToolbar
       actions={
         <div className="flex items-center gap-2">
-          <IconButton
-            ariaExpanded={areFiltersOpen}
-            label={areFiltersOpen ? "Hide filters" : "Show filters"}
-            onClick={onFilterToggle}
-            text="Filters"
-          >
-            <FilterIcon />
-          </IconButton>
           <IconButton
             label="New item"
             onClick={onNewItem}
@@ -408,6 +410,297 @@ function ShopPanelHeader({
   );
 }
 
+function ShopManagementList({
+  currencyName,
+  filters,
+  isLoading,
+  items,
+  onDuplicate,
+  onEdit,
+  onPriceMaxChange,
+  onPriceMinChange,
+  onRemove,
+  onSearchChange,
+  onShowArchivedItemsChange,
+  onView,
+  totalItemCount,
+  visibleItemCount,
+}: {
+  currencyName: string;
+  filters: ShopFiltersState;
+  isLoading: boolean;
+  items: ShopItem[];
+  onDuplicate: (item: ShopItem) => void;
+  onEdit: (item: ShopItem) => void;
+  onPriceMaxChange: (value: string) => void;
+  onPriceMinChange: (value: string) => void;
+  onRemove: (itemId: string) => void;
+  onSearchChange: (value: string) => void;
+  onShowArchivedItemsChange: (value: boolean) => void;
+  onView: (item: ShopItem) => void;
+  totalItemCount: number;
+  visibleItemCount: number;
+}) {
+  if (isLoading) {
+    return <p className="mt-4 text-sm text-text-muted">Loading shop...</p>;
+  }
+
+  if (visibleItemCount === 0) {
+    return (
+      <div className="mt-4">
+        <ShopEmptyState isManagementView totalItemCount={totalItemCount} />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="mt-4 grid gap-3 md:hidden">
+        {items.map((item) => (
+          <ShopManagementCard
+            currencyName={currencyName}
+            item={item}
+            key={item.id}
+            onDuplicate={onDuplicate}
+            onEdit={onEdit}
+            onRemove={onRemove}
+            onView={onView}
+          />
+        ))}
+      </div>
+
+      <table className="mt-4 hidden w-full table-fixed border-collapse text-left text-sm md:table">
+        <colgroup>
+          <col className="w-[28%]" />
+          <col className="w-[34%]" />
+          <col className="w-[12%]" />
+          <col className="w-[12%]" />
+          <col className="w-[10%]" />
+          <col className="w-12" />
+        </colgroup>
+        <thead>
+          <tr className="border-b border-border-subtle text-text-muted">
+            <th className="py-2 pr-4 font-semibold">
+              <TableHeaderFilter
+                isActive={Boolean(filters.search)}
+                label="Item"
+                onClear={() => onSearchChange("")}
+              >
+                <TableHeaderFilterInput
+                  label="Search items"
+                  onChange={onSearchChange}
+                  value={filters.search}
+                />
+              </TableHeaderFilter>
+            </th>
+            <th className="py-2 pr-4 font-semibold">
+              <TableHeaderFilter
+                isActive={Boolean(filters.search)}
+                label="Description"
+                onClear={() => onSearchChange("")}
+              >
+                <TableHeaderFilterInput
+                  label="Search descriptions"
+                  onChange={onSearchChange}
+                  value={filters.search}
+                />
+              </TableHeaderFilter>
+            </th>
+            <th className="py-2 pr-4 text-right font-semibold">
+              <TableHeaderFilter
+                isActive={Boolean(filters.priceMin || filters.priceMax)}
+                label="Price"
+                onClear={() => {
+                  onPriceMaxChange("");
+                  onPriceMinChange("");
+                }}
+              >
+                <div className="grid gap-3">
+                  <TableHeaderFilterInput
+                    label="Minimum"
+                    onChange={onPriceMinChange}
+                    type="number"
+                    value={filters.priceMin}
+                  />
+                  <TableHeaderFilterInput
+                    label="Maximum"
+                    onChange={onPriceMaxChange}
+                    type="number"
+                    value={filters.priceMax}
+                  />
+                </div>
+              </TableHeaderFilter>
+            </th>
+            <th className="py-2 pr-4 text-right font-semibold">Quantity</th>
+            <th className="py-2 pr-4 font-semibold">
+              <TableHeaderFilter
+                isActive={filters.showArchivedItems}
+                label="Status"
+                onClear={() => onShowArchivedItemsChange(false)}
+              >
+                <TableHeaderFilterSelect
+                  label="Status"
+                  onChange={(value) =>
+                    onShowArchivedItemsChange(value === "includeArchived")
+                  }
+                  options={[
+                    { label: "Active only", value: "activeOnly" },
+                    { label: "Include archived", value: "includeArchived" },
+                  ]}
+                  value={
+                    filters.showArchivedItems
+                      ? "includeArchived"
+                      : "activeOnly"
+                  }
+                />
+              </TableHeaderFilter>
+            </th>
+            <th className="py-2 text-right font-semibold">
+              <span className="sr-only">Actions</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr className="border-b border-border-subtle" key={item.id}>
+              <td className="py-3 pr-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <ShopTableImage item={item} />
+                  <span className="truncate font-semibold">{item.name}</span>
+                </div>
+              </td>
+              <td className="py-3 pr-4 text-text-muted">
+                <span className="line-clamp-2">{item.description || "-"}</span>
+              </td>
+              <td className="py-3 pr-4 text-right font-semibold">
+                {item.price}
+                <span className="ml-1 text-xs font-normal text-text-muted">
+                  {currencyName}
+                </span>
+              </td>
+              <td className="py-3 pr-4 text-right text-text-muted">
+                {item.quantity}
+              </td>
+              <td className="py-3 pr-4">
+                <ShopItemStatusBadge item={item} />
+              </td>
+              <td className="py-3 text-right">
+                <ShopManagementActions
+                  item={item}
+                  onDuplicate={onDuplicate}
+                  onEdit={onEdit}
+                  onRemove={onRemove}
+                  onView={onView}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+function ShopManagementCard({
+  currencyName,
+  item,
+  onDuplicate,
+  onEdit,
+  onRemove,
+  onView,
+}: {
+  currencyName: string;
+  item: ShopItem;
+  onDuplicate: (item: ShopItem) => void;
+  onEdit: (item: ShopItem) => void;
+  onRemove: (itemId: string) => void;
+  onView: (item: ShopItem) => void;
+}) {
+  return (
+    <article className="rounded-md bg-surface p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <ShopTableImage item={item} />
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-semibold">{item.name}</h3>
+            <p className="mt-1 truncate text-sm text-text-muted">
+              {item.description || "No description"}
+            </p>
+          </div>
+        </div>
+        <ShopManagementActions
+          item={item}
+          onDuplicate={onDuplicate}
+          onEdit={onEdit}
+          onRemove={onRemove}
+          onView={onView}
+        />
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-text-muted">
+        <span>
+          {item.price} {currencyName}
+        </span>
+        <span>{item.quantity} in stock</span>
+        <ShopItemStatusBadge item={item} />
+      </div>
+    </article>
+  );
+}
+
+function StudentShopGrid({
+  currencyName,
+  isLoading,
+  items,
+  onEdit,
+  onPurchase,
+  onRemove,
+  onView,
+  pageItems,
+  requestedItemIds,
+  visibleItemCount,
+}: {
+  currencyName: string;
+  isLoading: boolean;
+  items: ShopItem[];
+  onEdit: (item: ShopItem) => void;
+  onPurchase: (itemId: string) => void;
+  onRemove: (itemId: string) => void;
+  onView: (item: ShopItem) => void;
+  pageItems: ShopItem[];
+  requestedItemIds: string[];
+  visibleItemCount: number;
+}) {
+  return (
+    <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {isLoading && (
+        <p className="text-sm text-text-muted">Loading shop...</p>
+      )}
+      {!isLoading &&
+        pageItems.map((item) => (
+          <ShopItemCard
+            canManage={false}
+            currencyName={currencyName}
+            item={item}
+            key={item.id}
+            onEdit={onEdit}
+            onPurchase={onPurchase}
+            onRemove={onRemove}
+            onView={onView}
+            requested={requestedItemIds.includes(item.id)}
+          />
+        ))}
+      {!isLoading && visibleItemCount === 0 && (
+        <div className="sm:col-span-2 lg:col-span-4">
+          <ShopEmptyState
+            isManagementView={false}
+            totalItemCount={items.length}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StudentShopWallet({
   balance,
   currencyName,
@@ -416,7 +709,9 @@ function StudentShopWallet({
   currencyName: string;
 }) {
   const walletLabel =
-    balance === null ? "Loading wallet..." : formatCurrencyAmount(balance, currencyName);
+    balance === null
+      ? "Loading wallet..."
+      : formatCurrencyAmount(balance, currencyName);
 
   return (
     <div className="shop-wallet-card wallet-card flex min-h-24 items-center justify-between gap-4 rounded-3xl border border-transparent px-5 py-4 text-foreground shadow-sm sm:px-6">
@@ -438,107 +733,125 @@ function StudentShopWallet({
   );
 }
 
-function ShopFilters({
-  onPriceMaxChange,
-  onPriceMinChange,
-  onSearchChange,
-  onShowArchivedItemsChange,
-  priceMax,
-  priceMin,
-  search,
-  showArchivedItems,
-}: {
-  onPriceMaxChange: (value: string) => void;
-  onPriceMinChange: (value: string) => void;
-  onSearchChange: (value: string) => void;
-  onShowArchivedItemsChange: (value: boolean) => void;
-  priceMax: string;
-  priceMin: string;
-  search: string;
-  showArchivedItems: boolean;
-}) {
+function ShopTableImage({ item }: { item: ShopItem }) {
+  if (item.imageUrl) {
+    return (
+      <div
+        aria-label={`${item.name} image`}
+        className="h-10 w-10 shrink-0 rounded-md bg-cover bg-center"
+        role="img"
+        style={{ backgroundImage: `url("${item.imageUrl}")` }}
+      />
+    );
+  }
+
   return (
-    <div className="theme-subpanel mt-4 p-4">
-      <div className="grid gap-4 md:grid-cols-[1fr_10rem_10rem_auto] md:items-end">
-        <div>
-          <label className="text-sm font-semibold text-text-control" htmlFor="shopSearch">
-            Search items
-          </label>
-          <SearchInput
-            className="mt-2"
-            id="shopSearch"
-            onChange={onSearchChange}
-            placeholder="Search by item name or description"
-            value={search}
-          />
-        </div>
-        <PriceFilterInput
-          id="shopPriceMin"
-          label="Min price"
-          onChange={onPriceMinChange}
-          value={priceMin}
-        />
-        <PriceFilterInput
-          id="shopPriceMax"
-          label="Max price"
-          onChange={onPriceMaxChange}
-          value={priceMax}
-        />
-        <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-surface px-3 py-3 text-sm font-semibold text-text-control">
-          <input
-            checked={showArchivedItems}
-            className="h-4 w-4"
-            onChange={(event) => onShowArchivedItemsChange(event.target.checked)}
-            type="checkbox"
-          />
-          Show archived items
-        </label>
-      </div>
-    </div>
+    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand-soft text-brand">
+      <PackageIcon className="h-4 w-4" />
+    </span>
   );
 }
 
-function PriceFilterInput({
-  id,
-  label,
-  onChange,
-  value,
+function ShopManagementActions({
+  item,
+  onDuplicate,
+  onEdit,
+  onRemove,
+  onView,
 }: {
-  id: string;
-  label: string;
-  onChange: (value: string) => void;
-  value: string;
+  item: ShopItem;
+  onDuplicate: (item: ShopItem) => void;
+  onEdit: (item: ShopItem) => void;
+  onRemove: (itemId: string) => void;
+  onView: (item: ShopItem) => void;
 }) {
   return (
-    <div>
-      <label className="text-sm font-semibold text-text-control" htmlFor={id}>
-        {label}
-      </label>
-      <input
-        className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition focus:ring-2"
-        id={id}
-        min="0"
-        onChange={(event) => onChange(event.target.value)}
-        step="1"
-        type="number"
-        value={value}
-      />
-    </div>
+    <TableActionMenu
+      label={`Open actions for ${item.name}`}
+      items={[
+        {
+          icon: <EyeIcon />,
+          label: "View",
+          onSelect: () => onView(item),
+        },
+        {
+          icon: <PencilIcon />,
+          label: "Edit",
+          onSelect: () => onEdit(item),
+        },
+        {
+          icon: <CopyIcon />,
+          label: "Duplicate",
+          onSelect: () => onDuplicate(item),
+        },
+        {
+          disabled: !item.isActive,
+          icon: <TrashIcon />,
+          label: "Archive",
+          onSelect: () => onRemove(item.id),
+          tone: "danger",
+        },
+      ]}
+    />
+  );
+}
+
+function ShopItemStatusBadge({ item }: { item: ShopItem }) {
+  if (!item.isActive) {
+    return (
+      <span className="inline-flex rounded-sm bg-danger-soft px-2 py-1 text-xs font-semibold text-danger-strong">
+        Archived
+      </span>
+    );
+  }
+
+  if (item.quantity <= 0) {
+    return (
+      <span className="inline-flex rounded-sm bg-danger-soft px-2 py-1 text-xs font-semibold text-danger-strong">
+        Sold out
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex rounded-sm bg-success-soft px-2 py-1 text-xs font-semibold text-success">
+      Active
+    </span>
+  );
+}
+
+function ShopEmptyState({
+  isManagementView,
+  totalItemCount,
+}: {
+  isManagementView: boolean;
+  totalItemCount: number;
+}) {
+  return (
+    <EmptyState
+      description={
+        totalItemCount === 0
+          ? isManagementView
+            ? "Create the first reward item so students have something to request."
+            : "Rewards will appear here once staff add them."
+          : "Try changing the shop filters."
+      }
+      icon={<ShoppingBagIcon />}
+      title={totalItemCount === 0 ? "No shop items yet" : "No matching shop items"}
+    />
   );
 }
 
 function matchesShopFilters(item: ShopItem, filters: ShopFiltersState) {
-  const { priceMax, priceMin, search, showArchivedItems } = filters;
-
-  if (!showArchivedItems && !item.isActive) {
+  if (!filters.showArchivedItems && !item.isActive) {
     return false;
   }
 
-  if (!matchesPriceFilter(item.price, priceMin, priceMax)) {
+  if (!matchesPriceFilter(item.price, filters.priceMin, filters.priceMax)) {
     return false;
   }
 
-  const query = search.trim().toLowerCase();
+  const query = filters.search.trim().toLowerCase();
 
   if (!query) {
     return true;
@@ -548,13 +861,6 @@ function matchesShopFilters(item: ShopItem, filters: ShopFiltersState) {
     value.toLowerCase().includes(query),
   );
 }
-
-type ShopFiltersState = {
-  priceMax: string;
-  priceMin: string;
-  search: string;
-  showArchivedItems: boolean;
-};
 
 function matchesPriceFilter(price: number, minimum: string, maximum: string) {
   const minimumPrice = parsePriceFilter(minimum);

@@ -112,6 +112,12 @@ function AccountFields({
         type="email"
         value={form.email}
       />
+      <TextField
+        id="cardNumber"
+        label="Card Number"
+        onChange={(value) => onChange("cardNumber", value)}
+        value={form.cardNumber}
+      />
       <ProfileImageUploadField
         currentImageUrl={form.profileImageUrl}
         displayName={`${form.firstName} ${form.lastName}`.trim() || form.username}

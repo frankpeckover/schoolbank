@@ -101,6 +101,7 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
       firstName: user.firstName,
       lastName: user.lastName,
       profileImageUrl: user.profileImageUrl,
+      cardNumber: user.cardNumber,
       role: user.role,
     });
     setIsCreateModalOpen(true);
@@ -277,6 +278,7 @@ function downloadUsers(users: UserListItem[]) {
       "last_name",
       "display_name",
       "email",
+      "card_number",
       "role",
       "status",
       "last_activity",
@@ -289,6 +291,7 @@ function downloadUsers(users: UserListItem[]) {
       user.lastName,
       user.displayName,
       user.email,
+      user.cardNumber,
       user.role,
       user.isActive ? "active" : "inactive",
       user.lastActivityAt ? formatDateTime(user.lastActivityAt) : "",

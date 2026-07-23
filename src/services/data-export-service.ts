@@ -53,6 +53,7 @@ const exportTables: ExportTable[] = [
         last_name,
         email,
         profile_image_url,
+        card_number,
         is_active,
         created_at,
         updated_at

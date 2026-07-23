@@ -22,6 +22,7 @@ export type UserListItem = {
   displayName: string;
   email: string;
   profileImageUrl: string;
+  cardNumber: string;
   role: Role;
   isActive: boolean;
   lastActivityAt: string | null;
@@ -33,6 +34,7 @@ export type CreateUserInput = {
   lastName: string;
   email: string;
   profileImageUrl: string;
+  cardNumber: string;
   role: Role;
   password: string;
 };
@@ -79,6 +81,7 @@ export type UpdateUserInput = {
   lastName: string;
   email: string;
   profileImageUrl: string;
+  cardNumber: string;
   role: Role;
   isActive: boolean;
 };
@@ -129,6 +132,7 @@ type UserListRow = {
   last_name: string;
   email: string;
   profile_image_url: string;
+  card_number: string;
   role: Role;
   is_active: boolean;
   last_activity_at: Date | null;
@@ -143,6 +147,7 @@ type StudentListRow = {
 };
 
 type ImportableUser = {
+  cardNumber: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -154,6 +159,7 @@ type ImportableUser = {
 };
 
 type ImportedUserRow = {
+  card_number: string;
   email: string;
   first_name: string;
   id: string;
@@ -206,6 +212,7 @@ export class UserService {
         users.last_name,
         users.email,
         users.profile_image_url,
+        users.card_number,
         roles.role_key as role,
         users.is_active,
         max(ledger_entries.created_at) as last_activity_at
@@ -271,6 +278,7 @@ export class UserService {
     const lastName = capitaliseName(input.lastName);
     const email = input.email.trim().toLowerCase();
     const profileImageUrl = input.profileImageUrl.trim();
+    const cardNumber = input.cardNumber.trim();
     const password = input.password;
 
     if (!username || !firstName || !lastName || !email || !password) {
@@ -302,6 +310,7 @@ export class UserService {
             last_name,
             email,
             profile_image_url,
+            card_number,
             password_hash
           )
           values (
@@ -311,7 +320,8 @@ export class UserService {
             $4,
             $5,
             $6,
-            $7
+            $7,
+            $8
           )
           returning
             id,
@@ -319,6 +329,7 @@ export class UserService {
             first_name,
             last_name,
             profile_image_url,
+            card_number,
             email,
             (select role_key from roles where roles.id = users.role_id) as role,
             is_active,
@@ -331,6 +342,7 @@ export class UserService {
           lastName,
           email,
           profileImageUrl,
+          cardNumber,
           passwordHash,
         ],
       );
@@ -490,6 +502,7 @@ export class UserService {
             last_name,
             email,
             profile_image_url,
+            card_number,
             password_hash
           )
           select
@@ -499,8 +512,10 @@ export class UserService {
             imported.last_name,
             imported.email,
             '',
+            imported.card_number,
             imported.password_hash
           from jsonb_to_recordset($1::jsonb) as imported(
+            card_number text,
             email text,
             first_name text,
             last_name text,
@@ -516,12 +531,14 @@ export class UserService {
             first_name,
             last_name,
             profile_image_url,
+            card_number,
             email,
             (select role_key from roles where roles.id = users.role_id) as role
         `,
         [
           JSON.stringify(
             usersToCreate.map((user) => ({
+              card_number: user.cardNumber,
               email: user.email,
               first_name: user.firstName,
               last_name: user.lastName,
@@ -660,6 +677,7 @@ export class UserService {
     const lastName = capitaliseName(input.lastName);
     const email = input.email.trim().toLowerCase();
     const profileImageUrl = input.profileImageUrl.trim();
+    const cardNumber = input.cardNumber.trim();
 
     if (!input.id || !username || !firstName || !lastName || !email) {
       return {
@@ -681,16 +699,18 @@ export class UserService {
               last_name = $3,
               email = $4,
               profile_image_url = $5,
-              role_id = (select id from roles where role_key = $6 and is_active = true),
-              is_active = $7,
+              card_number = $6,
+              role_id = (select id from roles where role_key = $7 and is_active = true),
+              is_active = $8,
               updated_at = now()
-          where id = $8
+          where id = $9
           returning
             id,
             username,
             first_name,
             last_name,
             profile_image_url,
+            card_number,
             email,
             (select role_key from roles where roles.id = users.role_id) as role,
             is_active,
@@ -707,6 +727,7 @@ export class UserService {
           lastName,
           email,
           profileImageUrl,
+          cardNumber,
           input.role,
           input.isActive,
           input.id,
@@ -988,6 +1009,7 @@ export class UserService {
       displayName: formatDisplayName(user.first_name, user.last_name),
       email: user.email,
       profileImageUrl: user.profile_image_url,
+      cardNumber: user.card_number,
       role: user.role,
       isActive: user.is_active,
       lastActivityAt: user.last_activity_at?.toISOString() ?? null,
@@ -1046,6 +1068,7 @@ async function prepareImportUsers(
     users.map(async (user, index): Promise<ImportableUser | null> => {
       const rowNumber = index + 2;
       const email = user.email.trim().toLowerCase();
+      const cardNumber = user.cardNumber.trim();
       const firstName = capitaliseName(user.firstName);
       const lastName = capitaliseName(user.lastName);
       const temporaryPassword = generateTemporaryPassword();
@@ -1074,6 +1097,7 @@ async function prepareImportUsers(
 
       return {
         email,
+        cardNumber,
         firstName,
         lastName,
         passwordHash: await hashPassword(temporaryPassword),

@@ -14,11 +14,13 @@ import { GlobalMaintenanceBanner } from "@/components/ui/global-maintenance-bann
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 
 type LoginCardProps = {
+  initialMessage?: string | null;
   maintenanceMessage: string;
   onLogin: (user: SessionUser) => void;
 };
 
 export function LoginCard({
+  initialMessage = null,
   maintenanceMessage,
   onLogin,
 }: LoginCardProps) {
@@ -27,7 +29,7 @@ export function LoginCard({
   const [error, setError] = useState<string | null>(null);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(initialMessage);
   const [ssoProviders, setSsoProviders] = useState<PublicSsoProvider[]>([]);
 
   useEffect(() => {

@@ -13,7 +13,7 @@ export function matchesUserFilters(
   return (
     includesFilter(user.firstName, filters.firstName) &&
     includesFilter(user.lastName, filters.lastName) &&
-    includesFilter(user.username, filters.username) &&
+    includesAnyFilter([user.username, user.cardNumber], filters.username) &&
     includesFilter(user.email, filters.email) &&
     matchesLastActivityFilter(user.lastActivityAt, filters.lastActivity) &&
     (!filters.role || user.role === filters.role)
@@ -22,6 +22,10 @@ export function matchesUserFilters(
 
 function includesFilter(value: string, filter: string) {
   return value.toLowerCase().includes(filter.trim().toLowerCase());
+}
+
+function includesAnyFilter(values: string[], filter: string) {
+  return values.some((value) => includesFilter(value, filter));
 }
 
 function matchesLastActivityFilter(
