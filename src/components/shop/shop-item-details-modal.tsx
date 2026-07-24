@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { formatCurrencyAmount } from "@/lib/formatters";
 import type { ShopItem } from "@/services/shop-service";
 import { CheckIcon, PencilIcon, ShoppingBagIcon, TicketIcon } from "@/components/ui/icons";
@@ -24,7 +25,7 @@ export function ShopItemDetailsModal({
 }: ShopItemDetailsModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="theme-panel motion-pop max-h-full w-full max-w-xl overflow-y-auto p-5 shadow-lg">
+      <div className="app-modal theme-panel motion-pop relative max-h-full w-full max-w-xl overflow-y-auto p-5 shadow-lg">
         <ShopItemDetailsImage item={item} />
 
         <div className="mt-4 flex items-start justify-between gap-4">
@@ -36,7 +37,17 @@ export function ShopItemDetailsModal({
               </span>
             )}
           </div>
-          <ModalCloseButton onClick={onClose} />
+          <div className="flex shrink-0 items-center gap-1">
+            {canManage && (
+              <ModalIconButton
+                label="Edit item"
+                onClick={() => onEdit(item)}
+              >
+                <PencilIcon className="h-4 w-4" />
+              </ModalIconButton>
+            )}
+            <ModalCloseButton onClick={onClose} />
+          </div>
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -55,16 +66,7 @@ export function ShopItemDetailsModal({
         </div>
 
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          {canManage ? (
-            <button
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-hover"
-              onClick={() => onEdit(item)}
-              type="button"
-            >
-              <PencilIcon />
-              Edit Item
-            </button>
-          ) : (
+          {!canManage && (
             <button
               className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70 ${
                 requested
@@ -91,6 +93,28 @@ export function ShopItemDetailsModal({
         </div>
       </div>
     </div>
+  );
+}
+
+function ModalIconButton({
+  children,
+  label,
+  onClick,
+}: {
+  children: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      aria-label={label}
+      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-muted transition hover:bg-surface-muted hover:text-text-control"
+      onClick={onClick}
+      title={label}
+      type="button"
+    >
+      {children}
+    </button>
   );
 }
 

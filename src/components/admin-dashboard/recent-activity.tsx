@@ -14,7 +14,7 @@ export function RecentLedgerActivity({
   entries: AdminDashboardEntry[];
 }) {
   return (
-    <section className="theme-panel mt-5 min-w-0 p-4">
+    <section className="admin-recent-activity theme-panel mt-5 min-w-0 p-4">
       <PageHeader
         title="Recent Ledger Activity"
         titleSize="base"
@@ -38,7 +38,7 @@ export function RecentLedgerActivity({
 
 export function RecentAuditActivity({ entries }: { entries: AuditLogItem[] }) {
   return (
-    <section className="theme-panel mt-4 min-w-0 p-4">
+    <section className="admin-recent-activity theme-panel mt-4 min-w-0 p-4">
       <PageHeader title="Recent Audit" titleSize="base" />
 
       <div className="mt-3 min-w-0">
@@ -64,7 +64,7 @@ function RecentAuditList({ entries }: { entries: AuditLogItem[] }) {
       </div>
 
       <div className="hidden w-full min-w-0 max-w-full overflow-x-auto md:block">
-        <table className="w-full min-w-[460px] table-fixed border-collapse text-left text-sm">
+        <table className="admin-recent-activity-table w-full min-w-[460px] table-fixed border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-border-subtle text-text-muted">
               <th className="py-2 pr-4 font-semibold">Time</th>
@@ -95,7 +95,7 @@ function RecentAuditList({ entries }: { entries: AuditLogItem[] }) {
 
 function RecentAuditCard({ entry }: { entry: AuditLogItem }) {
   return (
-    <article className="theme-card w-full min-w-0 overflow-hidden p-3">
+    <article className="admin-recent-activity-card theme-card w-full min-w-0 overflow-hidden p-3">
       <h4 className="break-words text-sm font-semibold">
         {formatAuditLabel(entry.action)}
       </h4>
@@ -129,7 +129,7 @@ function RecentLedgerList({
       </div>
 
       <div className="hidden w-full min-w-0 max-w-full overflow-x-auto md:block">
-        <table className="w-full min-w-full table-fixed border-collapse text-left text-sm">
+        <table className="admin-recent-activity-table w-full min-w-full table-fixed border-collapse text-left text-sm">
           <colgroup>
             <col className="w-[24%]" />
             <col className="w-[46%]" />
@@ -186,7 +186,7 @@ function RecentLedgerCard({
   const amountClassName = getSignedAmountTextClassName(entry.amount);
 
   return (
-    <article className="theme-card w-full min-w-0 overflow-hidden p-3">
+    <article className="admin-recent-activity-card theme-card w-full min-w-0 overflow-hidden p-3">
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="min-w-0 flex-1 overflow-hidden">
           <h4 className="break-words text-sm font-semibold">

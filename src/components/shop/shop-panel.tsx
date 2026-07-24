@@ -8,7 +8,7 @@ import {
   requestShopItem,
 } from "@/lib/actions";
 import { downloadCsv } from "@/lib/client-csv";
-import { formatCurrencyAmount } from "@/lib/formatters";
+import { formatAmount, formatCurrencyAmount } from "@/lib/formatters";
 import { canManageShopItems } from "@/lib/permissions";
 import type { SessionUser } from "@/lib/session";
 import type { ShopItem } from "@/services/shop-service";
@@ -387,13 +387,13 @@ function ShopPanelHeader({
             items={[
               {
                 icon: <FileUpIcon />,
-                label: "Import shop items",
+                label: "Import shop items: CSV",
                 onSelect: onImportItems,
               },
               {
                 disabled: count === 0,
                 icon: <FileDownIcon />,
-                label: "Export shop items",
+                label: "Export shop items: CSV",
                 onSelect: onItemsExport,
               },
             ]}
@@ -573,7 +573,7 @@ function ShopManagementList({
                 <span className="line-clamp-2">{item.description || "-"}</span>
               </td>
               <td className="py-3 pr-4 text-right font-semibold">
-                {item.price}
+                {formatAmount(item.price)}
                 <span className="ml-1 text-xs font-normal text-text-muted">
                   {currencyName}
                 </span>
@@ -638,7 +638,7 @@ function ShopManagementCard({
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-text-muted">
         <span>
-          {item.price} {currencyName}
+          {formatAmount(item.price)} {currencyName}
         </span>
         <span>{item.quantity} in stock</span>
         <ShopItemStatusBadge item={item} />
@@ -714,9 +714,9 @@ function StudentShopWallet({
       : formatCurrencyAmount(balance, currencyName);
 
   return (
-    <div className="shop-wallet-card wallet-card flex min-h-24 items-center justify-between gap-4 rounded-3xl border border-transparent px-5 py-4 text-foreground shadow-sm sm:px-6">
+    <div className="shop-wallet-card wallet-card flex min-h-24 items-center justify-between gap-4 rounded-3xl border border-transparent px-5 py-4 text-foreground sm:px-6">
       <div className="relative flex min-w-0 items-center gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-surface/80 text-brand shadow-sm">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-surface/80 text-brand">
           <WalletIcon />
         </span>
         <div className="min-w-0">

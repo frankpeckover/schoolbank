@@ -3,6 +3,7 @@
 import { useState, type ChangeEvent } from "react";
 import { importShopItems } from "@/lib/actions";
 import { parseCsvObjects } from "@/lib/csv";
+import { CsvFileInput } from "@/components/ui/csv-file-input";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import type {
   ImportShopItemError,
@@ -93,7 +94,7 @@ export function ShopImportModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="theme-panel motion-pop w-full max-w-2xl p-5 shadow-lg">
+      <div className="app-modal theme-panel motion-pop w-full max-w-2xl p-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h3 className="text-xl font-semibold">Import Shop Items</h3>
@@ -107,24 +108,11 @@ export function ShopImportModal({
           <ModalCloseButton onClick={onClose} />
         </div>
 
-        <div className="theme-subpanel mt-5 p-4">
-          <label
-            className="text-sm font-semibold text-text-control"
-            htmlFor="shopCsvFile"
-          >
-            CSV file
-          </label>
-          <input
-            accept=".csv,text/csv"
-            className="mt-2 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none ring-brand transition file:mr-3 file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white focus:ring-2"
-            id="shopCsvFile"
-            onChange={handleFileChange}
-            type="file"
-          />
-          {fileName && (
-            <p className="mt-2 text-sm text-text-muted">{fileName}</p>
-          )}
-        </div>
+        <CsvFileInput
+          fileName={fileName}
+          id="shopCsvFile"
+          onChange={handleFileChange}
+        />
 
         {message && (
           <p className="mt-4 rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">

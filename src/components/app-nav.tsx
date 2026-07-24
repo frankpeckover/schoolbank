@@ -134,7 +134,7 @@ export function HeaderNavMenu({
       <button
         aria-expanded={isMobileMenuOpen}
         aria-label="Open menu"
-        className="inline-flex h-10 items-center justify-center gap-1 rounded-md border border-border-subtle bg-panel-soft px-2 text-text-control transition hover:border-brand-soft-strong hover:bg-brand-soft hover:text-brand-ink hover:shadow-sm lg:hidden"
+        className="inline-flex h-9 w-9 items-center justify-center border border-border-subtle bg-surface text-text-control transition hover:bg-surface-muted lg:hidden"
         onClick={() =>
           setIsMobileMenuOpen((currentValue) => !currentValue)
         }
@@ -179,8 +179,12 @@ export function HeaderNavMenu({
 export function DesktopSideNav({
   activeItem,
   onItemChange,
+  onLogout,
+  onPasswordChange,
+  profileImageUrl,
   role,
-}: Pick<HeaderNavMenuProps, "activeItem" | "onItemChange" | "role">) {
+  userDisplayName,
+}: HeaderNavMenuProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const navigationItems = getNavigationItems(role);
 
@@ -188,7 +192,7 @@ export function DesktopSideNav({
     onItemChange(item);
   }
 
-  const widthClassName = isExpanded ? "w-60" : "w-20";
+  const widthClassName = isExpanded ? "w-56" : "w-14";
 
   return (
     <>
@@ -199,9 +203,9 @@ export function DesktopSideNav({
       <aside
         className={`fixed inset-y-0 left-0 z-[90] hidden h-dvh shrink-0 transition-[width] duration-200 lg:block ${widthClassName}`}
       >
-        <div className="flex h-full flex-col gap-4 border-r border-border-subtle bg-surface p-3 shadow-sm">
+        <div className="flex h-full flex-col border-r border-border-subtle bg-surface">
           <div
-            className={`flex h-10 items-center gap-2 px-1 ${
+            className={`flex h-14 items-center gap-2 border-b border-border-subtle px-3 ${
               isExpanded ? "justify-between" : "justify-center"
             }`}
           >
@@ -212,7 +216,7 @@ export function DesktopSideNav({
             )}
             <button
               aria-label={isExpanded ? "Collapse navigation" : "Expand navigation"}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center text-text-muted transition hover:bg-brand-soft hover:text-brand-ink"
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center text-text-muted transition hover:text-text-control"
               onClick={() => setIsExpanded((currentValue) => !currentValue)}
               title={isExpanded ? "Collapse navigation" : "Expand navigation"}
               type="button"
@@ -225,7 +229,7 @@ export function DesktopSideNav({
             </button>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
+          <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto pb-3 pt-6">
             {navigationItems.map((item) => (
               <SideNavButton
                 isActive={activeItem === item}
@@ -236,9 +240,124 @@ export function DesktopSideNav({
               />
             ))}
           </div>
+
+          <SideNavAccountMenu
+            isExpanded={isExpanded}
+            onLogout={onLogout}
+            onPasswordChange={onPasswordChange}
+            profileImageUrl={profileImageUrl}
+            userDisplayName={userDisplayName}
+          />
         </div>
       </aside>
     </>
+  );
+}
+
+function SideNavAccountMenu({
+  isExpanded,
+  onLogout,
+  onPasswordChange,
+  profileImageUrl,
+  userDisplayName,
+}: Pick<
+  HeaderNavMenuProps,
+  "onLogout" | "onPasswordChange" | "profileImageUrl" | "userDisplayName"
+> & {
+  isExpanded: boolean;
+}) {
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const {
+    accentTheme,
+    accentThemeOptions,
+    customAccentColor,
+    setCustomAccentColor,
+    setAccentTheme,
+  } = useAccentTheme();
+  const { isDarkMode, toggleThemeMode } = useThemeMode();
+
+  function closeMenu() {
+    setIsAccountMenuOpen(false);
+  }
+
+  useEffect(() => {
+    if (!isAccountMenuOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        closeMenu();
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        closeMenu();
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isAccountMenuOpen]);
+
+  function handleLogout() {
+    closeMenu();
+    onLogout();
+  }
+
+  function handlePasswordChange() {
+    closeMenu();
+    onPasswordChange();
+  }
+
+  return (
+    <div
+      className="relative border-t border-border-subtle px-2 py-3"
+      ref={menuRef}
+    >
+      <button
+        aria-expanded={isAccountMenuOpen}
+        aria-label="Open account menu"
+        className={`flex h-10 w-full items-center text-xs font-normal transition ${
+          isAccountMenuOpen
+            ? "bg-brand-soft text-foreground"
+            : "text-text-muted hover:bg-surface-muted hover:text-text-control"
+        } ${isExpanded ? "justify-start gap-2.5 px-3" : "justify-center px-0"}`}
+        onClick={() => setIsAccountMenuOpen((currentValue) => !currentValue)}
+        type="button"
+      >
+        <UserAvatar
+          displayName={userDisplayName}
+          imageUrl={profileImageUrl}
+          size="sm"
+        />
+        {isExpanded && <span className="truncate">{userDisplayName}</span>}
+      </button>
+
+      {isAccountMenuOpen && (
+        <NavMenuPanel align="left" placement="up">
+          <AccountMenuItems
+            accentTheme={accentTheme}
+            accentThemeOptions={accentThemeOptions}
+            customAccentColor={customAccentColor}
+            hasTopBorder={false}
+            isDarkMode={isDarkMode}
+            onAccentThemeChange={setAccentTheme}
+            onCustomAccentColorChange={setCustomAccentColor}
+            onLogout={handleLogout}
+            onPasswordChange={handlePasswordChange}
+            onThemeToggle={toggleThemeMode}
+          />
+        </NavMenuPanel>
+      )}
+    </div>
   );
 }
 
@@ -357,11 +476,11 @@ function SideNavButton({
     <button
       aria-current={isActive ? "page" : undefined}
       aria-label={item}
-      className={`flex h-11 w-full items-center text-xs font-light transition ${
+      className={`flex h-9 w-full items-center text-[0.74rem] font-normal transition ${
         isActive
-          ? "bg-brand text-white shadow-sm"
-          : "text-text-control hover:bg-brand-soft hover:text-brand-ink"
-      } ${isExpanded ? "justify-start gap-3 px-3" : "justify-center px-0"}`}
+          ? "bg-brand-soft text-foreground"
+          : "text-text-muted hover:bg-surface-muted hover:text-text-control"
+      } ${isExpanded ? "justify-start gap-2.5 px-5" : "justify-center px-0"}`}
       onClick={() => onItemChange(item)}
       title={item}
       type="button"
@@ -383,7 +502,7 @@ function NavMenuPanel({
 }) {
   return (
     <div
-      className={`motion-pop absolute z-[110] w-64 rounded-md border border-border bg-surface p-2 shadow-lg ${
+      className={`motion-pop absolute z-[110] w-64 border border-border bg-surface p-2 shadow-lg ${
         align === "left" ? "left-0" : "right-0"
       } ${placement === "up" ? "bottom-12" : "top-12"}`}
     >
@@ -404,10 +523,10 @@ function MenuItemButton({
   return (
     <button
       aria-current={isActive ? "page" : undefined}
-      className={`block w-full rounded-md px-3 py-3 text-left text-xs font-light transition ${
+      className={`block w-full px-3 py-2.5 text-left text-xs font-normal transition ${
         isActive
-          ? "bg-brand text-white shadow-sm"
-          : "text-text-control hover:bg-brand-soft hover:text-brand-ink"
+          ? "bg-brand-soft text-foreground"
+          : "text-text-muted hover:bg-surface-muted hover:text-text-control"
       }`}
       onClick={() => onItemChange(item)}
       type="button"
@@ -445,7 +564,7 @@ function AccountMenuItems({
   return (
     <>
       <button
-        className={`flex w-full items-center gap-2 rounded-md px-3 py-3 text-left text-xs font-light text-text-control transition hover:bg-brand-soft hover:text-brand-ink ${
+        className={`flex w-full items-center gap-2 border-l-2 border-transparent px-3 py-2.5 text-left text-xs font-normal text-text-muted transition hover:bg-surface-muted hover:text-text-control ${
           hasTopBorder ? "mt-2 border-t border-border-subtle" : ""
         }`}
         onClick={onThemeToggle}
@@ -511,14 +630,14 @@ function AccountMenuItems({
         </div>
       </div>
       <button
-        className="block w-full rounded-md px-3 py-3 text-left text-xs font-light text-text-control transition hover:bg-brand-soft hover:text-brand-ink"
+        className="block w-full border-l-2 border-transparent px-3 py-2.5 text-left text-xs font-normal text-text-muted transition hover:bg-surface-muted hover:text-text-control"
         onClick={onPasswordChange}
         type="button"
       >
         Change password
       </button>
       <button
-        className="flex w-full items-center gap-2 rounded-md px-3 py-3 text-left text-xs font-light text-text-control transition hover:bg-brand-soft hover:text-brand-ink"
+        className="flex w-full items-center gap-2 border-l-2 border-transparent px-3 py-2.5 text-left text-xs font-normal text-text-muted transition hover:bg-surface-muted hover:text-text-control"
         onClick={onLogout}
         type="button"
       >
@@ -538,7 +657,7 @@ function getColorInputValue(color: string) {
 }
 
 function NavigationItemIcon({ item }: { item: NavigationItem }) {
-  const className = "h-4 w-4 shrink-0";
+  const className = "h-3.5 w-3.5 shrink-0";
 
   switch (item) {
     case "Dashboard":

@@ -6,6 +6,7 @@ import {
   MinusIcon,
 } from "@/components/ui/icons";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { formatAmount } from "@/lib/formatters";
 
 export type StudentBalanceCardStudent = {
   balance: number;
@@ -113,7 +114,7 @@ function BalanceAmount({
   return (
     <p className="flex min-w-0 flex-col text-left text-brand">
       <span className="font-number text-2xl font-semibold leading-none">
-        {amount}
+        {formatAmount(amount)}
       </span>
       <span className="mt-0.5 text-xs font-semibold text-text-muted">
         {currencyName}

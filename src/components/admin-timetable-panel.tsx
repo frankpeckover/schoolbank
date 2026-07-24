@@ -305,13 +305,13 @@ export function AdminTimetablePanel() {
                           {
                             disabled: filteredEntries.length === 0,
                             icon: <FileDownIcon />,
-                            label: "Export timetable",
+                            label: "Export timetable: CSV",
                             onSelect: () =>
                               downloadTimetableEntries(filteredEntries),
                           },
                           {
                             icon: <FileUpIcon />,
-                            label: "Import timetable",
+                            label: "Import timetable: CSV",
                             onSelect: () => setIsImportModalOpen(true),
                           },
                         ]}

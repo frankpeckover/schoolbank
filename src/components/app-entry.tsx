@@ -52,6 +52,7 @@ export function AppEntry({
     return (
       <LoginCard
         initialMessage={sessionMessage}
+        initialMessageTone={sessionMessage ? "warning" : "success"}
         maintenanceMessage={maintenanceMessage}
         onLogin={handleLogin}
       />

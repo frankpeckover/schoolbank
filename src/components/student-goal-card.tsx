@@ -5,9 +5,10 @@ import {
   getStudentGoal,
   saveStudentGoal,
 } from "@/lib/actions";
-import { formatCurrencyAmount } from "@/lib/formatters";
+import { formatAmount } from "@/lib/formatters";
 import type { StudentGoal } from "@/services/student-goal-service";
 import { PencilIcon, TargetIcon } from "@/components/ui/icons";
+import { TableActionMenu } from "@/components/ui/table-action-menu";
 
 type StudentGoalCardProps = {
   balance: number;
@@ -27,7 +28,6 @@ const progressRingAnimationDurationMs = 700;
 export function StudentGoalCard({
   balance,
   className = "",
-  currencyName,
 }: StudentGoalCardProps) {
   const [goal, setGoal] = useState<StudentGoal | null>(null);
   const [goalTitle, setGoalTitle] = useState("");
@@ -74,10 +74,6 @@ export function StudentGoalCard({
     () => getGoalProgressPercent(balance, goal?.targetAmount ?? 0),
     [balance, goal?.targetAmount],
   );
-  const remainingGoalAmount = goal
-    ? Math.max(0, goal.targetAmount - balance)
-    : 0;
-
   async function handleSaveGoal(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSaving(true);
@@ -117,7 +113,7 @@ export function StudentGoalCard({
 
   return (
     <article
-      className={`h-full rounded-3xl border border-border-subtle bg-surface p-5 shadow-sm ${className}`}
+      className={`h-full rounded-3xl border border-transparent bg-surface p-5 ${className}`}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
@@ -130,14 +126,16 @@ export function StudentGoalCard({
         </div>
 
         {goal && !isEditing && (
-          <button
-            aria-label="Edit goal"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border-subtle text-text-control transition hover:bg-panel-soft"
-            onClick={() => setIsEditing(true)}
-            type="button"
-          >
-            <PencilIcon />
-          </button>
+          <TableActionMenu
+            label="Open goal actions"
+            items={[
+              {
+                icon: <PencilIcon />,
+                label: "Edit goal",
+                onSelect: () => setIsEditing(true),
+              },
+            ]}
+          />
         )}
       </div>
 
@@ -148,15 +146,14 @@ export function StudentGoalCard({
       )}
 
       {!isLoading && !isEditing && goal && (
-        <div className="mt-5 flex flex-col items-center text-center">
-          <GoalProgressRing progressPercent={progressPercent} />
-          <p className="mt-4 max-w-full truncate text-lg font-semibold text-foreground">
-            {goal.title}
-          </p>
-          <p className="mt-1 text-sm font-semibold text-text-muted">
-            {"You're "}
-            {formatCurrencyAmount(remainingGoalAmount, currencyName)}
-            {" away from the goal!"}
+        <div className="mt-4 flex flex-col items-center text-center">
+          <GoalProgressRing
+            currentAmount={balance}
+            progressPercent={progressPercent}
+            targetAmount={goal.targetAmount}
+          />
+          <p className="mt-3 max-w-full truncate text-base font-semibold text-foreground">
+            {capitaliseFirstCharacter(goal.title)}
           </p>
         </div>
       )}
@@ -207,9 +204,13 @@ export function StudentGoalCard({
 }
 
 function GoalProgressRing({
+  currentAmount,
   progressPercent,
+  targetAmount,
 }: {
+  currentAmount: number;
   progressPercent: number;
+  targetAmount: number;
 }) {
   const animatedProgressPercent = useAnimatedProgressPercent(progressPercent);
   const strokeOffset =
@@ -249,11 +250,13 @@ function GoalProgressRing({
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-semibold text-foreground">
+        <span className="text-3xl font-semibold leading-none text-foreground">
           {Math.round(animatedProgressPercent)}%
         </span>
-        <span className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-text-kicker">
-          saved
+        <span className="mt-1 text-xs font-normal text-text-muted">
+          {formatAmount(Math.max(0, currentAmount))}
+          <span className="mx-1 text-base font-normal text-text-muted">/</span>
+          {formatAmount(targetAmount)}
         </span>
       </div>
     </div>
@@ -290,4 +293,12 @@ function getGoalProgressPercent(balance: number, targetAmount: number) {
     progressCompletePercent,
     Math.max(emptyProgressPercent, (balance / targetAmount) * progressCompletePercent),
   );
+}
+
+function capitaliseFirstCharacter(value: string) {
+  if (!value) {
+    return value;
+  }
+
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }

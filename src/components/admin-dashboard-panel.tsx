@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import {
+  Area,
+  AreaChart,
   CartesianGrid,
   Cell,
-  Line,
-  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -26,6 +26,7 @@ import {
 import { formatCurrencyAmount } from "@/lib/formatters";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FixedNotification } from "@/components/ui/fixed-notification";
+import { InlineSelectMenu } from "@/components/ui/inline-select-menu";
 import {
   RecentAuditActivity,
   RecentLedgerActivity,
@@ -57,7 +58,7 @@ type CirculationTooltipProps = {
 };
 
 const ACTIVE_CHART_POINT_RADIUS = 5;
-const CHART_STROKE_WIDTH = 3;
+const CHART_STROKE_WIDTH = 2;
 const CHART_CURSOR_WIDTH = 2;
 
 export function AdminDashboardPanel({
@@ -110,7 +111,6 @@ export function AdminDashboardPanel({
           <>
             <LedgerBalanceCard
               currencyName={currencyName}
-              entries={summary.circulationEntries}
               ledgerBalance={summary.ledgerBalance}
             />
             <PendingSummaryCard
@@ -170,19 +170,11 @@ export function AdminDashboardPanel({
 
 function LedgerBalanceCard({
   currencyName,
-  entries,
   ledgerBalance,
 }: {
   currencyName: string;
-  entries: AdminDashboardEntry[];
   ledgerBalance: number;
 }) {
-  const sparklinePoints = buildCirculationChartPoints(
-    entries,
-    ledgerBalance,
-    "daily",
-  );
-
   return (
     <section className="dashboard-unit-1 theme-panel flex min-h-36 min-w-0 flex-col p-4">
       <MetricCardHeader
@@ -190,48 +182,15 @@ function LedgerBalanceCard({
         label="Ledger Balance"
         tone="brand"
       />
-      <div className="grid flex-1 grid-cols-[minmax(0,1fr)_5.75rem] items-center gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-4xl font-semibold tracking-normal text-foreground">
-            {formatWholeNumber(ledgerBalance)}
-          </p>
-          <p className="mt-2 text-xs font-semibold uppercase tracking-normal text-text-muted">
-            {currencyName}
-          </p>
-        </div>
-        <LedgerSparkline points={sparklinePoints} />
+      <div className="flex flex-1 flex-col justify-end">
+        <p className="truncate text-4xl font-semibold tracking-normal text-foreground">
+          {formatWholeNumber(ledgerBalance)}
+        </p>
+        <p className="mt-2 text-xs font-semibold uppercase tracking-normal text-text-muted">
+          {currencyName}
+        </p>
       </div>
     </section>
-  );
-}
-
-function LedgerSparkline({ points }: { points: BalanceTimePoint[] }) {
-  if (points.length < 2) {
-    return (
-      <div className="flex h-16 min-w-0 flex-col justify-center rounded-md bg-panel-soft px-2">
-        <span className="h-0.5 rounded-full bg-brand-soft-strong" />
-        <span className="mt-2 text-center text-[0.65rem] font-semibold uppercase text-text-muted">
-          Trend
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="h-16 min-w-0 rounded-md bg-panel-soft/60 px-1 py-1">
-      <ResponsiveContainer height="100%" width="100%">
-        <LineChart data={points} margin={{ bottom: 4, left: 2, right: 2, top: 4 }}>
-          <Line
-            dataKey="balance"
-            dot={false}
-            isAnimationActive={false}
-            stroke="var(--brand)"
-            strokeWidth={2.5}
-            type="monotone"
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
   );
 }
 
@@ -358,10 +317,16 @@ function CirculationChartSection({
       {chartPoints.length > 0 && (
         <div className="mt-4 min-h-56 flex-1">
           <ResponsiveContainer height="100%" width="100%">
-            <LineChart
+            <AreaChart
               data={chartPoints}
               margin={{ bottom: 0, left: 0, right: 8, top: 8 }}
             >
+              <defs>
+                <linearGradient id="adminCirculationFill" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="5%" stopColor="var(--brand)" stopOpacity={0.18} />
+                  <stop offset="95%" stopColor="var(--brand)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <CartesianGrid
                 stroke="var(--border-subtle)"
                 strokeDasharray="3 3"
@@ -396,7 +361,7 @@ function CirculationChartSection({
                   strokeWidth: CHART_CURSOR_WIDTH,
                 }}
               />
-              <Line
+              <Area
                 activeDot={{
                   fill: "var(--surface)",
                   r: ACTIVE_CHART_POINT_RADIUS,
@@ -404,12 +369,13 @@ function CirculationChartSection({
                   strokeWidth: CHART_STROKE_WIDTH,
                 }}
                 dataKey="balance"
-                dot={false}
+                fill="url(#adminCirculationFill)"
+                fillOpacity={1}
                 stroke="var(--brand)"
                 strokeWidth={CHART_STROKE_WIDTH}
                 type="monotone"
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       )}
@@ -494,22 +460,12 @@ function ChartScaleControl({
   selectedScale: ChartTimeScale;
 }) {
   return (
-    <div className="inline-flex rounded-md border border-border-subtle bg-panel-soft p-1">
-      {chartTimeScaleOptions.map((option) => (
-        <button
-          className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition ${
-            selectedScale === option.value
-              ? "bg-surface text-brand shadow-sm"
-              : "text-text-muted hover:bg-surface"
-          }`}
-          key={option.value}
-          onClick={() => onScaleChange(option.value)}
-          type="button"
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
+    <InlineSelectMenu
+      ariaLabel="Change circulation graph scale"
+      onChange={onScaleChange}
+      options={chartTimeScaleOptions}
+      value={selectedScale}
+    />
   );
 }
 

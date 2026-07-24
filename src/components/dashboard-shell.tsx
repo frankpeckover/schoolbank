@@ -10,7 +10,6 @@ import { AdminTimetablePanel } from "@/components/admin-timetable-panel";
 import { AdminUsersPanel } from "@/components/admin-users-panel";
 import { CreditAnalyticsPanel } from "@/components/credit-analytics-panel";
 import {
-  DesktopAccountMenu,
   DesktopSideNav,
   HeaderNavMenu,
   type NavigationItem,
@@ -102,7 +101,11 @@ export function DashboardShell({
         <DesktopSideNav
           activeItem={activeNavItem}
           onItemChange={setActiveNavItem}
+          onLogout={onLogout}
+          onPasswordChange={() => setIsPasswordModalOpen(true)}
+          profileImageUrl={user.profileImageUrl}
           role={user.role}
+          userDisplayName={user.displayName}
         />
 
         <div className="mx-auto flex min-w-0 flex-1 flex-col px-4 py-2 sm:px-6 lg:max-w-[calc(96rem-15rem)] lg:px-8">
@@ -114,12 +117,6 @@ export function DashboardShell({
               <p className="min-w-0 flex-1 truncate text-left text-base font-medium text-text-control sm:text-center sm:text-lg lg:text-left">
                 {greeting}, {getGreetingName(user)}!
               </p>
-              <DesktopAccountMenu
-                onLogout={onLogout}
-                onPasswordChange={() => setIsPasswordModalOpen(true)}
-                profileImageUrl={user.profileImageUrl}
-                userDisplayName={user.displayName}
-              />
               <HeaderNavMenu
                 activeItem={activeNavItem}
                 onItemChange={setActiveNavItem}

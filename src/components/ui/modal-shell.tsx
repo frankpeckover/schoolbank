@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 
 type ModalShellProps = {
   actions?: ReactNode;
@@ -22,7 +23,7 @@ export function ModalShell({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-6">
       <div
-        className={`theme-panel motion-pop max-h-full w-full ${maxWidthClassName} overflow-y-auto p-5 shadow-lg`}
+        className={`app-modal theme-panel motion-pop max-h-full w-full ${maxWidthClassName} overflow-y-auto p-5 shadow-lg`}
       >
         <div className="flex items-start justify-between gap-4 border-b border-border-subtle pb-4">
           <div className="min-w-0">
@@ -31,22 +32,17 @@ export function ModalShell({
               <div className="mt-1 text-sm text-text-muted">{description}</div>
             )}
           </div>
-          {actions}
+          <div className="flex shrink-0 items-center gap-2">
+            {actions}
+            {onClose && <ModalCloseButton onClick={onClose} />}
+          </div>
         </div>
 
         <div className="mt-5">{children}</div>
 
-        {(footer || onClose) && (
+        {footer && (
           <div className="mt-5 flex justify-end border-t border-border-subtle pt-4">
-            {footer ?? (
-              <button
-                className="rounded-md border border-button-border px-4 py-2 text-sm font-semibold text-text-control transition hover:bg-surface-hover"
-                onClick={onClose}
-                type="button"
-              >
-                Close
-              </button>
-            )}
+            {footer}
           </div>
         )}
       </div>

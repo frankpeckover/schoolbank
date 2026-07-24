@@ -12,14 +12,12 @@ export function ModalCloseButton({
   return (
     <button
       aria-label={label}
-      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-button-border text-text-control transition hover:bg-panel-soft sm:h-auto sm:w-auto sm:px-3 sm:py-2 sm:text-sm sm:font-semibold"
+      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-muted transition hover:bg-surface-muted hover:text-text-control"
       onClick={onClick}
+      title={label}
       type="button"
     >
-      <span className="sm:hidden">
-        <XIcon />
-      </span>
-      <span className="hidden sm:inline">{label}</span>
+      <XIcon className="h-4 w-4" />
     </button>
   );
 }

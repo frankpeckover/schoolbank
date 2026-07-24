@@ -242,15 +242,34 @@ export class CreditAnalyticsService {
           group by users.id, users.is_active
         ),
         distribution_settings as (
+          with raw_distribution as (
+            select greatest(
+              1,
+              ceil(greatest(coalesce(max(balance), 0), 1)::numeric / $4::int)
+            ) as raw_bucket_size
+            from student_balances
+            where is_active = true
+          ),
+          distribution_magnitude as (
+            select
+              raw_bucket_size,
+              power(10, floor(log(raw_bucket_size))) as magnitude
+            from raw_distribution
+          )
           select
             greatest(
               1,
-              ceil(
-                greatest(coalesce(max(balance), 0), 1)::numeric / $4::int
+              (
+                magnitude *
+                case
+                  when raw_bucket_size / magnitude <= 1 then 1
+                  when raw_bucket_size / magnitude <= 2 then 2
+                  when raw_bucket_size / magnitude <= 5 then 5
+                  else 10
+                end
               )::integer
             ) as bucket_size
-          from student_balances
-          where is_active = true
+          from distribution_magnitude
         ),
         bucket_series as (
           select generate_series(0, $4::int) as bucket_order
@@ -259,6 +278,9 @@ export class CreditAnalyticsService {
           bucket_series.bucket_order,
           case
             when bucket_series.bucket_order = 0 then '0'
+            when bucket_series.bucket_order = $4 then
+              ((bucket_series.bucket_order - 1) * distribution_settings.bucket_size + 1)::text
+              || '+'
             else (
               ((bucket_series.bucket_order - 1) * distribution_settings.bucket_size + 1)::text
               || '-'
@@ -277,6 +299,11 @@ export class CreditAnalyticsService {
               and student_balances.balance between
                 ((bucket_series.bucket_order - 1) * distribution_settings.bucket_size + 1)
                 and (bucket_series.bucket_order * distribution_settings.bucket_size)
+            )
+            or (
+              bucket_series.bucket_order = $4
+              and student_balances.balance >=
+                ((bucket_series.bucket_order - 1) * distribution_settings.bucket_size + 1)
             )
           )
         where $1::int > 0

@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
-  Line,
-  LineChart,
+  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -34,6 +35,7 @@ import {
   WalletIcon,
 } from "@/components/ui/icons";
 import { FixedNotification } from "@/components/ui/fixed-notification";
+import { InlineSelectMenu } from "@/components/ui/inline-select-menu";
 import { MetricCard } from "@/components/ui/metric-card";
 import { SearchInput } from "@/components/ui/search-input";
 import {
@@ -221,6 +223,7 @@ export function CreditAnalyticsPanel({
           error={error}
           isLoading={isLoading}
           scopeLabel={selectedScope?.label ?? "Cohort"}
+          summary={summary}
         />
         <PurchaseTrendCard
           error={error}
@@ -298,23 +301,16 @@ function AnalyticsWindowSelector({
   selectedWindowDays: number;
 }) {
   return (
-    <div className="grid h-[46px] grid-cols-4 overflow-hidden rounded-md border border-border bg-surface lg:w-52">
-      {analyticsWindowOptions.map((option) => (
-        <button
-          aria-label={`Show ${option.days} days`}
-          aria-pressed={selectedWindowDays === option.days}
-          className={`px-2 text-xs font-semibold transition ${
-            selectedWindowDays === option.days
-              ? "bg-brand text-white"
-              : "text-text-control hover:bg-brand-soft hover:text-brand-ink"
-          }`}
-          key={option.days}
-          onClick={() => onWindowChange(option.days)}
-          type="button"
-        >
-          {option.label}
-        </button>
-      ))}
+    <div className="flex h-[46px] items-center">
+      <InlineSelectMenu
+        ariaLabel="Change analytics time window"
+        onChange={onWindowChange}
+        options={analyticsWindowOptions.map((option) => ({
+          label: option.label,
+          value: option.days,
+        }))}
+        value={selectedWindowDays}
+      />
     </div>
   );
 }
@@ -473,10 +469,22 @@ function BalanceHistoryChart({
   return (
     <div className="mt-4 h-64 w-full">
       <ResponsiveContainer height="100%" width="100%">
-        <LineChart
+        <AreaChart
           data={points}
           margin={{ bottom: 0, left: 0, right: 8, top: 8 }}
         >
+          <defs>
+            <linearGradient
+              id={`analyticsBalanceFill-${valueKey}`}
+              x1="0"
+              x2="0"
+              y1="0"
+              y2="1"
+            >
+              <stop offset="5%" stopColor="var(--brand)" stopOpacity={0.18} />
+              <stop offset="95%" stopColor="var(--brand)" stopOpacity={0} />
+            </linearGradient>
+          </defs>
           <CartesianGrid
             stroke="var(--border-subtle)"
             strokeDasharray="3 3"
@@ -516,7 +524,7 @@ function BalanceHistoryChart({
               strokeWidth: chartStrokeWidth,
             }}
           />
-          <Line
+          <Area
             activeDot={{
               fill: "var(--surface)",
               r: activeChartPointRadius,
@@ -524,12 +532,13 @@ function BalanceHistoryChart({
               strokeWidth: chartStrokeWidth,
             }}
             dataKey={valueKey}
-            dot={false}
+            fill={`url(#analyticsBalanceFill-${valueKey})`}
+            fillOpacity={1}
             stroke="var(--brand)"
             strokeWidth={chartStrokeWidth}
             type="monotone"
           />
-        </LineChart>
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );
@@ -540,11 +549,13 @@ function BalanceDistributionCard({
   error,
   isLoading,
   scopeLabel,
+  summary,
 }: {
   buckets: CreditAnalyticsBucket[];
   error: string | null;
   isLoading: boolean;
   scopeLabel: string;
+  summary: CreditAnalyticsSummary | null;
 }) {
   return (
     <section className="dashboard-unit-2 theme-panel min-w-0 p-4">
@@ -570,59 +581,157 @@ function BalanceDistributionCard({
       )}
 
       {!error && !isLoading && buckets.length > 0 && (
-        <BalanceDistributionChart buckets={buckets} />
+        <>
+          <BalanceDistributionSummary summary={summary} />
+          <BalanceDistributionChart
+            buckets={buckets}
+            medianBalance={summary?.medianBalance ?? 0}
+            totalWallets={summary?.activeStudentCount ?? 0}
+          />
+        </>
       )}
     </section>
   );
 }
 
+function BalanceDistributionSummary({
+  summary,
+}: {
+  summary: CreditAnalyticsSummary | null;
+}) {
+  if (!summary) {
+    return null;
+  }
+
+  return (
+    <div className="mt-3 grid grid-cols-3 gap-2 border-b border-border-subtle pb-3 text-xs">
+      <CompactDistributionStat
+        label="Median"
+        value={formatWholeNumber(summary.medianBalance)}
+      />
+      <CompactDistributionStat
+        label="Average"
+        value={formatWholeNumber(summary.averageBalance)}
+      />
+      <CompactDistributionStat
+        label="Zero"
+        value={formatWholeNumber(summary.zeroBalanceCount)}
+      />
+    </div>
+  );
+}
+
+function CompactDistributionStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="font-number truncate text-base font-semibold leading-none text-foreground">
+        {value}
+      </p>
+      <p className="mt-1 truncate text-text-muted">{label}</p>
+    </div>
+  );
+}
+
 function BalanceDistributionChart({
   buckets,
+  medianBalance,
+  totalWallets,
 }: {
   buckets: CreditAnalyticsBucket[];
+  medianBalance: number;
+  totalWallets: number;
 }) {
-  const yAxisTicks = getDistributionAxisTicks(buckets);
-  const yAxisMax = yAxisTicks[yAxisTicks.length - 1] ?? 1;
+  const xAxisTicks = getDistributionAxisTicks(buckets);
+  const xAxisMax = xAxisTicks[xAxisTicks.length - 1] ?? 1;
 
   return (
     <div className="mt-4 h-64 w-full">
       <ResponsiveContainer height="100%" width="100%">
         <BarChart
           data={buckets}
-          margin={{ bottom: 0, left: 0, right: 8, top: 8 }}
+          layout="vertical"
+          margin={{ bottom: 0, left: 8, right: 8, top: 8 }}
         >
           <CartesianGrid
             stroke="var(--border-subtle)"
             strokeDasharray="3 3"
-            vertical={false}
+            horizontal={false}
           />
           <XAxis
+            axisLine={false}
+            domain={[0, xAxisMax]}
+            tick={{ fill: "var(--text-muted)", fontSize: 11 }}
+            tickLine={false}
+            ticks={xAxisTicks}
+            type="number"
+          />
+          <YAxis
             axisLine={false}
             dataKey="label"
             tick={{ fill: "var(--text-muted)", fontSize: 11 }}
             tickLine={false}
-          />
-          <YAxis
-            axisLine={false}
-            domain={[0, yAxisMax]}
-            tick={{ fill: "var(--text-muted)", fontSize: 11 }}
-            tickLine={false}
-            ticks={yAxisTicks}
-            type="number"
-            width={32}
+            type="category"
+            width={62}
           />
           <Tooltip
-            content={<DistributionTooltip />}
-            cursor={{ fill: "var(--brand-soft)" }}
+            content={<DistributionTooltip totalWallets={totalWallets} />}
+            cursor={false}
           />
           <Bar
+            activeBar={{
+              fill: "var(--brand)",
+              fillOpacity: 0.85,
+              stroke: "var(--brand)",
+              strokeOpacity: 0.55,
+              strokeWidth: 1,
+            }}
             dataKey="count"
-            fill="var(--brand)"
-            radius={[8, 8, 3, 3]}
-          />
+            radius={[3, 8, 8, 3]}
+          >
+            {buckets.map((bucket) => (
+              <Cell
+                fill={
+                  isMedianBucket(bucket.label, medianBalance)
+                    ? "var(--brand)"
+                    : "var(--brand-soft-strong)"
+                }
+                key={bucket.label}
+              />
+            ))}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>
+  );
+}
+
+function isMedianBucket(label: string, medianBalance: number) {
+  if (medianBalance < 0) {
+    return false;
+  }
+
+  if (label === "0") {
+    return medianBalance === 0;
+  }
+
+  if (label.endsWith("+")) {
+    const minimum = Number(label.slice(0, -1));
+    return Number.isFinite(minimum) && medianBalance >= minimum;
+  }
+
+  const [minimum, maximum] = label.split("-").map((value) => Number(value));
+
+  return (
+    Number.isFinite(minimum) &&
+    Number.isFinite(maximum) &&
+    medianBalance >= minimum &&
+    medianBalance <= maximum
   );
 }
 
@@ -712,21 +821,24 @@ function PurchaseTrendChart({
           />
           <Tooltip
             content={<PurchaseTrendTooltip />}
-            cursor={{ fill: "var(--brand-soft)" }}
+            cursor={false}
           />
           <Bar
+            activeBar={{ fill: "var(--brand-hover)" }}
             dataKey="pendingPurchases"
             fill="var(--brand)"
             name="Pending"
             radius={[7, 7, 2, 2]}
           />
           <Bar
+            activeBar={{ fill: "var(--success-hover)" }}
             dataKey="approvedPurchases"
             fill="var(--success)"
             name="Approved"
             radius={[7, 7, 2, 2]}
           />
           <Bar
+            activeBar={{ fill: "var(--danger-strong)" }}
             dataKey="deniedPurchases"
             fill="var(--danger)"
             name="Denied"

@@ -177,12 +177,12 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
                           {
                             disabled: filteredUsers.length === 0,
                             icon: <FileDownIcon />,
-                            label: "Export users",
+                            label: "Export users: CSV",
                             onSelect: () => downloadUsers(filteredUsers),
                           },
                           {
                             icon: <FileUpIcon />,
-                            label: "Import users from CSV",
+                            label: "Import users: CSV",
                             onSelect: () => setIsImportModalOpen(true),
                           },
                         ]}

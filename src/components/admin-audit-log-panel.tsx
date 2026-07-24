@@ -115,7 +115,7 @@ export function AdminAuditLogPanel() {
                         {
                           disabled: isLoading || filteredEntries.length === 0,
                           icon: <FileDownIcon />,
-                          label: "Export audit log",
+                          label: "Export audit log: CSV",
                           onSelect: () => downloadAuditLog(filteredEntries),
                         },
                       ]}

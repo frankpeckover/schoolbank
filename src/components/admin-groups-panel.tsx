@@ -429,12 +429,12 @@ export function AdminGroupsPanel() {
                     {
                       disabled: filteredGroups.length === 0,
                       icon: <FileDownIcon />,
-                      label: "Export groups",
+                      label: "Export groups: CSV",
                       onSelect: () => downloadGroups(filteredGroups),
                     },
                     {
                       icon: <FileUpIcon />,
-                      label: "Import groups from CSV",
+                      label: "Import groups: CSV",
                       onSelect: () => setIsImportModalOpen(true),
                     },
                   ]}

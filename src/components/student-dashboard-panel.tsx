@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  Area,
+  AreaChart,
   CartesianGrid,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -14,6 +14,8 @@ import { StudentShopRequestsPanel } from "@/components/shop/student-shop-request
 import { StudentGoalCard } from "@/components/student-goal-card";
 import { TransactionLogPanel } from "@/components/transactions/transaction-log-panel";
 import { FixedNotification } from "@/components/ui/fixed-notification";
+import { WalletIcon } from "@/components/ui/icons";
+import { InlineSelectMenu } from "@/components/ui/inline-select-menu";
 import { getStudentBalance, listTransactionLog } from "@/lib/actions";
 import {
   buildBalanceTimeSeries,
@@ -40,15 +42,25 @@ type BalanceTrendTooltipProps = {
 };
 
 const ACTIVE_CHART_POINT_RADIUS = 6;
-const CHART_STROKE_WIDTH = 3;
+const CHART_STROKE_WIDTH = 2;
 const CHART_CURSOR_WIDTH = 2;
 const BALANCE_COUNT_ANIMATION_DURATION_MS = 650;
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+const studentMetricTimeframeOptions = [
+  { label: "7 days", value: 7 },
+  { label: "30 days", value: 30 },
+  { label: "90 days", value: 90 },
+] as const;
+type StudentMetricTimeframeDays =
+  (typeof studentMetricTimeframeOptions)[number]["value"];
 
 export function StudentDashboardPanel({
   currencyName,
   currentUser,
 }: StudentDashboardPanelProps) {
   const [balance, setBalance] = useState(0);
+  const [transactions, setTransactions] = useState<TransactionLogItem[]>([]);
+  const [isTransactionsLoading, setIsTransactionsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -76,6 +88,34 @@ export function StudentDashboardPanel({
     };
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadTransactions() {
+      try {
+        const loadedTransactions = await listTransactionLog();
+
+        if (isMounted) {
+          setTransactions(loadedTransactions);
+        }
+      } catch {
+        if (isMounted) {
+          setTransactions([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsTransactionsLoading(false);
+        }
+      }
+    }
+
+    loadTransactions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <>
       <FixedNotification error={error} />
@@ -85,18 +125,29 @@ export function StudentDashboardPanel({
           currencyName={currencyName}
           currentUser={currentUser}
         />
-        <BalanceTrendCard currencyName={currencyName} />
+        <BalanceTrendCard
+          currencyName={currencyName}
+          isLoading={isTransactionsLoading}
+          transactions={transactions}
+        />
         <StudentGoalCard
           balance={balance}
           className="dashboard-unit-1"
           currencyName={currencyName}
         />
-
       </section>
 
-      <StudentShopRequestsPanel
-        currencyName={currencyName}
-      />
+      <section className="dashboard-grid mt-5">
+        <StudentShopRequestsPanel
+          className="dashboard-unit-3"
+          currencyName={currencyName}
+        />
+        <StudentMetricStrip
+          className="dashboard-unit-1"
+          currencyName={currencyName}
+          transactions={transactions}
+        />
+      </section>
 
       <TransactionLogPanel
         currencyName={currencyName}
@@ -119,22 +170,27 @@ function StudentWalletCard({
   const balanceAmount = useAnimatedWholeNumber(Math.abs(balance));
 
   return (
-    <article className="dashboard-unit-2 wallet-card rounded-3xl border border-brand-soft-strong p-5 text-foreground shadow-sm transition hover:shadow-md sm:p-6">
-      <div className="relative flex h-full min-h-52 flex-col items-center justify-center gap-4 text-center">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-text-kicker">
-            Student Wallet
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold sm:text-3xl">
-            {currentUser.displayName}
-          </h2>
+    <article className="dashboard-unit-2 wallet-card rounded-3xl border border-transparent p-5 text-foreground sm:p-6">
+      <div className="relative flex h-full min-h-52 flex-col gap-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-text-kicker">
+              Student Wallet
+            </p>
+            <h2 className="mt-2 truncate text-2xl font-semibold sm:text-3xl">
+              {currentUser.displayName}
+            </h2>
+          </div>
+          <span className="shrink-0 rounded-md bg-surface/55 px-3 py-1 text-xs font-semibold text-text-muted">
+            Primary
+          </span>
         </div>
 
         <div>
           <p className="text-sm font-semibold text-text-muted">
             Available balance
           </p>
-          <p className="mt-2 flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 break-words text-brand-ink">
+          <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 break-words text-brand-ink">
             <span className="wallet-balance-number text-6xl leading-none sm:text-7xl">
               {formatAmount(balanceAmount)}
             </span>
@@ -143,6 +199,7 @@ function StudentWalletCard({
             </span>
           </p>
         </div>
+
       </div>
     </article>
   );
@@ -150,52 +207,33 @@ function StudentWalletCard({
 
 function BalanceTrendCard({
   currencyName,
+  isLoading,
+  transactions,
 }: {
   currencyName: string;
+  isLoading: boolean;
+  transactions: TransactionLogItem[];
 }) {
-  const [transactions, setTransactions] = useState<TransactionLogItem[]>([]);
   const [timeScale, setTimeScale] = useState<ChartTimeScale>("daily");
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadTransactions() {
-      try {
-        const loadedTransactions = await listTransactionLog();
-
-        if (isMounted) {
-          setTransactions(loadedTransactions);
-        }
-      } catch {
-        if (isMounted) {
-          setTransactions([]);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    loadTransactions();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
   const chartPoints = buildBalanceChartPoints(transactions, timeScale);
   const balanceTicks = getBalanceAxisTicks(chartPoints);
   const timeTicks = getTimeAxisTicks(chartPoints);
 
   return (
-    <article className="dashboard-unit-1 flex min-h-52 rounded-3xl border border-border-subtle bg-surface p-4 shadow-sm sm:p-5">
+    <article className="dashboard-unit-1 flex min-h-52 rounded-3xl border border-transparent bg-surface p-4 sm:p-5">
       <div className="flex min-h-56 w-full flex-col rounded-2xl bg-surface">
-        <ChartScaleControl
-          onScaleChange={setTimeScale}
-          selectedScale={timeScale}
-        />
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
+              <WalletIcon className="h-4 w-4" />
+            </span>
+            <h2 className="text-base font-semibold text-foreground">Balance</h2>
+          </div>
+          <ChartScaleMenu
+            onScaleChange={setTimeScale}
+            selectedScale={timeScale}
+          />
+        </div>
         {isLoading && (
           <div className="flex flex-1 items-center justify-center">
             <p className="text-sm text-text-muted">Loading trend...</p>
@@ -211,10 +249,16 @@ function BalanceTrendCard({
         {!isLoading && chartPoints.length > 0 && (
           <div className="mt-2 h-56 w-full flex-1">
             <ResponsiveContainer height="100%" width="100%">
-              <LineChart
+              <AreaChart
                 data={chartPoints}
                 margin={{ bottom: 0, left: 0, right: 8, top: 8 }}
               >
+                <defs>
+                  <linearGradient id="studentBalanceFill" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="5%" stopColor="var(--brand)" stopOpacity={0.18} />
+                    <stop offset="95%" stopColor="var(--brand)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid
                   stroke="var(--border-subtle)"
                   strokeDasharray="3 3"
@@ -249,7 +293,7 @@ function BalanceTrendCard({
                     strokeWidth: CHART_CURSOR_WIDTH,
                   }}
                 />
-                <Line
+                <Area
                   activeDot={{
                     fill: "var(--surface)",
                     r: ACTIVE_CHART_POINT_RADIUS,
@@ -257,21 +301,89 @@ function BalanceTrendCard({
                     strokeWidth: CHART_STROKE_WIDTH,
                   }}
                   dataKey="balance"
-                  dot={false}
+                  fill="url(#studentBalanceFill)"
+                  fillOpacity={1}
                   stroke="var(--brand)"
                   strokeWidth={CHART_STROKE_WIDTH}
                   type="monotone"
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         )}
-        {!isLoading && chartPoints.length > 0 && (
-          <p className="mt-2 text-center text-xs font-semibold text-text-muted">
-            Shows how your balance has changed over time.
-          </p>
-        )}
       </div>
+    </article>
+  );
+}
+
+function StudentMetricStrip({
+  className = "",
+  currencyName,
+  transactions,
+}: {
+  className?: string;
+  currencyName: string;
+  transactions: TransactionLogItem[];
+}) {
+  const [timeframeDays, setTimeframeDays] =
+    useState<StudentMetricTimeframeDays>(30);
+  const metrics = getStudentMetrics(transactions, timeframeDays);
+  const selectedOption = studentMetricTimeframeOptions.find(
+    (option) => option.value === timeframeDays,
+  );
+
+  return (
+    <section className={`rounded-3xl bg-surface p-4 ${className}`}>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold text-foreground">Averages</h2>
+          <p className="mt-1 text-xs text-text-muted">
+            {selectedOption?.label ?? "30 days"}
+          </p>
+        </div>
+        <InlineSelectMenu
+          ariaLabel="Change average timeframe"
+          onChange={setTimeframeDays}
+          options={studentMetricTimeframeOptions}
+          value={timeframeDays}
+        />
+      </div>
+      <div className="divide-y divide-border-subtle">
+        <StudentMetricCard
+          label="Avg gain/day"
+          currencyName={currencyName}
+          value={formatAmount(metrics.averageDailyGain)}
+        />
+        <StudentMetricCard
+          label="Avg loss/day"
+          currencyName={currencyName}
+          value={formatAmount(metrics.averageDailyLoss)}
+        />
+      </div>
+    </section>
+  );
+}
+
+function StudentMetricCard({
+  currencyName,
+  label,
+  value,
+}: {
+  currencyName: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <article className="py-3 first:pt-1 last:pb-1">
+      <p className="wallet-balance-number text-2xl leading-none text-foreground">
+        {value}
+      </p>
+      <p className="mt-1 text-xs font-normal text-text-muted">
+        {currencyName}
+      </p>
+      <p className="mt-2 text-xs font-medium uppercase tracking-[0.12em] text-text-muted">
+        {label}
+      </p>
     </article>
   );
 }
@@ -371,7 +483,40 @@ function doesTransactionAffectBalance(transaction: TransactionLogItem) {
   return !transaction.isVoided && transaction.entryStatus !== "voided";
 }
 
-function ChartScaleControl({
+function getStudentMetrics(
+  transactions: TransactionLogItem[],
+  timeframeDays: StudentMetricTimeframeDays,
+) {
+  const windowStartTime =
+    Date.now() - timeframeDays * MILLISECONDS_PER_DAY;
+  const recentTransactions = transactions.filter((transaction) => {
+    const transactionTime = new Date(transaction.createdAt).getTime();
+
+    return (
+      Number.isFinite(transactionTime) &&
+      transactionTime >= windowStartTime &&
+      doesTransactionAffectBalance(transaction)
+    );
+  });
+
+  const totalGain = recentTransactions.reduce(
+    (total, transaction) =>
+      transaction.amount > 0 ? total + transaction.amount : total,
+    0,
+  );
+  const totalLoss = recentTransactions.reduce(
+    (total, transaction) =>
+      transaction.amount < 0 ? total + Math.abs(transaction.amount) : total,
+    0,
+  );
+
+  return {
+    averageDailyGain: Math.round(totalGain / timeframeDays),
+    averageDailyLoss: Math.round(totalLoss / timeframeDays),
+  };
+}
+
+function ChartScaleMenu({
   onScaleChange,
   selectedScale,
 }: {
@@ -379,21 +524,13 @@ function ChartScaleControl({
   selectedScale: ChartTimeScale;
 }) {
   return (
-    <div className="ml-auto inline-flex rounded-md border border-border-subtle bg-panel-soft p-1">
-      {chartTimeScaleOptions.map((option) => (
-        <button
-          className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition ${
-            selectedScale === option.value
-              ? "bg-surface text-brand shadow-sm"
-              : "text-text-muted hover:bg-surface"
-          }`}
-          key={option.value}
-          onClick={() => onScaleChange(option.value)}
-          type="button"
-        >
-          {option.label}
-        </button>
-      ))}
+    <div className="ml-auto flex items-center gap-2">
+      <InlineSelectMenu
+        ariaLabel="Change balance graph scale"
+        onChange={onScaleChange}
+        options={chartTimeScaleOptions}
+        value={selectedScale}
+      />
     </div>
   );
 }

@@ -9,10 +9,12 @@ import { FixedNotification } from "@/components/ui/fixed-notification";
 import { ClockIcon, PackageIcon, ShoppingBagIcon } from "@/components/ui/icons";
 
 type StudentShopRequestsPanelProps = {
+  className?: string;
   currencyName: string;
 };
 
 export function StudentShopRequestsPanel({
+  className = "",
   currencyName,
 }: StudentShopRequestsPanelProps) {
   const [requests, setRequests] = useState<StudentShopRequest[]>([]);
@@ -49,7 +51,9 @@ export function StudentShopRequestsPanel({
   }, []);
 
   return (
-    <section className="theme-panel motion-panel mt-5 p-4 sm:p-5">
+    <section
+      className={`rounded-3xl border border-transparent bg-surface p-4 sm:p-5 ${className}`}
+    >
       <FixedNotification error={error} />
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent">
@@ -105,7 +109,7 @@ function StudentRequestCard({
   request: StudentShopRequest;
 }) {
   return (
-    <article className="reward-shine rounded-md border border-border-subtle p-3 shadow-sm transition hover:border-brand-soft-strong hover:shadow-md">
+    <article className="reward-shine rounded-md border border-transparent p-3 transition hover:bg-surface-hover">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-surface text-brand">

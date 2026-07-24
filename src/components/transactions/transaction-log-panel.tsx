@@ -221,7 +221,7 @@ export function TransactionLogPanel({
                           disabled:
                             isLoading || filteredTransactions.length === 0,
                           icon: <FileDownIcon />,
-                          label: "Export transactions",
+                          label: "Export transactions: CSV",
                           onSelect: () =>
                             downloadTransactions(
                               filteredTransactions,

@@ -11,16 +11,21 @@ import type { PublicSsoProvider } from "@/lib/sso-types";
 import { AppBrand } from "@/components/ui/app-brand";
 import { AppFooter } from "@/components/ui/app-footer";
 import { GlobalMaintenanceBanner } from "@/components/ui/global-maintenance-banner";
+import { EyeIcon } from "@/components/ui/icons";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 
 type LoginCardProps = {
   initialMessage?: string | null;
+  initialMessageTone?: LoginMessageTone;
   maintenanceMessage: string;
   onLogin: (user: SessionUser) => void;
 };
 
+type LoginMessageTone = "success" | "warning";
+
 export function LoginCard({
   initialMessage = null,
+  initialMessageTone = "success",
   maintenanceMessage,
   onLogin,
 }: LoginCardProps) {
@@ -29,7 +34,10 @@ export function LoginCard({
   const [error, setError] = useState<string | null>(null);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [message, setMessage] = useState<string | null>(initialMessage);
+  const [messageTone, setMessageTone] =
+    useState<LoginMessageTone>(initialMessageTone);
   const [ssoProviders, setSsoProviders] = useState<PublicSsoProvider[]>([]);
 
   useEffect(() => {
@@ -44,6 +52,7 @@ export function LoginCard({
     window.history.replaceState({}, "", nextUrl);
 
     if (ssoStatus === "account_required") {
+      setMessageTone("success");
       setMessage(
         "You were authenticated successfully. Please ask an admin to create your account before signing in.",
       );
@@ -101,15 +110,26 @@ export function LoginCard({
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-background text-foreground">
+    <main className="login-shell flex min-h-screen flex-col bg-background text-foreground">
       <GlobalMaintenanceBanner message={maintenanceMessage} />
       <div className="mx-auto flex w-full max-w-md flex-1 items-center px-4 py-5 sm:px-6 lg:px-8">
         <section className="login-panel login-entry w-full p-2 sm:p-0">
+          {message && (
+            <LoginMessage message={message} tone={messageTone} />
+          )}
+
           <div className="login-entry-item mb-4 flex justify-start">
             <AppBrand showNameOnMobile />
           </div>
           <div className="login-entry-item mb-5 flex justify-start">
-            <h1 className="text-3xl font-semibold tracking-normal">Sign In</h1>
+            <div>
+              <h1 className="text-3xl font-semibold tracking-normal">
+                Sign in to your account
+              </h1>
+              <p className="mt-1 text-sm text-text-muted">
+                Welcome back. Enter your credentials to continue.
+              </p>
+            </div>
           </div>
           <form className="space-y-3" onSubmit={handleSubmit}>
             <div className="login-entry-item">
@@ -118,7 +138,7 @@ export function LoginCard({
                 <input
                   aria-label="Username"
                   autoComplete="username"
-                  className="w-full rounded-md border border-border bg-surface py-3.5 pl-10 pr-3 text-sm outline-none ring-brand transition placeholder:text-text-muted focus:border-brand focus:ring-2"
+                  className="w-full rounded-md border border-border bg-surface py-2.5 pl-10 pr-3 text-sm outline-none ring-brand transition placeholder:text-text-muted focus:border-brand focus:ring-2"
                   disabled={isSubmitting}
                   id="username"
                   onChange={(event) => setUsername(event.target.value)}
@@ -135,14 +155,26 @@ export function LoginCard({
                 <input
                   aria-label="Password"
                   autoComplete="current-password"
-                  className="w-full rounded-md border border-border bg-surface py-3.5 pl-10 pr-3 text-sm outline-none ring-brand transition placeholder:text-text-muted focus:border-brand focus:ring-2"
+                  className="w-full rounded-md border border-border bg-surface py-2.5 pl-10 pr-11 text-sm outline-none ring-brand transition placeholder:text-text-muted focus:border-brand focus:ring-2"
                   disabled={isSubmitting}
                   id="password"
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="Password"
-                  type="password"
+                  type={isPasswordVisible ? "text" : "password"}
                   value={password}
                 />
+                <button
+                  aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+                  className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-text-muted transition hover:bg-surface-hover hover:text-text-control"
+                  disabled={isSubmitting}
+                  onClick={() =>
+                    setIsPasswordVisible((currentValue) => !currentValue)
+                  }
+                  title={isPasswordVisible ? "Hide password" : "Show password"}
+                  type="button"
+                >
+                  <EyeIcon className="h-4 w-4" />
+                </button>
               </div>
             </div>
 
@@ -151,14 +183,9 @@ export function LoginCard({
                 {error}
               </p>
             )}
-            {message && (
-              <p className="rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
-                {message}
-              </p>
-            )}
 
             <button
-              className="login-entry-item w-full rounded-md bg-brand px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70"
+              className="login-entry-item w-full rounded-md bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70"
               disabled={isSubmitting}
               type="submit"
             >
@@ -171,9 +198,9 @@ export function LoginCard({
               </div>
             )}
 
-            <div className="login-entry-item text-center">
+            <div className="login-entry-item text-right">
               <button
-                className="text-sm font-semibold text-text-muted underline-offset-4 transition hover:text-text-control hover:underline disabled:cursor-not-allowed disabled:opacity-70"
+                className="text-xs font-medium text-text-muted underline underline-offset-4 transition hover:text-text-control disabled:cursor-not-allowed disabled:opacity-70"
                 onClick={() => setIsForgotPasswordOpen(true)}
                 title="Request a password reset link"
                 type="button"
@@ -211,6 +238,27 @@ function UserFieldIcon() {
       <path d="M20 21a8 8 0 0 0-16 0" />
       <circle cx="12" cy="7" r="4" />
     </svg>
+  );
+}
+
+function LoginMessage({
+  message,
+  tone,
+}: {
+  message: string;
+  tone: LoginMessageTone;
+}) {
+  const toneClassName =
+    tone === "warning"
+      ? "border-warning-border bg-warning-soft text-warning"
+      : "border-success-border bg-success-soft text-success";
+
+  return (
+    <p
+      className={`login-entry-item mb-4 rounded-md border px-3 py-2 text-sm font-medium ${toneClassName}`}
+    >
+      {message}
+    </p>
   );
 }
 

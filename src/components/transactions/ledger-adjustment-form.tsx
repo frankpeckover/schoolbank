@@ -17,6 +17,7 @@ import {
   defaultTransactionPresets,
   type TransactionPresets,
 } from "@/lib/transaction-presets";
+import { formatAmount } from "@/lib/formatters";
 import type { GroupListItem } from "@/services/group-service";
 import type { StudentListItem } from "@/services/user-service";
 
@@ -486,7 +487,7 @@ function AdjustmentReasonStep({
 
       <div className="theme-subpanel mt-4 p-3">
         <p className="text-sm font-semibold text-text-control">
-          {actionLabel} {amount} {currencyName}
+          {actionLabel} {formatAmount(amount)} {currencyName}
         </p>
         <p className="mt-1 text-sm text-text-muted">
           {recipientLabel || "No recipient selected"}
@@ -750,5 +751,5 @@ function getAdjustmentSuccessMessage({
   const action = direction === "add" ? "Added" : "Removed";
   const preposition = direction === "add" ? "to" : "from";
 
-  return `${action} ${amount} ${currencyName} ${preposition} ${recipientLabel} for ${reason}.`;
+  return `${action} ${formatAmount(amount)} ${currencyName} ${preposition} ${recipientLabel} for ${reason}.`;
 }
