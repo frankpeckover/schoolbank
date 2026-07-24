@@ -319,14 +319,26 @@ export class CreditAnalyticsService {
         with filtered_students as (${filteredStudentsQuery}),
         days as (
           select generate_series(
-            (current_date - (($1::int - 1) * interval '1 day'))::date,
-            current_date,
-            interval '1 day'
-          )::date as bucket_date
+            case
+              when $1::int = 1 then date_trunc('day', now())
+              else (current_date - (($1::int - 1) * interval '1 day'))::timestamp
+            end,
+            case
+              when $1::int = 1 then date_trunc('hour', now())
+              else current_date::timestamp
+            end,
+            case
+              when $1::int = 1 then interval '1 hour'
+              else interval '1 day'
+            end
+          ) as bucket_date
         ),
         daily_ledger_entries as (
           select
-            date_trunc('day', ledger_entries.created_at)::date as bucket_date,
+            date_trunc(
+              case when $1::int = 1 then 'hour' else 'day' end,
+              ledger_entries.created_at
+            ) as bucket_date,
             ledger_entries.amount,
             ledger_entries.entry_type
           from ledger_entries
@@ -337,16 +349,25 @@ export class CreditAnalyticsService {
               ledger_entries.status = 'pending'
               and ledger_entries.is_voided = true
             )
-            and ledger_entries.created_at >= now() - ($1::int * interval '1 day')
+            and ledger_entries.created_at >= case
+              when $1::int = 1 then date_trunc('day', now())
+              else now() - ($1::int * interval '1 day')
+            end
         ),
         daily_shop_purchases as (
           select
-            date_trunc('day', shop_purchases.purchased_at)::date as bucket_date,
+            date_trunc(
+              case when $1::int = 1 then 'hour' else 'day' end,
+              shop_purchases.purchased_at
+            ) as bucket_date,
             shop_purchases.status
           from shop_purchases
           join filtered_students on filtered_students.id = shop_purchases.purchased_by_user_id
           where shop_purchases.is_voided = false
-            and shop_purchases.purchased_at >= now() - ($1::int * interval '1 day')
+            and shop_purchases.purchased_at >= case
+              when $1::int = 1 then date_trunc('day', now())
+              else now() - ($1::int * interval '1 day')
+            end
         )
         select
           days.bucket_date,
@@ -372,10 +393,19 @@ export class CreditAnalyticsService {
         with filtered_students as (${filteredStudentsQuery}),
         days as (
           select generate_series(
-            (current_date - (($1::int - 1) * interval '1 day'))::date,
-            current_date,
-            interval '1 day'
-          )::date as bucket_date
+            case
+              when $1::int = 1 then date_trunc('day', now())
+              else (current_date - (($1::int - 1) * interval '1 day'))::timestamp
+            end,
+            case
+              when $1::int = 1 then date_trunc('hour', now())
+              else current_date::timestamp
+            end,
+            case
+              when $1::int = 1 then interval '1 hour'
+              else interval '1 day'
+            end
+          ) as bucket_date
         )
         select
           days.bucket_date,
@@ -389,7 +419,10 @@ export class CreditAnalyticsService {
                 ledger_entries.status = 'pending'
                 and ledger_entries.is_voided = true
               )
-              and ledger_entries.created_at < days.bucket_date + interval '1 day'
+              and ledger_entries.created_at < days.bucket_date + case
+                when $1::int = 1 then interval '1 hour'
+                else interval '1 day'
+              end
           ) / nullif((select count(*) from filtered_students), 0)), 0) as average_balance,
           coalesce((
             select sum(ledger_entries.amount)
@@ -401,7 +434,10 @@ export class CreditAnalyticsService {
                 ledger_entries.status = 'pending'
                 and ledger_entries.is_voided = true
               )
-              and ledger_entries.created_at < days.bucket_date + interval '1 day'
+              and ledger_entries.created_at < days.bucket_date + case
+                when $1::int = 1 then interval '1 hour'
+                else interval '1 day'
+              end
           ), 0) as total_balance
         from days
         order by days.bucket_date
@@ -445,11 +481,15 @@ export class CreditAnalyticsService {
 
     return {
       balanceBuckets: bucketResult.rows.map(mapBucketRow),
-      balanceHistory: balanceHistoryResult.rows.map(mapBalanceHistoryRow),
+      balanceHistory: balanceHistoryResult.rows.map((row) =>
+        mapBalanceHistoryRow(row, analyticsWindowDays),
+      ),
       movementLeaders: movementLeadersResult.rows.map(mapStudentMovementRow),
       summary: mapSummaryRow(summaryResult.rows[0]),
       topBalances: topBalancesResult.rows.map(mapStudentBalanceRow),
-      trend: trendResult.rows.map(mapTrendRow),
+      trend: trendResult.rows.map((row) =>
+        mapTrendRow(row, analyticsWindowDays),
+      ),
     };
   }
 
@@ -564,12 +604,13 @@ function mapBucketRow(row: BucketRow): CreditAnalyticsBucket {
 
 function mapBalanceHistoryRow(
   row: BalanceHistoryRow,
+  windowDays: number,
 ): CreditAnalyticsBalanceHistoryPoint {
   const date = new Date(row.bucket_date);
 
   return {
     averageBalance: toNumber(row.average_balance),
-    label: formatShortDate(date),
+    label: formatAnalyticsBucketLabel(date, windowDays),
     timestamp: date.getTime(),
     totalBalance: toNumber(row.total_balance),
   };
@@ -584,7 +625,10 @@ function mapScopeSearchRow(row: ScopeSearchRow): CreditAnalyticsScope {
   };
 }
 
-function mapTrendRow(row: TrendRow): CreditAnalyticsTrendPoint {
+function mapTrendRow(
+  row: TrendRow,
+  windowDays: number,
+): CreditAnalyticsTrendPoint {
   const issued = toNumber(row.issued);
   const removed = toNumber(row.removed);
   const spent = toNumber(row.spent);
@@ -594,7 +638,7 @@ function mapTrendRow(row: TrendRow): CreditAnalyticsTrendPoint {
     approvedPurchases: toNumber(row.approved_purchases),
     deniedPurchases: toNumber(row.denied_purchases),
     issued,
-    label: formatShortDate(new Date(row.bucket_date)),
+    label: formatAnalyticsBucketLabel(new Date(row.bucket_date), windowDays),
     net: issued - removed - spent,
     pendingPurchases: toNumber(row.pending_purchases),
     removed,
@@ -603,7 +647,14 @@ function mapTrendRow(row: TrendRow): CreditAnalyticsTrendPoint {
   };
 }
 
-function formatShortDate(date: Date) {
+function formatAnalyticsBucketLabel(date: Date, windowDays: number) {
+  if (windowDays === 1) {
+    return new Intl.DateTimeFormat("en-AU", {
+      hour: "numeric",
+      hour12: false,
+    }).format(date);
+  }
+
   return new Intl.DateTimeFormat("en-AU", {
     day: "numeric",
     month: "short",

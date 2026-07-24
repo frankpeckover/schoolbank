@@ -19,6 +19,7 @@ import {
   findPointLabel,
   getBalanceAxisTicks,
   getDistributionAxisTicks,
+  getMovementAxisTicks,
   getPurchaseAxisTicks,
   getTimeAxisTicks,
   type BalanceHistoryValueKey,
@@ -26,6 +27,7 @@ import {
 import {
   BalanceHistoryTooltip,
   DistributionTooltip,
+  NetMovementTooltip,
   PurchaseTrendTooltip,
 } from "@/components/credit-analytics/analytics-tooltips";
 import {
@@ -61,6 +63,7 @@ type AnalyticsWindowOption = {
 
 const analyticsSearchDebounceMs = 300;
 const analyticsWindowOptions: AnalyticsWindowOption[] = [
+  { days: 1, label: "Today" },
   { days: 7, label: "7D" },
   { days: 30, label: "30D" },
   { days: 90, label: "90D" },
@@ -192,15 +195,27 @@ export function CreditAnalyticsPanel({
         />
       </div>
 
-      <AnalyticsMetricGrid
-        currencyName={currencyName}
-        isLoading={isLoading}
-        selectedWindowDays={selectedWindowDays}
-        summary={summary}
-      />
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-6">
+        <AnalyticsMetricGrid
+          className="lg:col-span-2"
+          currencyName={currencyName}
+          isLoading={isLoading}
+          selectedWindowDays={selectedWindowDays}
+          summary={summary}
+        />
+        <NetMovementCard
+          className="lg:col-span-4"
+          currencyName={currencyName}
+          error={error}
+          isLoading={isLoading}
+          scopeLabel={selectedScope?.label ?? "Cohort"}
+          trend={trend}
+        />
+      </div>
 
-      <div className="dashboard-grid mt-4">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-6">
         <BalanceHistoryCard
+          className="lg:col-span-4"
           currencyName={currencyName}
           error={error}
           isLoading={isLoading}
@@ -209,7 +224,16 @@ export function CreditAnalyticsPanel({
           title="Total credits over time"
           valueKey="totalBalance"
         />
+        <BalanceDistributionCard
+          className="lg:col-span-2"
+          buckets={balanceBuckets}
+          error={error}
+          isLoading={isLoading}
+          scopeLabel={selectedScope?.label ?? "Cohort"}
+          summary={summary}
+        />
         <BalanceHistoryCard
+          className="lg:col-span-4"
           currencyName={currencyName}
           error={error}
           isLoading={isLoading}
@@ -218,14 +242,8 @@ export function CreditAnalyticsPanel({
           title="Average balance over time"
           valueKey="averageBalance"
         />
-        <BalanceDistributionCard
-          buckets={balanceBuckets}
-          error={error}
-          isLoading={isLoading}
-          scopeLabel={selectedScope?.label ?? "Cohort"}
-          summary={summary}
-        />
         <PurchaseTrendCard
+          className="lg:col-span-2"
           error={error}
           isLoading={isLoading}
           scopeLabel={selectedScope?.label ?? "Cohort"}
@@ -237,21 +255,26 @@ export function CreditAnalyticsPanel({
 }
 
 function AnalyticsMetricGrid({
+  className,
   currencyName,
   isLoading,
   selectedWindowDays,
   summary,
 }: {
+  className: string;
   currencyName: string;
   isLoading: boolean;
   selectedWindowDays: number;
   summary: CreditAnalyticsSummary | null;
 }) {
+  const activeWalletLabel =
+    selectedWindowDays === 1 ? "Active today" : `Active ${selectedWindowDays} days`;
+
   return (
-    <section className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
+    <section className={`${className} grid grid-cols-2 gap-3`}>
       <MetricCard
         icon={<UsersIcon />}
-        label={`Active in last ${selectedWindowDays} days`}
+        label={activeWalletLabel}
         tone="brand"
         value={
           summary
@@ -261,7 +284,7 @@ function AnalyticsMetricGrid({
       />
       <MetricCard
         icon={<ShoppingBagIcon />}
-        label="Active shop requests"
+        label="Shop requests"
         tone="accent"
         value={
           summary
@@ -315,6 +338,124 @@ function AnalyticsWindowSelector({
   );
 }
 
+function NetMovementCard({
+  className,
+  currencyName,
+  error,
+  isLoading,
+  scopeLabel,
+  trend,
+}: {
+  className: string;
+  currencyName: string;
+  error: string | null;
+  isLoading: boolean;
+  scopeLabel: string;
+  trend: CreditAnalyticsTrendPoint[];
+}) {
+  return (
+    <section className={`${className} theme-panel min-w-0 p-4`}>
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-base font-semibold text-foreground">
+          Daily movement
+        </h3>
+        <span className="rounded-sm bg-chip-bg px-2 py-1 text-xs font-semibold text-chip-text">
+          {scopeLabel}
+        </span>
+      </div>
+
+      {!error && isLoading && (
+        <div className="flex h-52 items-center justify-center">
+          <p className="text-sm text-text-muted">Loading analytics...</p>
+        </div>
+      )}
+
+      {!error && !isLoading && trend.length === 0 && (
+        <div className="flex h-52 items-center justify-center text-center">
+          <p className="text-sm text-text-muted">No movement history found.</p>
+        </div>
+      )}
+
+      {!error && !isLoading && trend.length > 0 && (
+        <NetMovementChart currencyName={currencyName} trend={trend} />
+      )}
+    </section>
+  );
+}
+
+function NetMovementChart({
+  currencyName,
+  trend,
+}: {
+  currencyName: string;
+  trend: CreditAnalyticsTrendPoint[];
+}) {
+  const yAxisTicks = getMovementAxisTicks(trend);
+  const yAxisMinimum = yAxisTicks[0] ?? -1;
+  const yAxisMaximum = yAxisTicks[yAxisTicks.length - 1] ?? 1;
+  const xAxisTicks = getTimeAxisTicks(trend);
+
+  return (
+    <div className="mt-4 h-52 w-full">
+      <ResponsiveContainer height="100%" width="100%">
+        <BarChart
+          data={trend}
+          margin={{ bottom: 0, left: 0, right: 8, top: 8 }}
+        >
+          <CartesianGrid
+            stroke="var(--border-subtle)"
+            strokeDasharray="3 3"
+            vertical={false}
+          />
+          <XAxis
+            axisLine={false}
+            dataKey="timestamp"
+            domain={["dataMin", "dataMax"]}
+            minTickGap={12}
+            tick={{ fill: "var(--text-muted)", fontSize: 11 }}
+            tickFormatter={(timestamp) =>
+              findPointLabel(trend, Number(timestamp))
+            }
+            tickLine={false}
+            ticks={xAxisTicks}
+            type="number"
+          />
+          <YAxis
+            axisLine={false}
+            domain={[yAxisMinimum, yAxisMaximum]}
+            tick={{ fill: "var(--text-muted)", fontSize: 11 }}
+            tickLine={false}
+            ticks={yAxisTicks}
+            type="number"
+            width={42}
+          />
+          <Tooltip
+            content={<NetMovementTooltip currencyName={currencyName} />}
+            cursor={false}
+          />
+          <Bar
+            activeBar={{
+              fillOpacity: 0.85,
+              stroke: "var(--brand)",
+              strokeOpacity: 0.45,
+              strokeWidth: 1,
+            }}
+            dataKey="net"
+            radius={[6, 6, 2, 2]}
+          >
+            {trend.map((point) => (
+              <Cell
+                fill={point.net >= 0 ? "var(--success)" : "var(--danger)"}
+                key={point.timestamp}
+              />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 function getLoadingMetricValue(isLoading: boolean) {
   return isLoading ? "..." : "-";
 }
@@ -324,6 +465,7 @@ function formatWholeNumber(amount: number) {
 }
 
 function BalanceHistoryCard({
+  className,
   currencyName,
   error,
   isLoading,
@@ -332,6 +474,7 @@ function BalanceHistoryCard({
   title,
   valueKey,
 }: {
+  className: string;
   currencyName: string;
   error: string | null;
   isLoading: boolean;
@@ -341,7 +484,7 @@ function BalanceHistoryCard({
   valueKey: BalanceHistoryValueKey;
 }) {
   return (
-    <section className="dashboard-unit-2 theme-panel min-w-0 p-4">
+    <section className={`${className} theme-panel min-w-0 p-4`}>
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-base font-semibold text-foreground">{title}</h3>
         <span className="rounded-sm bg-chip-bg px-2 py-1 text-xs font-semibold text-chip-text">
@@ -546,19 +689,21 @@ function BalanceHistoryChart({
 
 function BalanceDistributionCard({
   buckets,
+  className,
   error,
   isLoading,
   scopeLabel,
   summary,
 }: {
   buckets: CreditAnalyticsBucket[];
+  className: string;
   error: string | null;
   isLoading: boolean;
   scopeLabel: string;
   summary: CreditAnalyticsSummary | null;
 }) {
   return (
-    <section className="dashboard-unit-2 theme-panel min-w-0 p-4">
+    <section className={`${className} theme-panel min-w-0 p-4`}>
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-base font-semibold text-foreground">
           Balance distribution
@@ -736,18 +881,20 @@ function isMedianBucket(label: string, medianBalance: number) {
 }
 
 function PurchaseTrendCard({
+  className,
   error,
   isLoading,
   scopeLabel,
   trend,
 }: {
+  className: string;
   error: string | null;
   isLoading: boolean;
   scopeLabel: string;
   trend: CreditAnalyticsTrendPoint[];
 }) {
   return (
-    <section className="dashboard-unit-2 theme-panel min-w-0 p-4">
+    <section className={`${className} theme-panel min-w-0 p-4`}>
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-base font-semibold text-foreground">
           Purchasing trends

@@ -36,18 +36,42 @@ export function getPurchaseAxisTicks(trend: CreditAnalyticsTrendPoint[]) {
   return getAxisTicks(maximumCount);
 }
 
+export function getMovementAxisTicks(trend: CreditAnalyticsTrendPoint[]) {
+  const values = trend.map((point) => point.net);
+  const minimumValue = Math.min(...values, 0);
+  const maximumValue = Math.max(...values, 0);
+  const largestAbsoluteValue = Math.max(
+    Math.abs(minimumValue),
+    Math.abs(maximumValue),
+    1,
+  );
+  const positiveTicks = getAxisTicks(largestAbsoluteValue);
+  const negativeTicks = positiveTicks
+    .slice(1)
+    .map((tick) => -tick)
+    .reverse();
+
+  return [...negativeTicks, ...positiveTicks];
+}
+
 export function getTimeAxisTicks(
   points: Array<CreditAnalyticsBalanceHistoryPoint | CreditAnalyticsTrendPoint>,
 ) {
-  if (points.length <= maximumAxisTickCount) {
+  if (points.length <= 1) {
     return points.map((point) => point.timestamp);
+  }
+
+  if (points.length <= maximumAxisTickCount + 1) {
+    return points.slice(1).map((point) => point.timestamp);
   }
 
   const lastIndex = points.length - 1;
   const tickIndexes = new Set<number>();
 
   for (let index = 0; index < maximumAxisTickCount; index += 1) {
-    tickIndexes.add(Math.round((index * lastIndex) / (maximumAxisTickCount - 1)));
+    tickIndexes.add(
+      1 + Math.round((index * (lastIndex - 1)) / (maximumAxisTickCount - 1)),
+    );
   }
 
   return Array.from(tickIndexes)
