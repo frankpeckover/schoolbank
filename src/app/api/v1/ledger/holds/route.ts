@@ -14,10 +14,10 @@ export async function POST(request: Request) {
       await apiFinanceService.createHold(apiClient, {
         amount: body.amount,
         description: body.description,
+        email: body.email,
         studentUserId: body.studentUserId,
       }),
       201,
     ),
   );
 }
-

@@ -90,6 +90,15 @@ username: admin
 password: admin
 ```
 
+Default school database login created by the script:
+
+```txt
+username: dev_app_user
+password: gB6eYM688eR
+```
+
+The seeded `local` organisation in `create-platform-database.sql` points to this default login. If you change the school database login, update the matching `organisations` row in the platform database as well.
+
 Use a different database login per school when you move beyond local development, for example:
 
 ```txt

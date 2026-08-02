@@ -17,6 +17,7 @@ import {
   CogIcon,
   EyeIcon,
   ListIcon,
+  LockerIcon,
   LogOutIcon,
   MoonIcon,
   PackageIcon,
@@ -51,7 +52,19 @@ const adminNavigationItems = [
   "Settings",
 ] as const;
 
-export type NavigationItem = (typeof adminNavigationItems)[number];
+const moduleNavigationItems = ["Locker"] as const;
+
+export type NavigationItem =
+  | (typeof adminNavigationItems)[number]
+  | (typeof moduleNavigationItems)[number];
+
+type NavigationSection = {
+  items: readonly NavigationItem[];
+  title: string | null;
+};
+
+const externalNavigationItems = new Set<NavigationItem>(["Locker"]);
+const lockerLaunchPath = "/modules/locker/launch";
 
 type HeaderNavMenuProps = {
   activeItem: NavigationItem;
@@ -82,7 +95,7 @@ export function HeaderNavMenu({
     setAccentTheme,
   } = useAccentTheme();
   const { isDarkMode, toggleThemeMode } = useThemeMode();
-  const navigationItems = getNavigationItems(role);
+  const navigationSections = getNavigationSections(role);
 
   function closeMenus() {
     setIsMobileMenuOpen(false);
@@ -115,6 +128,11 @@ export function HeaderNavMenu({
   }, [isMobileMenuOpen]);
 
   function handleItemChange(item: NavigationItem) {
+    if (externalNavigationItems.has(item)) {
+      window.location.assign(lockerLaunchPath);
+      return;
+    }
+
     onItemChange(item);
     closeMenus();
   }
@@ -149,12 +167,12 @@ export function HeaderNavMenu({
 
       {isMobileMenuOpen && (
         <NavMenuPanel>
-          {navigationItems.map((item) => (
-            <MenuItemButton
-              isActive={activeItem === item}
-              item={item}
-              key={item}
+          {navigationSections.map((section) => (
+            <NavMenuSection
+              activeItem={activeItem}
+              key={section.title ?? "main"}
               onItemChange={handleItemChange}
+              section={section}
             />
           ))}
 
@@ -186,9 +204,14 @@ export function DesktopSideNav({
   userDisplayName,
 }: HeaderNavMenuProps) {
   const [isExpanded, setIsExpanded] = useState(true);
-  const navigationItems = getNavigationItems(role);
+  const navigationSections = getNavigationSections(role);
 
   function handleItemChange(item: NavigationItem) {
+    if (externalNavigationItems.has(item)) {
+      window.location.assign(lockerLaunchPath);
+      return;
+    }
+
     onItemChange(item);
   }
 
@@ -230,13 +253,13 @@ export function DesktopSideNav({
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto pb-3 pt-6">
-            {navigationItems.map((item) => (
-              <SideNavButton
-                isActive={activeItem === item}
+            {navigationSections.map((section) => (
+              <SideNavSection
+                activeItem={activeItem}
                 isExpanded={isExpanded}
-                item={item}
-                key={item}
+                key={section.title ?? "main"}
                 onItemChange={handleItemChange}
+                section={section}
               />
             ))}
           </div>
@@ -251,6 +274,49 @@ export function DesktopSideNav({
         </div>
       </aside>
     </>
+  );
+}
+
+function SideNavSection({
+  activeItem,
+  isExpanded,
+  onItemChange,
+  section,
+}: {
+  activeItem: NavigationItem;
+  isExpanded: boolean;
+  onItemChange: (item: NavigationItem) => void;
+  section: NavigationSection;
+}) {
+  const isTitledSection = Boolean(section.title);
+
+  return (
+    <div
+      className={
+        isTitledSection
+          ? "mt-6 border-t border-border-subtle pt-4 first:mt-0"
+          : ""
+      }
+    >
+      {section.title && (
+        <p
+          className={`mb-1 px-5 text-[0.64rem] font-light uppercase tracking-[0.16em] text-text-kicker ${
+            isExpanded ? "block" : "hidden"
+          }`}
+        >
+          {section.title}
+        </p>
+      )}
+      {section.items.map((item) => (
+        <SideNavButton
+          isActive={activeItem === item}
+          isExpanded={isExpanded}
+          item={item}
+          key={item}
+          onItemChange={onItemChange}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -536,6 +602,42 @@ function MenuItemButton({
   );
 }
 
+function NavMenuSection({
+  activeItem,
+  onItemChange,
+  section,
+}: {
+  activeItem: NavigationItem;
+  onItemChange: (item: NavigationItem) => void;
+  section: NavigationSection;
+}) {
+  const isTitledSection = Boolean(section.title);
+
+  return (
+    <div
+      className={
+        isTitledSection
+          ? "mt-3 border-t border-border-subtle pt-3"
+          : ""
+      }
+    >
+      {section.title && (
+        <p className="px-3 pb-1 text-[0.64rem] font-light uppercase tracking-[0.16em] text-text-kicker">
+          {section.title}
+        </p>
+      )}
+      {section.items.map((item) => (
+        <MenuItemButton
+          isActive={activeItem === item}
+          item={item}
+          key={item}
+          onItemChange={onItemChange}
+        />
+      ))}
+    </div>
+  );
+}
+
 function AccountMenuItems({
   accentTheme,
   accentThemeOptions,
@@ -666,6 +768,8 @@ function NavigationItemIcon({ item }: { item: NavigationItem }) {
       return <TargetIcon className={className} />;
     case "Shop":
       return <PackageIcon className={className} />;
+    case "Locker":
+      return <LockerIcon className={className} />;
     case "Transaction Log":
       return <ListIcon className={className} />;
     case "Users":
@@ -685,7 +789,26 @@ function NavigationItemIcon({ item }: { item: NavigationItem }) {
   }
 }
 
-function getNavigationItems(role: Role) {
+function getNavigationSections(role: Role): NavigationSection[] {
+  const userRole = { role };
+  const sections: NavigationSection[] = [
+    {
+      items: getPrimaryNavigationItems(role),
+      title: null,
+    },
+  ];
+
+  if (isAdmin(userRole) || isStudent(userRole)) {
+    sections.push({
+      items: moduleNavigationItems,
+      title: "Modules",
+    });
+  }
+
+  return sections;
+}
+
+function getPrimaryNavigationItems(role: Role): readonly NavigationItem[] {
   const userRole = { role };
 
   if (isAdmin(userRole)) {

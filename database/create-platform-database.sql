@@ -12,6 +12,7 @@
 --   slug: local
 --   domain: dev.app.local
 --   school database: app_dev
+--   school database user: dev_app_user
 --
 -- The platform_app_user/password values are the one database login the web app
 -- needs in .env.local to find all school database connection details.
@@ -54,8 +55,8 @@ values (
   'localhost',
   5432,
   'app_dev',
-  'school_app_user',
-  'change_me_to_match_school_database_password'
+  'dev_app_user',
+  'gB6eYM688eR'
 )
 on conflict (slug) do update
 set name = excluded.name,

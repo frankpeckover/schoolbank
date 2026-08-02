@@ -47,26 +47,26 @@
 
 :root {
   color-scheme: light;
-  --background: #eef1f0;
-  --background-gradient-start: #e7eeeb;
+  --background: #f8fafc;
+  --background-gradient-start: #ffffff;
   --accent-primary: #27575e;
   --accent-secondary: #9f5b32;
   --accent-highlight: #d8b85a;
   --custom-accent-primary: #2563eb;
-  --foreground: #17201c;
+  --foreground: #111827;
   --surface: #ffffff;
-  --panel-soft: #f6f7f6;
-  --surface-hover: #e9eeeb;
-  --border: #ccd5d0;
-  --border-subtle: #dce3df;
-  --border-muted: #e8eeeb;
-  --border-strong: #aebeb6;
-  --button-border: #98aaa1;
-  --text-muted: #5f6d66;
-  --text-subtle: #66746d;
-  --text-kicker: #5b6962;
-  --text-label: #52615a;
-  --text-control: #37443f;
+  --panel-soft: #f3f6f9;
+  --surface-hover: #eef2f6;
+  --border: #d1d7df;
+  --border-subtle: #e0e5eb;
+  --border-muted: #edf1f5;
+  --border-strong: #aeb8c4;
+  --button-border: #9ca8b6;
+  --text-muted: #5f6b7a;
+  --text-subtle: #667282;
+  --text-kicker: #5b6674;
+  --text-label: #525e6c;
+  --text-control: #364152;
   --brand: var(--accent-primary);
   --brand-hover: color-mix(in srgb, var(--accent-primary) 84%, black);
   --brand-soft: color-mix(in srgb, var(--accent-primary) 10%, white);
@@ -89,9 +89,9 @@
   --warning: #9a6700;
   --warning-border: #f4d27a;
   --warning-soft: #fff8df;
-  --selected-soft: #e4ece9;
-  --chip-bg: #d4ded8;
-  --chip-text: #26372f;
+  --selected-soft: #e7edf4;
+  --chip-bg: #e2e8f0;
+  --chip-text: #253041;
   --balance-bg: #173b40;
   --balance-muted: #cce3df;
   --wallet-highlight: var(--accent-highlight);
@@ -102,11 +102,11 @@
   --wallet-card-background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.68) 0%, rgba(255, 255, 255, 0.18) 52%, transparent 100%),
     linear-gradient(145deg, #eff6fd 0%, #e8f4fb 48%, #edf8f3 100%);
-  --progress-track: #d6ddd8;
-  --activity-meta: #69746d;
+  --progress-track: #d7dee7;
+  --activity-meta: #687386;
   --shell-gradient-accent: color-mix(in srgb, var(--accent-primary) 10%, transparent);
   --shell-gradient-surface: rgba(255, 255, 255, 0.8);
-  --shadow-panel: rgba(23, 32, 28, 0.07);
+  --shadow-panel: rgba(17, 24, 39, 0.07);
   --radius-control: 0.75rem;
   --radius-card: 1rem;
   --radius-panel: 1.25rem;
@@ -118,30 +118,30 @@
 
 html[data-theme="dark"] {
   color-scheme: dark;
-  --background: #0d1210;
-  --background-gradient-start: #111a17;
-  --foreground: #f4f7f5;
-  --surface: #18211e;
-  --panel-soft: #202b27;
-  --surface-hover: #28352f;
-  --border: #3b4b44;
-  --border-subtle: #2e3c36;
-  --border-muted: #25322d;
-  --border-strong: #63766e;
-  --button-border: #63766e;
-  --text-muted: #aebbb4;
-  --text-subtle: #c2cbc6;
-  --text-kicker: #adbbb3;
-  --text-label: #d0d8d4;
-  --text-control: #dfe7e2;
+  --background: #050608;
+  --background-gradient-start: #090b0f;
+  --foreground: #f5f7fa;
+  --surface: #101216;
+  --panel-soft: #171a20;
+  --surface-hover: #1f232b;
+  --border: #343a45;
+  --border-subtle: #262b34;
+  --border-muted: #1c2027;
+  --border-strong: #5d6675;
+  --button-border: #5d6675;
+  --text-muted: #a9b1bd;
+  --text-subtle: #c1c8d1;
+  --text-kicker: #aeb6c2;
+  --text-label: #d0d6de;
+  --text-control: #e0e5eb;
   --brand: color-mix(in srgb, var(--accent-primary) 72%, white);
   --brand-hover: color-mix(in srgb, var(--accent-primary) 54%, white);
-  --brand-soft: color-mix(in srgb, var(--accent-primary) 22%, #17201d);
-  --brand-soft-strong: color-mix(in srgb, var(--accent-primary) 42%, #17201d);
+  --brand-soft: color-mix(in srgb, var(--accent-primary) 22%, #101216);
+  --brand-soft-strong: color-mix(in srgb, var(--accent-primary) 42%, #101216);
   --brand-ink: color-mix(in srgb, var(--accent-primary) 32%, white);
   --section-highlight: color-mix(in srgb, var(--accent-primary) 72%, white);
   --accent: color-mix(in srgb, var(--accent-secondary) 72%, white);
-  --accent-soft: color-mix(in srgb, var(--accent-secondary) 20%, #17201d);
+  --accent-soft: color-mix(in srgb, var(--accent-secondary) 20%, #101216);
   --success: rgb(89, 188, 146);
   --success-hover: rgb(113, 207, 168);
   --success-soft: #183a34;
@@ -156,9 +156,9 @@ html[data-theme="dark"] {
   --warning: #f5c451;
   --warning-border: #80632a;
   --warning-soft: #3b311c;
-  --selected-soft: #1f333c;
-  --chip-bg: #30423a;
-  --chip-text: #e0eee5;
+  --selected-soft: #182434;
+  --chip-bg: #252b35;
+  --chip-text: #e4e9ef;
   --balance-bg: #0f292c;
   --balance-muted: #a9d8d1;
   --wallet-highlight: color-mix(in srgb, var(--accent-highlight) 86%, white);
@@ -169,10 +169,10 @@ html[data-theme="dark"] {
   --wallet-card-background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 52%, transparent 100%),
     linear-gradient(145deg, #1c2a35 0%, #172830 48%, #172b25 100%);
-  --progress-track: #46534d;
-  --activity-meta: #b4bfb8;
+  --progress-track: #3d444f;
+  --activity-meta: #b3bbc6;
   --shell-gradient-accent: color-mix(in srgb, var(--accent-primary) 14%, transparent);
-  --shell-gradient-surface: rgba(24, 33, 30, 0.84);
+  --shell-gradient-surface: rgba(16, 18, 22, 0.84);
   --shadow-panel: rgba(0, 0, 0, 0.34);
 }
 
@@ -894,6 +894,24 @@ html[data-theme="dark"] .professional-shell .motion-pop.theme-panel {
   box-shadow: 0 1px 2px color-mix(in srgb, var(--professional-panel-shadow) 70%, transparent) !important;
 }
 
+.goal-celebration-burst {
+  position: relative;
+  height: 0;
+  width: 0;
+}
+
+.goal-confetti-piece {
+  animation: goal-confetti-burst 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  background: var(--confetti-color);
+  border-radius: 999px;
+  height: 0.6rem;
+  left: 0;
+  position: absolute;
+  top: 0;
+  transform: translate(-50%, -50%) rotate(var(--confetti-rotate));
+  width: 0.22rem;
+}
+
 @keyframes panel-enter {
   from {
     opacity: 0;
@@ -935,6 +953,24 @@ html[data-theme="dark"] .professional-shell .motion-pop.theme-panel {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes goal-confetti-burst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5) rotate(0deg);
+  }
+  18% {
+    opacity: 1;
+  }
+  78% {
+    opacity: 1;
+    transform: translate(var(--confetti-x), var(--confetti-y)) scale(1) rotate(var(--confetti-rotate));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--confetti-x), calc(var(--confetti-y) + 22px)) scale(0.92) rotate(var(--confetti-rotate));
   }
 }
 

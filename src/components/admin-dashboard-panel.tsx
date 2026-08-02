@@ -329,7 +329,7 @@ function CirculationChartSection({
               </defs>
               <CartesianGrid
                 stroke="var(--border-subtle)"
-                strokeDasharray="3 3"
+                strokeOpacity={0.45}
                 vertical={false}
               />
               <XAxis

@@ -130,6 +130,17 @@ export function FileDownIcon(props: IconProps) {
   );
 }
 
+export function KeyIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <circle cx="7.5" cy="14.5" r="4.5" />
+      <path d="M11 11 21 1" />
+      <path d="m16 6 2 2" />
+      <path d="m14 8 2 2" />
+    </IconBase>
+  );
+}
+
 export function FilterIcon(props: IconProps) {
   return (
     <IconBase {...props}>
@@ -207,6 +218,18 @@ export function ListIcon(props: IconProps) {
       <path d="M3 6h.01" />
       <path d="M3 12h.01" />
       <path d="M3 18h.01" />
+    </IconBase>
+  );
+}
+
+export function LockerIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <rect height="18" rx="2" width="12" x="6" y="3" />
+      <path d="M9 7h6" />
+      <path d="M9 11h6" />
+      <path d="M9 15h3" />
+      <path d="M15 15h.01" />
     </IconBase>
   );
 }

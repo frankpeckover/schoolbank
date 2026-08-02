@@ -8,6 +8,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -18,11 +19,11 @@ import {
   chartStrokeWidth,
   findPointLabel,
   getBalanceAxisTicks,
+  getCompactMovementAxisTicks,
   getDistributionAxisTicks,
   getMovementAxisTicks,
   getPurchaseAxisTicks,
   getTimeAxisTicks,
-  type BalanceHistoryValueKey,
 } from "@/components/credit-analytics/analytics-chart-utils";
 import {
   BalanceHistoryTooltip,
@@ -221,8 +222,6 @@ export function CreditAnalyticsPanel({
           isLoading={isLoading}
           points={balanceHistory}
           scopeLabel={selectedScope?.label ?? "Cohort"}
-          title="Total credits over time"
-          valueKey="totalBalance"
         />
         <BalanceDistributionCard
           className="lg:col-span-2"
@@ -231,16 +230,6 @@ export function CreditAnalyticsPanel({
           isLoading={isLoading}
           scopeLabel={selectedScope?.label ?? "Cohort"}
           summary={summary}
-        />
-        <BalanceHistoryCard
-          className="lg:col-span-4"
-          currencyName={currencyName}
-          error={error}
-          isLoading={isLoading}
-          points={balanceHistory}
-          scopeLabel={selectedScope?.label ?? "Cohort"}
-          title="Average balance over time"
-          valueKey="averageBalance"
         />
         <PurchaseTrendCard
           className="lg:col-span-2"
@@ -391,6 +380,7 @@ function NetMovementChart({
   trend: CreditAnalyticsTrendPoint[];
 }) {
   const yAxisTicks = getMovementAxisTicks(trend);
+  const compactYAxisTicks = getCompactMovementAxisTicks(trend);
   const yAxisMinimum = yAxisTicks[0] ?? -1;
   const yAxisMaximum = yAxisTicks[yAxisTicks.length - 1] ?? 1;
   const xAxisTicks = getTimeAxisTicks(trend);
@@ -403,8 +393,7 @@ function NetMovementChart({
           margin={{ bottom: 0, left: 0, right: 8, top: 8 }}
         >
           <CartesianGrid
-            stroke="var(--border-subtle)"
-            strokeDasharray="3 3"
+            horizontal={false}
             vertical={false}
           />
           <XAxis
@@ -425,10 +414,19 @@ function NetMovementChart({
             domain={[yAxisMinimum, yAxisMaximum]}
             tick={{ fill: "var(--text-muted)", fontSize: 11 }}
             tickLine={false}
-            ticks={yAxisTicks}
+            ticks={compactYAxisTicks}
             type="number"
             width={42}
           />
+          {compactYAxisTicks.map((tick) => (
+            <ReferenceLine
+              ifOverflow="extendDomain"
+              key={tick}
+              stroke="var(--border-subtle)"
+              strokeOpacity={0.45}
+              y={tick}
+            />
+          ))}
           <Tooltip
             content={<NetMovementTooltip currencyName={currencyName} />}
             cursor={false}
@@ -471,8 +469,6 @@ function BalanceHistoryCard({
   isLoading,
   points,
   scopeLabel,
-  title,
-  valueKey,
 }: {
   className: string;
   currencyName: string;
@@ -480,13 +476,25 @@ function BalanceHistoryCard({
   isLoading: boolean;
   points: CreditAnalyticsBalanceHistoryPoint[];
   scopeLabel: string;
-  title: string;
-  valueKey: BalanceHistoryValueKey;
 }) {
   return (
     <section className={`${className} theme-panel min-w-0 p-4`}>
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-base font-semibold text-foreground">{title}</h3>
+        <div className="min-w-0">
+          <h3 className="text-base font-semibold text-foreground">
+            Balance history
+          </h3>
+          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-text-muted">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-brand" />
+              Total
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-accent" />
+              Average
+            </span>
+          </div>
+        </div>
         <span className="rounded-sm bg-chip-bg px-2 py-1 text-xs font-semibold text-chip-text">
           {scopeLabel}
         </span>
@@ -508,7 +516,6 @@ function BalanceHistoryCard({
         <BalanceHistoryChart
           currencyName={currencyName}
           points={points}
-          valueKey={valueKey}
         />
       )}
     </section>
@@ -599,26 +606,26 @@ function formatScopeKind(kind: CreditAnalyticsScope["kind"]) {
 function BalanceHistoryChart({
   currencyName,
   points,
-  valueKey,
 }: {
   currencyName: string;
   points: CreditAnalyticsBalanceHistoryPoint[];
-  valueKey: BalanceHistoryValueKey;
 }) {
-  const yAxisTicks = getBalanceAxisTicks(points, valueKey);
+  const totalAxisTicks = getBalanceAxisTicks(points, "totalBalance");
+  const averageAxisTicks = getBalanceAxisTicks(points, "averageBalance");
   const xAxisTicks = getTimeAxisTicks(points);
-  const yAxisMax = yAxisTicks[yAxisTicks.length - 1] ?? 1;
+  const totalAxisMax = totalAxisTicks[totalAxisTicks.length - 1] ?? 1;
+  const averageAxisMax = averageAxisTicks[averageAxisTicks.length - 1] ?? 1;
 
   return (
     <div className="mt-4 h-64 w-full">
       <ResponsiveContainer height="100%" width="100%">
         <AreaChart
           data={points}
-          margin={{ bottom: 0, left: 0, right: 8, top: 8 }}
+          margin={{ bottom: 0, left: 0, right: 0, top: 8 }}
         >
           <defs>
             <linearGradient
-              id={`analyticsBalanceFill-${valueKey}`}
+              id="analyticsTotalBalanceFill"
               x1="0"
               x2="0"
               y1="0"
@@ -627,10 +634,20 @@ function BalanceHistoryChart({
               <stop offset="5%" stopColor="var(--brand)" stopOpacity={0.18} />
               <stop offset="95%" stopColor="var(--brand)" stopOpacity={0} />
             </linearGradient>
+            <linearGradient
+              id="analyticsAverageBalanceFill"
+              x1="0"
+              x2="0"
+              y1="0"
+              y2="1"
+            >
+              <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.16} />
+              <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
+            </linearGradient>
           </defs>
           <CartesianGrid
             stroke="var(--border-subtle)"
-            strokeDasharray="3 3"
+            strokeOpacity={0.45}
             vertical={false}
           />
           <XAxis
@@ -648,18 +665,39 @@ function BalanceHistoryChart({
           />
           <YAxis
             axisLine={false}
-            domain={[0, yAxisMax]}
+            domain={[0, totalAxisMax]}
+            yAxisId="total"
             tick={{ fill: "var(--text-muted)", fontSize: 11 }}
             tickLine={false}
-            ticks={yAxisTicks}
+            ticks={totalAxisTicks}
             type="number"
             width={42}
           />
+          <YAxis
+            axisLine={false}
+            domain={[0, averageAxisMax]}
+            orientation="right"
+            yAxisId="average"
+            tick={{ fill: "var(--accent)", fontSize: 11 }}
+            tickLine={false}
+            ticks={averageAxisTicks}
+            type="number"
+            width={42}
+          />
+          {totalAxisTicks.map((tick) => (
+            <ReferenceLine
+              ifOverflow="extendDomain"
+              key={tick}
+              stroke="var(--border-subtle)"
+              strokeOpacity={0.45}
+              y={tick}
+              yAxisId="total"
+            />
+          ))}
           <Tooltip
             content={
               <BalanceHistoryTooltip
                 currencyName={currencyName}
-                valueKey={valueKey}
               />
             }
             cursor={{
@@ -674,12 +712,28 @@ function BalanceHistoryChart({
               stroke: "var(--brand)",
               strokeWidth: chartStrokeWidth,
             }}
-            dataKey={valueKey}
-            fill={`url(#analyticsBalanceFill-${valueKey})`}
+            dataKey="totalBalance"
+            fill="url(#analyticsTotalBalanceFill)"
             fillOpacity={1}
             stroke="var(--brand)"
             strokeWidth={chartStrokeWidth}
             type="monotone"
+            yAxisId="total"
+          />
+          <Area
+            activeDot={{
+              fill: "var(--surface)",
+              r: activeChartPointRadius,
+              stroke: "var(--accent)",
+              strokeWidth: chartStrokeWidth,
+            }}
+            dataKey="averageBalance"
+            fill="url(#analyticsAverageBalanceFill)"
+            fillOpacity={1}
+            stroke="var(--accent)"
+            strokeWidth={chartStrokeWidth}
+            type="monotone"
+            yAxisId="average"
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -805,7 +859,7 @@ function BalanceDistributionChart({
         >
           <CartesianGrid
             stroke="var(--border-subtle)"
-            strokeDasharray="3 3"
+            strokeOpacity={0.45}
             horizontal={false}
           />
           <XAxis
@@ -941,7 +995,7 @@ function PurchaseTrendChart({
         >
           <CartesianGrid
             stroke="var(--border-subtle)"
-            strokeDasharray="3 3"
+            strokeOpacity={0.45}
             vertical={false}
           />
           <XAxis

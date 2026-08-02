@@ -1,4 +1,3 @@
-import type { BalanceHistoryValueKey } from "@/components/credit-analytics/analytics-chart-utils";
 import {
   formatAmount,
   formatCurrencyAmount,
@@ -16,7 +15,6 @@ type BalanceHistoryTooltipProps = {
   payload?: {
     payload: CreditAnalyticsBalanceHistoryPoint;
   }[];
-  valueKey: BalanceHistoryValueKey;
 };
 
 type DistributionTooltipProps = {
@@ -49,7 +47,6 @@ export function BalanceHistoryTooltip({
   active,
   currencyName,
   payload,
-  valueKey,
 }: BalanceHistoryTooltipProps) {
   const point = payload?.[0]?.payload;
 
@@ -60,9 +57,22 @@ export function BalanceHistoryTooltip({
   return (
     <div className="rounded-md border border-border bg-surface px-3 py-2 text-sm shadow-md">
       <p className="font-semibold text-text-control">{point.label}</p>
-      <p className="mt-1 text-brand">
-        {formatCurrencyAmount(point[valueKey], currencyName)}
-      </p>
+      <div className="mt-2 space-y-1">
+        <p className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-brand" />
+          <span className="text-text-muted">Total</span>
+          <span className="font-semibold text-foreground">
+            {formatCurrencyAmount(point.totalBalance, currencyName)}
+          </span>
+        </p>
+        <p className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-accent" />
+          <span className="text-text-muted">Average</span>
+          <span className="font-semibold text-foreground">
+            {formatCurrencyAmount(point.averageBalance, currencyName)}
+          </span>
+        </p>
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ export type Role = "teacher" | "student" | "admin";
 
 export type SessionUser = {
   id: string;
+  email: string;
   firstName: string;
   lastName: string;
   username: string;

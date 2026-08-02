@@ -74,6 +74,7 @@ type IdTokenClaims = {
 };
 
 type UserRow = {
+  email: string;
   first_name: string;
   id: string;
   last_name: string;
@@ -555,6 +556,7 @@ async function findActiveUserByEmail(email: string): Promise<SessionUser | null>
     `
       select
         users.id,
+        users.email,
         users.username,
         users.first_name,
         users.last_name,
@@ -577,6 +579,7 @@ async function findActiveUserByEmail(email: string): Promise<SessionUser | null>
 
   return {
     displayName: `${user.first_name} ${user.last_name}`.trim(),
+    email: user.email,
     firstName: user.first_name,
     id: user.id,
     lastName: user.last_name,

@@ -3,6 +3,18 @@ import { NextResponse, type NextRequest } from "next/server";
 const httpsProtocol = "https";
 const disabledFlag = "true";
 const strictTransportSecurityValue = "max-age=31536000; includeSubDomains";
+const contentSecurityPolicyValue = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "font-src 'self' https://fonts.gstatic.com",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "img-src 'self' data: blob: https:",
+  "object-src 'none'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "upgrade-insecure-requests",
+].join("; ");
 
 export function proxy(request: NextRequest) {
   const protocol = getRequestProtocol(request);
@@ -52,8 +64,15 @@ function getForwardedHost(request: NextRequest) {
 }
 
 function withSecurityHeaders(response: NextResponse, protocol: string) {
+  if (process.env.NODE_ENV === "production") {
+    response.headers.set("Content-Security-Policy", contentSecurityPolicyValue);
+  }
+
   response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-DNS-Prefetch-Control", "off");
   response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Permitted-Cross-Domain-Policies", "none");
+  response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set(
     "Permissions-Policy",

@@ -34,6 +34,7 @@ type AuditLogRow = {
 };
 
 const adminAuditActionPrefixes = [
+  "api_client.",
   "auth.",
   "data_export.",
   "finance_api.",

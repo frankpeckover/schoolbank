@@ -6,6 +6,7 @@ import type { Role, SessionUser } from "@/lib/session";
 import { AuditService } from "@/services/audit-service";
 
 type UserRow = {
+  email: string;
   id: string;
   username: string;
   first_name: string;
@@ -43,6 +44,7 @@ export class AuthService {
         `
           select
             users.id,
+            users.email,
             users.username,
             users.first_name,
             users.last_name,
@@ -83,6 +85,7 @@ export class AuthService {
       return {
         ok: true,
         user: {
+          email: user.email,
           id: user.id,
           firstName: user.first_name,
           lastName: user.last_name,

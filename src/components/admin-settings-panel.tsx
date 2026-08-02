@@ -27,9 +27,11 @@ import {
 import {
   FileDownIcon,
   FileUpIcon,
+  KeyIcon,
   UsersIcon,
   WalletIcon,
 } from "@/components/ui/icons";
+import { ApiKeySettings } from "@/components/admin-settings/api-key-settings";
 import { FixedNotification } from "@/components/ui/fixed-notification";
 import { SchoolLogo } from "@/components/ui/school-logo";
 import type { SchoolInfo } from "@/services/school-service";
@@ -416,6 +418,13 @@ export function AdminSettingsPanel({
         <div className="mt-4">
           <SettingsMessages error={ssoError} message={ssoMessage} />
         </div>
+      </SettingsPanel>
+
+      <SettingsPanel
+        icon={<KeyIcon />}
+        title="API Keys"
+      >
+        <ApiKeySettings />
       </SettingsPanel>
 
       <form className="space-y-5" onSubmit={handlePresetsSubmit}>

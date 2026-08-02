@@ -7,7 +7,8 @@ import type { PoolClient } from "pg";
 type ApiLedgerInput = {
   amount: unknown;
   description: unknown;
-  studentUserId: unknown;
+  email?: unknown;
+  studentUserId?: unknown;
 };
 
 type ApiHoldActionInput = {
@@ -16,6 +17,7 @@ type ApiHoldActionInput = {
 
 type StudentBalanceData = {
   balance: number;
+  email: string;
   firstName: string;
   lastName: string;
   studentUserId: string;
@@ -23,6 +25,7 @@ type StudentBalanceData = {
 };
 
 type StudentRow = {
+  email: string;
   first_name: string;
   id: string;
   last_name: string;
@@ -32,6 +35,16 @@ type StudentRow = {
 type BalanceRow = StudentRow & {
   balance: number;
 };
+
+type StudentLookup =
+  | {
+      field: "email";
+      value: string;
+    }
+  | {
+      field: "id";
+      value: string;
+    };
 
 type LedgerEntryRow = {
   amount: number;
@@ -48,6 +61,7 @@ const ledgerService = new LedgerService();
 const maxApiAmount = 1_000_000;
 const apiControlledEntryTypes = new Set<LedgerEntryType>(["credit", "debit", "hold"]);
 const apiRelatedEntityType = "api_client";
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export class ApiFinanceError extends Error {
   constructor(
@@ -64,7 +78,20 @@ export class ApiFinanceService {
     const client = await db.connect();
 
     try {
-      return this.getStudentBalanceData(client, studentUserId);
+      return this.getStudentBalanceData(
+        client,
+        parseStudentLookup({ studentUserId }),
+      );
+    } finally {
+      client.release();
+    }
+  }
+
+  async getStudentBalanceByEmail(email: string) {
+    const client = await db.connect();
+
+    try {
+      return this.getStudentBalanceData(client, parseStudentLookup({ email }));
     } finally {
       client.release();
     }
@@ -94,7 +121,7 @@ export class ApiFinanceService {
       await client.query("begin");
       const student = await this.getActiveStudentForUpdate(
         client,
-        ledgerInput.studentUserId,
+        ledgerInput.studentLookup,
       );
       const currentBalance = await ledgerService.getAvailableBalance(
         client,
@@ -171,7 +198,7 @@ export class ApiFinanceService {
 
       const student = await this.getActiveStudentForUpdate(
         client,
-        hold.student_user_id,
+        { field: "id", value: hold.student_user_id },
       );
       const balance = await ledgerService.getAvailableBalance(client, student.id);
 
@@ -228,7 +255,7 @@ export class ApiFinanceService {
 
       const student = await this.getActiveStudentForUpdate(
         client,
-        hold.student_user_id,
+        { field: "id", value: hold.student_user_id },
       );
       const balance = await ledgerService.getAvailableBalance(client, student.id);
 
@@ -289,7 +316,7 @@ export class ApiFinanceService {
 
       const student = await this.getActiveStudentForUpdate(
         client,
-        entry.student_user_id,
+        { field: "id", value: entry.student_user_id },
       );
       const balance = await ledgerService.getAvailableBalance(client, student.id);
 
@@ -335,7 +362,7 @@ export class ApiFinanceService {
       await client.query("begin");
       const student = await this.getActiveStudentForUpdate(
         client,
-        ledgerInput.studentUserId,
+        ledgerInput.studentLookup,
       );
 
       if (signedAmount < 0) {
@@ -391,14 +418,13 @@ export class ApiFinanceService {
 
   private async getStudentBalanceData(
     client: PoolClient,
-    studentUserId: string,
+    studentLookup: StudentLookup,
   ): Promise<StudentBalanceData> {
-    assertUuid(studentUserId, "studentUserId");
-
     const result = await client.query<BalanceRow>(
       `
         select
           users.id,
+          users.email,
           users.first_name,
           users.last_name,
           users.username,
@@ -413,13 +439,13 @@ export class ApiFinanceService {
             ledger_entries.status = 'pending'
             and ledger_entries.is_voided = true
           )
-        where users.id = $1
+        where ${getStudentLookupWhereClause(studentLookup)}
           and users.is_active = true
           and roles.role_key = 'student'
           and roles.is_active = true
-        group by users.id, users.first_name, users.last_name, users.username
+        group by users.id, users.email, users.first_name, users.last_name, users.username
       `,
-      [studentUserId],
+      [studentLookup.value],
     );
     const student = result.rows[0];
 
@@ -433,6 +459,7 @@ export class ApiFinanceService {
 
     return {
       balance: Number(student.balance),
+      email: student.email,
       firstName: student.first_name,
       lastName: student.last_name,
       studentUserId: student.id,
@@ -442,22 +469,20 @@ export class ApiFinanceService {
 
   private async getActiveStudentForUpdate(
     client: PoolClient,
-    studentUserId: string,
+    studentLookup: StudentLookup,
   ) {
-    assertUuid(studentUserId, "studentUserId");
-
     const result = await client.query<StudentRow>(
       `
-        select users.id, users.first_name, users.last_name, users.username
+        select users.id, users.email, users.first_name, users.last_name, users.username
         from users
         join roles on roles.id = users.role_id
-        where users.id = $1
+        where ${getStudentLookupWhereClause(studentLookup)}
           and users.is_active = true
           and roles.role_key = 'student'
           and roles.is_active = true
         for update of users
       `,
-      [studentUserId],
+      [studentLookup.value],
     );
     const student = result.rows[0];
 
@@ -564,14 +589,15 @@ export class ApiFinanceService {
 function parseLedgerInput(input: ApiLedgerInput) {
   const amount = parsePositiveInteger(input.amount, "amount");
   const description = parseRequiredString(input.description, "description");
-  const studentUserId = parseRequiredString(input.studentUserId, "studentUserId");
-
-  assertUuid(studentUserId, "studentUserId");
+  const studentLookup = parseStudentLookup({
+    email: input.email,
+    studentUserId: input.studentUserId,
+  });
 
   return {
     amount,
     description,
-    studentUserId,
+    studentLookup,
   };
 }
 
@@ -588,6 +614,7 @@ function buildLedgerResponse(input: {
     description: input.description,
     ledgerEntryId: input.ledgerEntryId,
     student: {
+      email: input.student.email,
       firstName: input.student.first_name,
       lastName: input.student.last_name,
       studentUserId: input.student.id,
@@ -632,6 +659,68 @@ function getOptionalDescription(value: unknown) {
   }
 
   return parseRequiredString(value, "description");
+}
+
+function parseStudentLookup(input: {
+  email?: unknown;
+  studentUserId?: unknown;
+}): StudentLookup {
+  const studentUserId = parseOptionalString(input.studentUserId, "studentUserId");
+  const email = parseOptionalString(input.email, "email")?.toLowerCase();
+
+  if ((studentUserId && email) || (!studentUserId && !email)) {
+    throw new ApiFinanceError(
+      "invalid_student_lookup",
+      "Provide exactly one of studentUserId or email.",
+      400,
+    );
+  }
+
+  if (studentUserId) {
+    assertUuid(studentUserId, "studentUserId");
+
+    return {
+      field: "id",
+      value: studentUserId,
+    };
+  }
+
+  if (!emailPattern.test(email ?? "")) {
+    throw new ApiFinanceError(
+      "invalid_email",
+      "email must be a valid email address.",
+      400,
+    );
+  }
+
+  return {
+    field: "email",
+    value: email ?? "",
+  };
+}
+
+function parseOptionalString(value: unknown, fieldName: string) {
+  if (value === undefined || value === null || value === "") {
+    return "";
+  }
+
+  if (typeof value !== "string") {
+    throw new ApiFinanceError(
+      "invalid_field",
+      `${fieldName} must be a string.`,
+      400,
+    );
+  }
+
+  return value.trim();
+}
+
+function getStudentLookupWhereClause(studentLookup: StudentLookup) {
+  if (studentLookup.field === "email") {
+    return "lower(users.email) = $1";
+  }
+
+  return "users.id = $1";
 }
 
 function assertUuid(value: string, fieldName: string) {

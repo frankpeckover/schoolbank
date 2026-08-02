@@ -1,9 +1,11 @@
-import { createHash, randomBytes } from "crypto";
+import { randomBytes } from "crypto";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
+import { hashServerSecret } from "@/lib/server-hash";
 import type { Role, SessionUser } from "@/lib/session";
 
 type SessionUserRow = {
+  email: string;
   first_name: string;
   id: string;
   last_name: string;
@@ -13,6 +15,7 @@ type SessionUserRow = {
 };
 
 const sessionCookieName = "session_69";
+const sessionTokenHashSecretEnv = "SESSION_TOKEN_HASH_SECRET";
 const sessionTokenBytes = 32;
 const sessionLengthDays = 7;
 const idleSessionTimeoutHours = 8;
@@ -65,6 +68,7 @@ export class SessionService {
         `
           select
             users.id,
+            users.email,
             users.username,
             users.first_name,
             users.last_name,
@@ -146,12 +150,13 @@ async function deleteSessionToken(tokenHash: string) {
 }
 
 function hashSessionToken(token: string) {
-  return createHash("sha256").update(token).digest("hex");
+  return hashServerSecret(token, sessionTokenHashSecretEnv);
 }
 
 function mapSessionUserRow(user: SessionUserRow): SessionUser {
   return {
     displayName: formatDisplayName(user.first_name, user.last_name),
+    email: user.email,
     firstName: user.first_name,
     id: user.id,
     lastName: user.last_name,

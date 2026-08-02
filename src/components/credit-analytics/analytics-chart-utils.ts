@@ -54,6 +54,24 @@ export function getMovementAxisTicks(trend: CreditAnalyticsTrendPoint[]) {
   return [...negativeTicks, ...positiveTicks];
 }
 
+export function getCompactMovementAxisTicks(
+  trend: CreditAnalyticsTrendPoint[],
+) {
+  const ticks = getMovementAxisTicks(trend);
+
+  if (ticks.length <= 5) {
+    return ticks;
+  }
+
+  const zeroIndex = ticks.indexOf(0);
+
+  if (zeroIndex === -1) {
+    return ticks;
+  }
+
+  return ticks.filter((_, index) => (index - zeroIndex) % 2 === 0);
+}
+
 export function getTimeAxisTicks(
   points: Array<CreditAnalyticsBalanceHistoryPoint | CreditAnalyticsTrendPoint>,
 ) {

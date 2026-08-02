@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   getStudentGoal,
@@ -24,6 +25,18 @@ const progressRingCircumference = 2 * Math.PI * progressRingRadius;
 const progressCompletePercent = 100;
 const emptyProgressPercent = 0;
 const progressRingAnimationDurationMs = 700;
+const maximumGoalTitleLength = 12;
+const goalCelebrationDurationMs = 1800;
+const goalConfettiPieces = [
+  { color: "var(--brand)", rotate: -18, x: -74, y: -86 },
+  { color: "var(--success)", rotate: 24, x: -42, y: -112 },
+  { color: "var(--accent)", rotate: 8, x: -12, y: -96 },
+  { color: "var(--danger)", rotate: -32, x: 20, y: -118 },
+  { color: "var(--brand)", rotate: 40, x: 56, y: -88 },
+  { color: "var(--success)", rotate: -12, x: 82, y: -112 },
+  { color: "var(--accent)", rotate: 28, x: -64, y: -42 },
+  { color: "var(--danger)", rotate: 16, x: 66, y: -44 },
+];
 
 export function StudentGoalCard({
   balance,
@@ -36,6 +49,8 @@ export function StudentGoalCard({
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [showGoalCelebration, setShowGoalCelebration] = useState(false);
+  const previousProgressPercentRef = useRef(emptyProgressPercent);
 
   useEffect(() => {
     let isMounted = true;
@@ -74,6 +89,31 @@ export function StudentGoalCard({
     () => getGoalProgressPercent(balance, goal?.targetAmount ?? 0),
     [balance, goal?.targetAmount],
   );
+
+  useEffect(() => {
+    if (!goal) {
+      previousProgressPercentRef.current = emptyProgressPercent;
+      return;
+    }
+
+    const hasJustReachedGoal =
+      progressPercent >= progressCompletePercent &&
+      previousProgressPercentRef.current < progressCompletePercent;
+
+    previousProgressPercentRef.current = progressPercent;
+
+    if (!hasJustReachedGoal) {
+      return;
+    }
+
+    setShowGoalCelebration(true);
+    const timeoutId = window.setTimeout(() => {
+      setShowGoalCelebration(false);
+    }, goalCelebrationDurationMs);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [goal, progressPercent]);
+
   async function handleSaveGoal(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSaving(true);
@@ -113,8 +153,10 @@ export function StudentGoalCard({
 
   return (
     <article
-      className={`h-full rounded-3xl border border-transparent bg-surface p-5 ${className}`}
+      className={`relative h-full overflow-hidden rounded-3xl border border-transparent bg-surface p-5 ${className}`}
     >
+      <GoalCelebration isVisible={showGoalCelebration} />
+
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
@@ -149,12 +191,10 @@ export function StudentGoalCard({
         <div className="mt-4 flex flex-col items-center text-center">
           <GoalProgressRing
             currentAmount={balance}
+            goalTitle={goal.title}
             progressPercent={progressPercent}
             targetAmount={goal.targetAmount}
           />
-          <p className="mt-3 max-w-full truncate text-base font-semibold text-foreground">
-            {capitaliseFirstCharacter(goal.title)}
-          </p>
         </div>
       )}
 
@@ -164,7 +204,7 @@ export function StudentGoalCard({
             Goal name
             <input
               className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none transition focus:border-brand"
-              maxLength={48}
+              maxLength={maximumGoalTitleLength}
               onChange={(event) => setGoalTitle(event.target.value)}
               placeholder="Bike, camp, reward..."
               value={goalTitle}
@@ -203,16 +243,49 @@ export function StudentGoalCard({
   );
 }
 
+function GoalCelebration({ isVisible }: { isVisible: boolean }) {
+  if (!isVisible) {
+    return null;
+  }
+
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+    >
+      <div className="goal-celebration-burst">
+        {goalConfettiPieces.map((piece, index) => (
+          <span
+            className="goal-confetti-piece"
+            key={`${piece.x}-${piece.y}-${index}`}
+            style={
+              {
+                "--confetti-color": piece.color,
+                "--confetti-rotate": `${piece.rotate}deg`,
+                "--confetti-x": `${piece.x}px`,
+                "--confetti-y": `${piece.y}px`,
+              } as CSSProperties
+            }
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function GoalProgressRing({
   currentAmount,
+  goalTitle,
   progressPercent,
   targetAmount,
 }: {
   currentAmount: number;
+  goalTitle: string;
   progressPercent: number;
   targetAmount: number;
 }) {
   const animatedProgressPercent = useAnimatedProgressPercent(progressPercent);
+  const displayGoalTitle = getDisplayGoalTitle(goalTitle);
   const strokeOffset =
     progressRingCircumference -
     (animatedProgressPercent / progressCompletePercent) *
@@ -250,6 +323,9 @@ function GoalProgressRing({
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="mb-1 max-w-24 truncate text-xs font-medium text-text-muted">
+          {displayGoalTitle}
+        </span>
         <span className="text-3xl font-semibold leading-none text-foreground">
           {Math.round(animatedProgressPercent)}%
         </span>
@@ -301,4 +377,8 @@ function capitaliseFirstCharacter(value: string) {
   }
 
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function getDisplayGoalTitle(value: string) {
+  return capitaliseFirstCharacter(value.trim()).slice(0, maximumGoalTitleLength);
 }
