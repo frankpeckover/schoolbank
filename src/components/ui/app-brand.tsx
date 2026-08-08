@@ -18,7 +18,7 @@ export function AppBrand({
   const lockupClassName =
     size === "large"
       ? "h-12 max-w-64 sm:h-14"
-      : "h-9 max-w-44";
+      : "h-9 max-w-[10.5rem]";
 
   if (showNameOnMobile && appConfig.lockupUrl) {
     return (
