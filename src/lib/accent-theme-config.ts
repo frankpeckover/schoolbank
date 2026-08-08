@@ -14,12 +14,12 @@ export type AccentThemeOption = {
 export const accentThemeStorageKey = "app-accent-theme";
 export const customAccentColorStorageKey = "app-custom-accent-color";
 export const defaultAccentTheme: AccentTheme = "teal";
-export const defaultCustomAccentColor = "#2563eb";
+export const defaultCustomAccentColor = "#7ae4b7";
 
 export const accentThemeOptions: AccentThemeOption[] = [
   {
     label: "Teal",
-    swatch: "#245c63",
+    swatch: "#183f3d",
     value: "teal",
   },
   {

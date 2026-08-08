@@ -10,7 +10,12 @@ export const appConfig = {
   initials:
     process.env.NEXT_PUBLIC_APP_INITIALS?.trim() ||
     getInitials(configuredAppName),
-  logoUrl: process.env.NEXT_PUBLIC_APP_LOGO_URL?.trim() || "/app-logo.svg",
+  logoUrl:
+    process.env.NEXT_PUBLIC_APP_LOGO_URL?.trim() ||
+    "/brand/intramynt-app-icon.png",
+  lockupUrl:
+    process.env.NEXT_PUBLIC_APP_LOCKUP_URL?.trim() ||
+    "/brand/intramynt-lockup.png",
   name: configuredAppName,
   supportEmail:
     process.env.NEXT_PUBLIC_APP_SUPPORT_EMAIL?.trim() || "support@example.com",

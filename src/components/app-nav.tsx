@@ -210,7 +210,7 @@ export function DesktopSideNav({
       >
         <div className="flex h-full flex-col border-r border-border-subtle bg-surface">
           <div
-            className={`flex h-14 items-center gap-2 border-b border-border-subtle px-3 ${
+            className={`flex h-14 items-center gap-4 border-b border-border-subtle px-3 ${
               isExpanded ? "justify-between" : "justify-center"
             }`}
           >

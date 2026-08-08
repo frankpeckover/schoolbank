@@ -15,6 +15,20 @@ export function AppBrand({
       : "h-10 w-10 rounded-2xl";
   const textClassName =
     size === "large" ? "text-2xl sm:text-3xl" : "text-base sm:text-lg";
+  const lockupClassName =
+    size === "large"
+      ? "h-12 max-w-64 sm:h-14"
+      : "h-9 max-w-44";
+
+  if (showNameOnMobile && appConfig.lockupUrl) {
+    return (
+      <img
+        alt={`${appConfig.name} logo`}
+        className={`${lockupClassName} min-w-0 shrink object-contain object-left`}
+        src={appConfig.lockupUrl}
+      />
+    );
+  }
 
   return (
     <div className="flex min-w-0 items-center gap-3">

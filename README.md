@@ -30,7 +30,8 @@ Create `.env.local` from `.env.example` and adjust the platform database credent
 ```txt
 NEXT_PUBLIC_APP_NAME=IntraMynt
 NEXT_PUBLIC_APP_INITIALS=IM
-NEXT_PUBLIC_APP_LOGO_URL=/app-logo.svg
+NEXT_PUBLIC_APP_LOGO_URL=/brand/intramynt-app-icon.png
+NEXT_PUBLIC_APP_LOCKUP_URL=/brand/intramynt-lockup.png
 NEXT_PUBLIC_APP_TAGLINE=Internal currency, made simple.
 
 PLATFORM_POSTGRES_HOST=localhost

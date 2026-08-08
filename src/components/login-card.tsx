@@ -119,7 +119,7 @@ export function LoginCard({
           )}
 
           <div className="login-entry-item mb-4 flex justify-start">
-            <AppBrand showNameOnMobile />
+            <AppBrand showNameOnMobile size="large" />
           </div>
           <div className="login-entry-item mb-5 flex justify-start">
             <div>
