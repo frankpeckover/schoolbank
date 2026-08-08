@@ -57,6 +57,7 @@ type StudentMetricTimeframeDays =
 export function StudentDashboardPanel({
   currencyName,
   currentUser,
+  schoolName,
 }: StudentDashboardPanelProps) {
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<TransactionLogItem[]>([]);
@@ -124,6 +125,7 @@ export function StudentDashboardPanel({
           balance={balance}
           currencyName={currencyName}
           currentUser={currentUser}
+          schoolName={schoolName}
         />
         <BalanceTrendCard
           currencyName={currencyName}
@@ -162,10 +164,12 @@ function StudentWalletCard({
   balance,
   currencyName,
   currentUser,
+  schoolName,
 }: {
   balance: number;
   currencyName: string;
   currentUser: SessionUser;
+  schoolName: string;
 }) {
   const balanceAmount = useAnimatedWholeNumber(Math.abs(balance));
 
@@ -200,6 +204,11 @@ function StudentWalletCard({
           </p>
         </div>
 
+        <div className="mt-auto flex justify-end pt-2">
+          <p className="max-w-56 truncate text-right text-xs font-medium uppercase tracking-[0.18em] text-text-muted/75">
+            {schoolName}
+          </p>
+        </div>
       </div>
     </article>
   );

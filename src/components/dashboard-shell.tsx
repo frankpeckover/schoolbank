@@ -22,6 +22,7 @@ import { TransactionLogPanel } from "@/components/transactions/transaction-log-p
 import { AppBrand } from "@/components/ui/app-brand";
 import { AppFooter } from "@/components/ui/app-footer";
 import { GlobalMaintenanceBanner } from "@/components/ui/global-maintenance-banner";
+import { SchoolLogo } from "@/components/ui/school-logo";
 import { getSchoolInfo } from "@/lib/actions";
 import { appConfig } from "@/lib/app-config";
 import {
@@ -55,6 +56,7 @@ export function DashboardShell({
   const [schoolInfo, setSchoolInfo] = useState<SchoolInfo>({
     name: appConfig.defaultSchoolName,
     address: "",
+    balanceCap: null,
     contactEmail: "",
     currencyName: defaultCurrencyName,
     logoUrl: "",
@@ -91,6 +93,10 @@ export function DashboardShell({
     });
   }, []);
 
+  useEffect(() => {
+    document.title = getBrowserTabTitle(activeNavItem, user);
+  }, [activeNavItem, user]);
+
   const schoolName = schoolInfo.name.trim() || appConfig.defaultSchoolName;
   const shellRoleClassName = getShellRoleClassName(user);
 
@@ -117,6 +123,16 @@ export function DashboardShell({
               <p className="min-w-0 flex-1 truncate text-left text-base font-medium text-text-control sm:text-center sm:text-lg lg:text-left">
                 {greeting}, {getGreetingName(user)}!
               </p>
+              <div className="hidden min-w-0 items-center gap-2 md:flex">
+                <SchoolLogo
+                  logoUrl={schoolInfo.logoUrl}
+                  name={schoolName}
+                  size="small"
+                />
+                <span className="max-w-40 truncate text-xs font-medium text-text-muted">
+                  {schoolName}
+                </span>
+              </div>
               <HeaderNavMenu
                 activeItem={activeNavItem}
                 onItemChange={setActiveNavItem}
@@ -215,6 +231,27 @@ export function DashboardShell({
 
 function getGreetingName(user: SessionUser) {
   return user.firstName.trim() || user.displayName.trim() || user.username;
+}
+
+function getBrowserTabTitle(activeNavItem: NavigationItem, user: SessionUser) {
+  const sectionName =
+    activeNavItem === "Dashboard"
+      ? getRoleDashboardTitle(user)
+      : activeNavItem;
+
+  return `${sectionName} | ${appConfig.name}`;
+}
+
+function getRoleDashboardTitle(user: SessionUser) {
+  if (isAdmin(user)) {
+    return "Admin Dashboard";
+  }
+
+  if (isTeacher(user)) {
+    return "Teacher Dashboard";
+  }
+
+  return "Student Dashboard";
 }
 
 function getShellRoleClassName(user: SessionUser) {

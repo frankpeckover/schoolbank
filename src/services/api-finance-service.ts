@@ -355,7 +355,7 @@ export class ApiFinanceService {
     },
   ) {
     const ledgerInput = parseLedgerInput(input);
-    const signedAmount = ledgerInput.amount * options.amountDirection;
+    const requestedSignedAmount = ledgerInput.amount * options.amountDirection;
     const client = await db.connect();
 
     try {
@@ -365,12 +365,20 @@ export class ApiFinanceService {
         ledgerInput.studentLookup,
       );
 
-      if (signedAmount < 0) {
-        const currentBalance = await ledgerService.getAvailableBalance(
-          client,
-          student.id,
-        );
+      const currentBalance = await ledgerService.getAvailableBalance(
+        client,
+        student.id,
+      );
+      const signedAmount =
+        requestedSignedAmount > 0
+          ? await getCappedApiCreditAmount(
+              client,
+              requestedSignedAmount,
+              currentBalance,
+            )
+          : requestedSignedAmount;
 
+      if (signedAmount < 0) {
         if (currentBalance + signedAmount < 0) {
           throw new ApiFinanceError(
             "insufficient_balance",
@@ -378,6 +386,14 @@ export class ApiFinanceService {
             409,
           );
         }
+      }
+
+      if (signedAmount === 0) {
+        throw new ApiFinanceError(
+          "balance_cap_reached",
+          "Student balance is already at the configured cap.",
+          409,
+        );
       }
 
       const ledgerEntryId = await ledgerService.createEntry(client, {
@@ -621,6 +637,22 @@ function buildLedgerResponse(input: {
       username: input.student.username,
     },
   };
+}
+
+async function getCappedApiCreditAmount(
+  client: PoolClient,
+  requestedAmount: number,
+  currentBalance: number,
+) {
+  const balanceCap = await ledgerService.getBalanceCap(client);
+
+  if (balanceCap === null) {
+    return requestedAmount;
+  }
+
+  const remainingCapacity = Math.max(balanceCap - currentBalance, 0);
+
+  return Math.min(requestedAmount, remainingCapacity);
 }
 
 function parsePositiveInteger(value: unknown, fieldName: string) {

@@ -397,18 +397,8 @@ export class TransactionService {
     try {
       await client.query("begin");
 
-      let adjustmentRecipients: AdjustmentRecipient[] = studentUserIds.map(
-        (studentUserId) => ({
-          balance: 0,
-          firstName: "",
-          lastName: "",
-          userId: studentUserId,
-          username: "",
-        }),
-      );
-
-      if (input.amount < 0) {
-        const studentsResult = await client.query<{
+      const balanceCap = await ledgerService.getBalanceCap(client);
+      const studentsResult = await client.query<{
           first_name: string;
           last_name: string;
           user_id: string;
@@ -425,29 +415,31 @@ export class TransactionService {
           [studentUserIds],
         );
 
-        if (studentsResult.rows.length !== studentUserIds.length) {
-          await client.query("rollback");
-          return {
-            ok: false,
-            message: "One or more selected students could not be found.",
-          };
-        }
+      if (studentsResult.rows.length !== studentUserIds.length) {
+        await client.query("rollback");
+        return {
+          ok: false,
+          message: "One or more selected students could not be found.",
+        };
+      }
 
-        adjustmentRecipients = await Promise.all(
-          studentsResult.rows.map(async (student) => ({
-            balance: await ledgerService.getAvailableBalance(
-              client,
-              student.user_id,
-            ),
-            firstName: student.first_name,
-            lastName: student.last_name,
-            userId: student.user_id,
-            username: student.username,
-          })),
-        );
+      const adjustmentRecipients: AdjustmentRecipient[] = [];
+
+      for (const student of studentsResult.rows) {
+        adjustmentRecipients.push({
+          balance: await ledgerService.getAvailableBalance(
+            client,
+            student.user_id,
+          ),
+          firstName: student.first_name,
+          lastName: student.last_name,
+          userId: student.user_id,
+          username: student.username,
+        });
       }
 
       const createdLedgerEntryIds: string[] = [];
+      let cappedAtBalanceCapCount = 0;
       let skippedZeroBalanceCount = 0;
       let reducedToZeroCount = 0;
 
@@ -455,6 +447,7 @@ export class TransactionService {
         const actualAmount = getActualAdjustmentAmount(
           input.amount,
           recipient.balance,
+          balanceCap,
         );
 
         if (actualAmount === 0) {
@@ -464,6 +457,10 @@ export class TransactionService {
 
         if (input.amount < 0 && actualAmount !== input.amount) {
           reducedToZeroCount += 1;
+        }
+
+        if (input.amount > 0 && actualAmount !== input.amount) {
+          cappedAtBalanceCapCount += 1;
         }
 
         const ledgerEntryId = await ledgerService.createEntry(client, {
@@ -486,6 +483,8 @@ export class TransactionService {
         actorUserId: currentUser.id,
         details: {
           amount: input.amount,
+          balanceCap,
+          cappedAtBalanceCapCount,
           ledgerEntryIds: createdLedgerEntryIds,
           reason,
           reducedToZeroCount,
@@ -501,6 +500,7 @@ export class TransactionService {
         ok: true,
         message: getAdjustmentResultMessage({
           amount: input.amount,
+          cappedAtBalanceCapCount,
           createdCount: createdLedgerEntryIds.length,
           reason,
           reducedToZeroCount,
@@ -591,17 +591,23 @@ export class TransactionService {
 
       const groupName = membersResult.rows[0].group_name;
       const description = `${reason} (Group: ${groupName})`;
+      const balanceCap = await ledgerService.getBalanceCap(client);
 
       const createdLedgerEntryIds: string[] = [];
+      let cappedAtBalanceCapCount = 0;
       let skippedZeroBalanceCount = 0;
       let reducedToZeroCount = 0;
 
       for (const member of membersResult.rows) {
-        const balance =
-          input.amount < 0
-            ? await ledgerService.getAvailableBalance(client, member.user_id)
-            : 0;
-        const actualAmount = getActualAdjustmentAmount(input.amount, balance);
+        const balance = await ledgerService.getAvailableBalance(
+          client,
+          member.user_id,
+        );
+        const actualAmount = getActualAdjustmentAmount(
+          input.amount,
+          balance,
+          balanceCap,
+        );
 
         if (actualAmount === 0) {
           skippedZeroBalanceCount += 1;
@@ -610,6 +616,10 @@ export class TransactionService {
 
         if (input.amount < 0 && actualAmount !== input.amount) {
           reducedToZeroCount += 1;
+        }
+
+        if (input.amount > 0 && actualAmount !== input.amount) {
+          cappedAtBalanceCapCount += 1;
         }
 
         const ledgerEntryId = await ledgerService.createEntry(client, {
@@ -631,6 +641,8 @@ export class TransactionService {
         actorUserId: currentUser.id,
         details: {
           amount: input.amount,
+          balanceCap,
+          cappedAtBalanceCapCount,
           groupId: input.groupId,
           groupName,
           ledgerEntryIds: createdLedgerEntryIds,
@@ -648,6 +660,7 @@ export class TransactionService {
         ok: true,
         message: getAdjustmentResultMessage({
           amount: input.amount,
+          cappedAtBalanceCapCount,
           createdCount: createdLedgerEntryIds.length,
           reason,
           reducedToZeroCount,
@@ -780,9 +793,19 @@ function formatDisplayName(firstName: string, lastName: string) {
   return `${firstName} ${lastName}`.trim();
 }
 
-function getActualAdjustmentAmount(requestedAmount: number, currentBalance: number) {
-  if (requestedAmount >= 0) {
-    return requestedAmount;
+function getActualAdjustmentAmount(
+  requestedAmount: number,
+  currentBalance: number,
+  balanceCap: number | null = null,
+) {
+  if (requestedAmount > 0) {
+    if (balanceCap === null) {
+      return requestedAmount;
+    }
+
+    const remainingCapacity = Math.max(balanceCap - currentBalance, 0);
+
+    return Math.min(requestedAmount, remainingCapacity);
   }
 
   const requestedRemoval = Math.abs(requestedAmount);
@@ -793,6 +816,7 @@ function getActualAdjustmentAmount(requestedAmount: number, currentBalance: numb
 
 function getAdjustmentResultMessage({
   amount,
+  cappedAtBalanceCapCount,
   createdCount,
   reason,
   reducedToZeroCount,
@@ -800,13 +824,35 @@ function getAdjustmentResultMessage({
   targetLabel,
 }: {
   amount: number;
+  cappedAtBalanceCapCount: number;
   createdCount: number;
   reason: string;
   reducedToZeroCount: number;
   skippedZeroBalanceCount: number;
   targetLabel: string;
 }) {
-  if (amount > 0 || (reducedToZeroCount === 0 && skippedZeroBalanceCount === 0)) {
+  if (amount > 0) {
+    if (cappedAtBalanceCapCount === 0 && skippedZeroBalanceCount === 0) {
+      return undefined;
+    }
+
+    if (createdCount === 0) {
+      return `No value added to ${targetLabel}; all selected students were already at the balance cap.`;
+    }
+
+    const summaryParts = [
+      `${createdCount} adjusted`,
+      `${cappedAtBalanceCapCount} capped`,
+    ];
+
+    if (skippedZeroBalanceCount > 0) {
+      summaryParts.push(`${skippedZeroBalanceCount} already at cap`);
+    }
+
+    return `Added up to ${amount} for ${reason}. ${summaryParts.join(", ")}.`;
+  }
+
+  if (reducedToZeroCount === 0 && skippedZeroBalanceCount === 0) {
     return undefined;
   }
 

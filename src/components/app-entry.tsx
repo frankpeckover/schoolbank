@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { logoutUser } from "@/lib/actions";
+import { appConfig } from "@/lib/app-config";
+import { isAdmin, isTeacher } from "@/lib/permissions";
 import type { SessionUser } from "@/lib/session";
 import { sessionExpiredEventName } from "@/lib/session-expiry-event";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { LoginCard } from "@/components/login-card";
+import { ToastViewport } from "@/components/ui/toast-viewport";
 
 type AppEntryProps = {
   initialUser: SessionUser | null;
@@ -18,6 +21,11 @@ export function AppEntry({
 }: AppEntryProps) {
   const [user, setUser] = useState<SessionUser | null>(initialUser);
   const [sessionMessage, setSessionMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    document.title =
+      user === null ? `Sign In | ${appConfig.name}` : getDashboardTitle(user);
+  }, [user]);
 
   useEffect(() => {
     function handleSessionExpired() {
@@ -50,20 +58,38 @@ export function AppEntry({
 
   if (user === null) {
     return (
-      <LoginCard
-        initialMessage={sessionMessage}
-        initialMessageTone={sessionMessage ? "warning" : "success"}
-        maintenanceMessage={maintenanceMessage}
-        onLogin={handleLogin}
-      />
+      <>
+        <ToastViewport />
+        <LoginCard
+          initialMessage={sessionMessage}
+          initialMessageTone={sessionMessage ? "warning" : "success"}
+          maintenanceMessage={maintenanceMessage}
+          onLogin={handleLogin}
+        />
+      </>
     );
   }
 
   return (
-    <DashboardShell
-      maintenanceMessage={maintenanceMessage}
-      onLogout={handleLogout}
-      user={user}
-    />
+    <>
+      <ToastViewport />
+      <DashboardShell
+        maintenanceMessage={maintenanceMessage}
+        onLogout={handleLogout}
+        user={user}
+      />
+    </>
   );
+}
+
+function getDashboardTitle(user: SessionUser) {
+  if (isAdmin(user)) {
+    return `Admin Dashboard | ${appConfig.name}`;
+  }
+
+  if (isTeacher(user)) {
+    return `Teacher Dashboard | ${appConfig.name}`;
+  }
+
+  return `Student Dashboard | ${appConfig.name}`;
 }

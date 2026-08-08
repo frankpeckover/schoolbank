@@ -20,7 +20,9 @@ export function AppBrand({
   const lockupClassName =
     size === "large"
       ? "h-12 max-w-64 sm:h-14"
-      : "h-9 max-w-[10.5rem]";
+      : variant === "wordmark"
+        ? "h-7 max-w-[9.25rem]"
+        : "h-9 max-w-[10.5rem]";
   const brandImageUrl =
     variant === "wordmark" ? appConfig.wordmarkUrl : appConfig.lockupUrl;
 

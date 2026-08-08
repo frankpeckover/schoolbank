@@ -139,7 +139,7 @@ export function HeaderNavMenu({
       <button
         aria-expanded={isMobileMenuOpen}
         aria-label="Open menu"
-        className="inline-flex h-9 w-9 items-center justify-center border border-border-subtle bg-surface text-text-control transition hover:bg-surface-muted lg:hidden"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full text-text-control transition hover:bg-surface-muted lg:hidden"
         onClick={() =>
           setIsMobileMenuOpen((currentValue) => !currentValue)
         }
@@ -210,8 +210,8 @@ export function DesktopSideNav({
       >
         <div className="flex h-full flex-col border-r border-border-subtle bg-surface">
           <div
-            className={`flex h-14 items-center gap-4 border-b border-border-subtle px-3 ${
-              isExpanded ? "justify-between" : "justify-center"
+            className={`flex h-14 items-center gap-4 border-b border-border-subtle ${
+              isExpanded ? "justify-between px-5" : "justify-center px-3"
             }`}
           >
             {isExpanded && (

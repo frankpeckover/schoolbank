@@ -14,6 +14,7 @@ import {
   type TimetableFiltersState,
 } from "@/components/admin-timetable/timetable-types";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 import { FixedNotification } from "@/components/ui/fixed-notification";
 import { IconButton } from "@/components/ui/icon-button";
 import {
@@ -59,6 +60,7 @@ export function AdminTimetablePanel() {
   const [filters, setFilters] =
     useState<TimetableFiltersState>(emptyTimetableFilters);
   const [editingEntry, setEditingEntry] = useState<TimetableEntry | null>(null);
+  const [deletingEntry, setDeletingEntry] = useState<TimetableEntry | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -151,22 +153,23 @@ export function AdminTimetablePanel() {
     await refreshTimetable();
   }
 
-  async function handleDeleteEntry(entry: TimetableEntry) {
-    const shouldDelete = window.confirm(
-      `Delete ${entry.groupName} with ${entry.teacherName} on ${weekDays[entry.dayOfWeek]}?`,
-    );
+  function handleDeleteEntry(entry: TimetableEntry) {
+    setDeletingEntry(entry);
+  }
 
-    if (!shouldDelete) {
+  async function confirmDeleteEntry() {
+    if (!deletingEntry) {
       return;
     }
 
-    const result = await deleteTimetableEntry(entry.id);
+    const result = await deleteTimetableEntry(deletingEntry.id);
 
     if (!result.ok) {
       setError(result.message);
       return;
     }
 
+    setDeletingEntry(null);
     setMessage("Timetable entry deleted.");
     setError(null);
     await refreshTimetable();
@@ -258,6 +261,16 @@ export function AdminTimetablePanel() {
         <TimetableImportModal
           onClose={() => setIsImportModalOpen(false)}
           onImported={handleTimetableImported}
+        />
+      )}
+
+      {deletingEntry && (
+        <ConfirmationModal
+          confirmLabel="Delete Entry"
+          description={`Delete ${deletingEntry.groupName} with ${deletingEntry.teacherName} on ${weekDays[deletingEntry.dayOfWeek]}?`}
+          onCancel={() => setDeletingEntry(null)}
+          onConfirm={confirmDeleteEntry}
+          title="Delete timetable entry"
         />
       )}
 

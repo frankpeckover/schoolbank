@@ -1,6 +1,6 @@
 import { appConfig } from "@/lib/app-config";
 
-type SchoolLogoSize = "medium" | "large";
+type SchoolLogoSize = "small" | "medium" | "large";
 
 type SchoolLogoProps = {
   logoUrl: string;
@@ -11,6 +11,7 @@ type SchoolLogoProps = {
 const sizeClassNames: Record<SchoolLogoSize, string> = {
   large: "h-16 w-16",
   medium: "h-12 w-12",
+  small: "h-8 w-8",
 };
 
 export function SchoolLogo({

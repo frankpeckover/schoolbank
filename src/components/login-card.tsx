@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import {
+  getPublicSchoolInfo,
   listEnabledSsoProviders,
   loginUser,
   requestPasswordReset,
@@ -13,6 +14,8 @@ import { AppFooter } from "@/components/ui/app-footer";
 import { GlobalMaintenanceBanner } from "@/components/ui/global-maintenance-banner";
 import { EyeIcon } from "@/components/ui/icons";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
+import { SchoolLogo } from "@/components/ui/school-logo";
+import type { SchoolInfo } from "@/services/school-service";
 
 type LoginCardProps = {
   initialMessage?: string | null;
@@ -38,7 +41,10 @@ export function LoginCard({
   const [message, setMessage] = useState<string | null>(initialMessage);
   const [messageTone, setMessageTone] =
     useState<LoginMessageTone>(initialMessageTone);
+  const [schoolInfo, setSchoolInfo] = useState<SchoolInfo | null>(null);
   const [ssoProviders, setSsoProviders] = useState<PublicSsoProvider[]>([]);
+
+  const schoolName = schoolInfo?.name.trim() ?? "";
 
   useEffect(() => {
     const ssoStatus = new URLSearchParams(window.location.search).get("sso");
@@ -65,6 +71,30 @@ export function LoginCard({
     }
 
     setError(getSsoErrorMessage(ssoStatus));
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadSchoolInfo() {
+      try {
+        const loadedSchoolInfo = await getPublicSchoolInfo();
+
+        if (isMounted) {
+          setSchoolInfo(loadedSchoolInfo);
+        }
+      } catch {
+        if (isMounted) {
+          setSchoolInfo(null);
+        }
+      }
+    }
+
+    loadSchoolInfo();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -118,13 +148,20 @@ export function LoginCard({
             <LoginMessage message={message} tone={messageTone} />
           )}
 
-          <div className="login-entry-item mb-4 flex justify-start">
+          <div className="login-entry-item mb-4 flex min-w-0 items-center justify-between gap-3">
             <AppBrand showNameOnMobile size="large" />
+            {schoolName && (
+              <SchoolLogo
+                logoUrl={schoolInfo?.logoUrl ?? ""}
+                name={schoolName}
+                size="small"
+              />
+            )}
           </div>
-          <div className="login-entry-item mb-5 flex justify-start">
+          <div className="login-entry-item mb-5">
             <div>
               <h1 className="text-3xl font-semibold tracking-normal">
-                Sign in to your account
+                {schoolName ? `Sign in to ${schoolName}` : "Sign in to your account"}
               </h1>
               <p className="mt-1 text-sm text-text-muted">
                 Welcome back. Enter your credentials to continue.
@@ -213,7 +250,10 @@ export function LoginCard({
       </div>
 
       <div className="mx-auto w-full max-w-6xl px-4 pb-5 sm:px-6 lg:px-8">
-        <AppFooter />
+        <AppFooter
+          contactEmail={schoolInfo?.contactEmail ?? ""}
+          schoolName={schoolName}
+        />
       </div>
 
       {isForgotPasswordOpen && (

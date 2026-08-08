@@ -11,6 +11,7 @@ import { AuditService } from "@/services/audit-service";
 export type SchoolInfo = {
   name: string;
   address: string;
+  balanceCap: number | null;
   contactEmail: string;
   currencyName: string;
   logoUrl: string;
@@ -34,6 +35,7 @@ export type UploadSchoolLogoResult =
 type SchoolInfoRow = {
   name: string;
   address: string;
+  balance_cap: number | null;
   contact_email: string;
   currency_name: string;
   logo_url: string;
@@ -63,6 +65,7 @@ export class SchoolService {
       select
         name,
         address,
+        balance_cap,
         contact_email,
         currency_name,
         logo_url,
@@ -80,6 +83,7 @@ export class SchoolService {
       return {
         name: appConfig.defaultSchoolName,
         address: "",
+        balanceCap: null,
         contactEmail: "",
         currencyName: defaultCurrencyName,
         logoUrl: "",
@@ -98,6 +102,7 @@ export class SchoolService {
   ): Promise<ActionResult> {
     const name = input.name.trim();
     const address = input.address.trim();
+    const balanceCap = input.balanceCap;
     const contactEmail = input.contactEmail.trim().toLowerCase();
     const currencyName = input.currencyName.trim();
     const logoUrl = input.logoUrl.trim();
@@ -112,6 +117,16 @@ export class SchoolService {
       };
     }
 
+    if (
+      balanceCap !== null &&
+      (!Number.isInteger(balanceCap) || balanceCap <= 0)
+    ) {
+      return {
+        ok: false,
+        message: "Balance cap must be a positive whole number, or blank.",
+      };
+    }
+
     const client = await db.connect();
 
     try {
@@ -123,6 +138,7 @@ export class SchoolService {
             id,
             name,
             address,
+            balance_cap,
             contact_email,
             currency_name,
             logo_url,
@@ -130,10 +146,11 @@ export class SchoolService {
             website,
             timezone
           )
-          values (1, $1, $2, $3, $4, $5, $6, $7, $8)
+          values (1, $1, $2, $3, $4, $5, $6, $7, $8, $9)
           on conflict (id) do update
           set name = excluded.name,
               address = excluded.address,
+              balance_cap = excluded.balance_cap,
               contact_email = excluded.contact_email,
               currency_name = excluded.currency_name,
               logo_url = excluded.logo_url,
@@ -145,6 +162,7 @@ export class SchoolService {
         [
           name,
           address,
+          balanceCap,
           contactEmail,
           currencyName,
           logoUrl,
@@ -159,6 +177,7 @@ export class SchoolService {
         actorUserId: currentUser.id,
         details: {
           contactEmail,
+          balanceCap,
           currencyName,
           hasLogo: Boolean(logoUrl),
           name,
@@ -234,6 +253,7 @@ export class SchoolService {
     return {
       name: row.name,
       address: row.address,
+      balanceCap: row.balance_cap === null ? null : Number(row.balance_cap),
       contactEmail: row.contact_email,
       currencyName: row.currency_name,
       logoUrl: row.logo_url,

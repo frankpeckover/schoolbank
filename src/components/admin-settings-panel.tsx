@@ -25,6 +25,7 @@ import {
   maxQuickReasons,
 } from "@/lib/transaction-presets";
 import {
+  CogIcon,
   FileDownIcon,
   FileUpIcon,
   KeyIcon,
@@ -44,6 +45,7 @@ type AdminSettingsPanelProps = {
 const fallbackSchoolInfo: SchoolInfo = {
   name: appConfig.defaultSchoolName,
   address: "",
+  balanceCap: null,
   contactEmail: "",
   currencyName: defaultCurrencyName,
   logoUrl: "",
@@ -161,8 +163,7 @@ export function AdminSettingsPanel({
     };
   }, []);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function saveSchoolSettings(successMessage: string) {
     setIsSaving(true);
     setError(null);
     setMessage(null);
@@ -202,9 +203,24 @@ export function AdminSettingsPanel({
 
     setForm(savedSchoolInfo);
     setLogoFile(null);
-    setMessage("School settings saved.");
+    setMessage(successMessage);
     setIsSaving(false);
     onSchoolInfoUpdated(savedSchoolInfo);
+  }
+
+  async function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await saveSchoolSettings("Organisation profile saved.");
+  }
+
+  async function handleAppearanceSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await saveSchoolSettings("Appearance settings saved.");
+  }
+
+  async function handleRewardRulesSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await saveSchoolSettings("Reward settings saved.");
   }
 
   function updateField<Field extends keyof SchoolInfo>(
@@ -305,20 +321,30 @@ export function AdminSettingsPanel({
   }
 
   return (
-    <section className="mt-5 space-y-5">
-      <form className="space-y-5" onSubmit={handleSubmit}>
-        <SettingsPanel
-          icon={<WalletIcon />}
-          title="Organisation Profile"
-        >
-          <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-            <LogoUploadField
-              currentLogoUrl={form.logoUrl}
-              fileName={logoFile?.name ?? ""}
-              onChange={(event) => setLogoFile(event.target.files?.[0] ?? null)}
-              schoolName={form.name}
+    <section className="mt-5 space-y-6">
+      <SettingsGroup
+        description="Platform details and support information for this instance."
+        title="Account"
+      >
+        <SettingsPanel icon={<CogIcon />} title="Application">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <ReadOnlySetting label="App name" value={appConfig.name} />
+            <ReadOnlySetting label="Version" value={appConfig.version} />
+            <ReadOnlySetting
+              label="Support"
+              value={appConfig.supportEmail}
             />
-            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+          </div>
+        </SettingsPanel>
+      </SettingsGroup>
+
+      <SettingsGroup
+        description="Core organisation details shown throughout the app."
+        title="Organisation"
+      >
+        <form className="space-y-4" onSubmit={handleProfileSubmit}>
+          <SettingsPanel icon={<UsersIcon />} title="Profile">
+            <div className="grid gap-4 md:grid-cols-2">
               <TextField
                 id="schoolName"
                 label="School name"
@@ -327,165 +353,270 @@ export function AdminSettingsPanel({
                 value={form.name}
               />
               <TextField
-                id="currencyName"
-                label="Currency name"
-                onChange={(value) => updateField("currencyName", value)}
-                required
-                value={form.currencyName}
-              />
-              <TextField
                 id="timezone"
                 label="Timezone"
                 onChange={(value) => updateField("timezone", value)}
                 placeholder="Australia/Brisbane"
                 value={form.timezone}
               />
+              <TextField
+                id="contactEmail"
+                label="Contact email"
+                onChange={(value) => updateField("contactEmail", value)}
+                placeholder="office@example.edu"
+                type="email"
+                value={form.contactEmail}
+              />
+              <TextField
+                id="phone"
+                label="Phone"
+                onChange={(value) => updateField("phone", value)}
+                placeholder="+61..."
+                value={form.phone}
+              />
+              <TextField
+                id="website"
+                label="Website"
+                onChange={(value) => updateField("website", value)}
+                placeholder="https://example.edu"
+                type="url"
+                value={form.website}
+              />
+              <TextField
+                id="address"
+                label="Address"
+                onChange={(value) => updateField("address", value)}
+                value={form.address}
+              />
             </div>
+          </SettingsPanel>
+          <SettingsActionRow
+            error={error}
+            isSaving={isSaving}
+            message={message}
+            saveLabel="Save Organisation"
+          />
+        </form>
+      </SettingsGroup>
+
+      <SettingsGroup
+        description="Visual identity used in headers and organisation areas."
+        title="Appearance"
+      >
+        <form className="space-y-4" onSubmit={handleAppearanceSubmit}>
+          <SettingsPanel icon={<FileUpIcon />} title="Logo">
+            <LogoUploadField
+              currentLogoUrl={form.logoUrl}
+              fileName={logoFile?.name ?? ""}
+              onChange={(event) => setLogoFile(event.target.files?.[0] ?? null)}
+              schoolName={form.name}
+            />
+          </SettingsPanel>
+          <SettingsActionRow
+            error={error}
+            isSaving={isSaving}
+            message={message}
+            saveLabel="Save Appearance"
+          />
+        </form>
+      </SettingsGroup>
+
+      <SettingsGroup
+        description="Currency wording and optional guardrails for balances."
+        title="Rewards"
+      >
+        <form className="space-y-4" onSubmit={handleRewardRulesSubmit}>
+          <SettingsPanel icon={<WalletIcon />} title="Currency Rules">
+            <div className="grid gap-4 md:grid-cols-2">
+              <TextField
+                id="currencyName"
+                label="Currency name"
+                onChange={(value) => updateField("currencyName", value)}
+                required
+                value={form.currencyName}
+              />
+              <NumberField
+                id="balanceCap"
+                label="Balance cap"
+                min={1}
+                onChange={(value) => updateField("balanceCap", value)}
+                placeholder="No cap"
+                value={form.balanceCap}
+              />
+            </div>
+          </SettingsPanel>
+          <SettingsActionRow
+            error={error}
+            isSaving={isSaving}
+            message={message}
+            saveLabel="Save Rewards"
+          />
+        </form>
+      </SettingsGroup>
+
+      <SettingsGroup
+        description="Teacher presets for faster credit and debit workflows."
+        title="Teacher Workflow"
+      >
+        <form className="space-y-5" onSubmit={handlePresetsSubmit}>
+          <SettingsPanel icon={<WalletIcon />} title="Quick Transactions">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+              <QuickAmountFields
+                amounts={presetAmounts}
+                onChange={setPresetAmounts}
+              />
+              <QuickReasonFields
+                onChange={setPresetReasons}
+                reasons={presetReasons}
+              />
+            </div>
+          </SettingsPanel>
+
+          <SettingsActionRow
+            error={presetError}
+            isSaving={isSavingPresets}
+            message={presetMessage}
+            saveLabel="Save Quick Transactions"
+          />
+        </form>
+      </SettingsGroup>
+
+      <SettingsGroup
+        description="Single sign-on providers shown on the login page."
+        title="Auth"
+      >
+        <SettingsPanel icon={<KeyIcon />} title="Single Sign-On">
+          <div className="grid gap-4 lg:grid-cols-2">
+            {ssoProviders.map((provider) => (
+              <SsoProviderForm
+                key={provider.providerType}
+                clientSecret={ssoSecrets[provider.providerType]}
+                isSaving={savingSsoProvider === provider.providerType}
+                onClientSecretChange={(value) =>
+                  setSsoSecrets((current) => ({
+                    ...current,
+                    [provider.providerType]: value,
+                  }))
+                }
+                onChange={updateSsoProviderField}
+                onSubmit={(event) => handleSsoSubmit(event, provider)}
+                provider={provider}
+              />
+            ))}
+          </div>
+          <div className="mt-4">
+            <SettingsMessages error={ssoError} message={ssoMessage} />
           </div>
         </SettingsPanel>
+      </SettingsGroup>
 
-        <SettingsPanel
-          icon={<UsersIcon />}
-          title="Contact Details"
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            <TextField
-              id="contactEmail"
-              label="Contact email"
-              onChange={(value) => updateField("contactEmail", value)}
-              placeholder="office@example.edu"
-              type="email"
-              value={form.contactEmail}
-            />
-            <TextField
-              id="phone"
-              label="Phone"
-              onChange={(value) => updateField("phone", value)}
-              placeholder="+61..."
-              value={form.phone}
-            />
-            <TextField
-              id="website"
-              label="Website"
-              onChange={(value) => updateField("website", value)}
-              placeholder="https://example.edu"
-              type="url"
-              value={form.website}
-            />
-            <TextField
-              id="address"
-              label="Address"
-              onChange={(value) => updateField("address", value)}
-              value={form.address}
-            />
+      <SettingsGroup
+        description="External access for approved integrations and modules."
+        title="API"
+      >
+        <SettingsPanel icon={<KeyIcon />} title="API Keys">
+          <ApiKeySettings />
+        </SettingsPanel>
+      </SettingsGroup>
+
+      <SettingsGroup
+        description="Administrative export tools for portability and retention."
+        title="Data"
+      >
+        <SettingsPanel icon={<FileDownIcon />} title="Data Export">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-text-control">
+                Export organisation data
+              </p>
+              <p className="mt-1 max-w-2xl text-sm text-text-muted">
+                Downloads a ZIP file of CSV exports plus a manifest. Password
+                hashes, sessions, reset tokens, platform credentials, and server
+                error logs are not included.
+              </p>
+            </div>
+            <button
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md border border-border bg-surface px-4 py-3 text-sm font-semibold text-text-control transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-70"
+              disabled={isExporting}
+              onClick={handleDataExport}
+              type="button"
+            >
+              <FileDownIcon />
+              {isExporting ? "Exporting..." : "Export Data"}
+            </button>
+          </div>
+          <div className="mt-4">
+            <SettingsMessages error={exportError} message={exportMessage} />
           </div>
         </SettingsPanel>
-
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <SettingsMessages error={error} message={message} />
-          <button
-            className="rounded-md bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70"
-            disabled={isSaving}
-            type="submit"
-          >
-            {isSaving ? "Saving..." : "Save Settings"}
-          </button>
-        </div>
-      </form>
-
-      <SettingsPanel
-        icon={<UsersIcon />}
-        title="Single Sign-On"
-      >
-        <div className="grid gap-4 lg:grid-cols-2">
-          {ssoProviders.map((provider) => (
-            <SsoProviderForm
-              key={provider.providerType}
-              clientSecret={ssoSecrets[provider.providerType]}
-              isSaving={savingSsoProvider === provider.providerType}
-              onClientSecretChange={(value) =>
-                setSsoSecrets((current) => ({
-                  ...current,
-                  [provider.providerType]: value,
-                }))
-              }
-              onChange={updateSsoProviderField}
-              onSubmit={(event) => handleSsoSubmit(event, provider)}
-              provider={provider}
-            />
-          ))}
-        </div>
-        <div className="mt-4">
-          <SettingsMessages error={ssoError} message={ssoMessage} />
-        </div>
-      </SettingsPanel>
-
-      <SettingsPanel
-        icon={<KeyIcon />}
-        title="API Keys"
-      >
-        <ApiKeySettings />
-      </SettingsPanel>
-
-      <form className="space-y-5" onSubmit={handlePresetsSubmit}>
-        <SettingsPanel
-          icon={<WalletIcon />}
-          title="Quick Transactions"
-        >
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-            <QuickAmountFields
-              amounts={presetAmounts}
-              onChange={setPresetAmounts}
-            />
-            <QuickReasonFields
-              onChange={setPresetReasons}
-              reasons={presetReasons}
-            />
-          </div>
-        </SettingsPanel>
-
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <SettingsMessages error={presetError} message={presetMessage} />
-          <button
-            className="rounded-md bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70"
-            disabled={isSavingPresets}
-            type="submit"
-          >
-            {isSavingPresets ? "Saving..." : "Save Quick Transactions"}
-          </button>
-        </div>
-      </form>
-
-      <SettingsPanel
-        icon={<FileDownIcon />}
-        title="Data Export"
-      >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-text-control">
-              Export organisation data
-            </p>
-            <p className="mt-1 max-w-2xl text-sm text-text-muted">
-              Downloads a ZIP file of CSV exports plus a manifest. Password
-              hashes, sessions, reset tokens, platform credentials, and server
-              error logs are not included.
-            </p>
-          </div>
-          <button
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md border border-border bg-surface px-4 py-3 text-sm font-semibold text-text-control transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-70"
-            disabled={isExporting}
-            onClick={handleDataExport}
-            type="button"
-          >
-            <FileDownIcon />
-            {isExporting ? "Exporting..." : "Export Data"}
-          </button>
-        </div>
-        <div className="mt-4">
-          <SettingsMessages error={exportError} message={exportMessage} />
-        </div>
-      </SettingsPanel>
+      </SettingsGroup>
     </section>
+  );
+}
+
+function SettingsGroup({
+  children,
+  description,
+  title,
+}: {
+  children: ReactNode;
+  description: string;
+  title: string;
+}) {
+  return (
+    <section className="grid gap-3 lg:grid-cols-[10rem_minmax(0,1fr)] lg:gap-6">
+      <div className="pt-1">
+        <h2 className="text-sm font-semibold text-text-control">{title}</h2>
+        <p className="mt-1 text-xs leading-5 text-text-muted">
+          {description}
+        </p>
+      </div>
+      <div className="min-w-0 space-y-4">{children}</div>
+    </section>
+  );
+}
+
+function ReadOnlySetting({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="min-w-0 rounded-md bg-surface-muted px-3 py-3">
+      <p className="text-xs font-medium uppercase tracking-[0.08em] text-text-kicker">
+        {label}
+      </p>
+      <p className="mt-1 truncate text-sm font-semibold text-text-control">
+        {value || "-"}
+      </p>
+    </div>
+  );
+}
+
+function SettingsActionRow({
+  error,
+  isSaving,
+  message,
+  saveLabel,
+}: {
+  error: string | null;
+  isSaving: boolean;
+  message: string | null;
+  saveLabel: string;
+}) {
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <SettingsMessages error={error} message={message} />
+      <button
+        className="rounded-md bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70"
+        disabled={isSaving}
+        type="submit"
+      >
+        {isSaving ? "Saving..." : saveLabel}
+      </button>
+    </div>
   );
 }
 
@@ -655,6 +786,46 @@ function TextField({
         type={type}
         value={value}
       />
+    </div>
+  );
+}
+
+function NumberField({
+  id,
+  label,
+  min,
+  onChange,
+  placeholder = "",
+  value,
+}: {
+  id: string;
+  label: string;
+  min?: number;
+  onChange: (value: number | null) => void;
+  placeholder?: string;
+  value: number | null;
+}) {
+  return (
+    <div className="min-w-0">
+      <label className="text-sm font-semibold text-text-control" htmlFor={id}>
+        {label}
+      </label>
+      <input
+        className="mt-2 block w-full min-w-0 max-w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition focus:ring-2"
+        id={id}
+        min={min}
+        onChange={(event) => {
+          const nextValue = event.target.value.trim();
+
+          onChange(nextValue ? Number(nextValue) : null);
+        }}
+        placeholder={placeholder}
+        type="number"
+        value={value ?? ""}
+      />
+      <p className="mt-1 text-xs text-text-muted">
+        Leave blank for no maximum balance.
+      </p>
     </div>
   );
 }

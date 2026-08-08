@@ -15,10 +15,14 @@ create table if not exists school_info (
   website text not null default '',
   timezone text not null default '',
   currency_name text not null default 'credits',
+  balance_cap integer check (balance_cap is null or balance_cap > 0),
   logo_url text not null default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table school_info
+  add column if not exists balance_cap integer check (balance_cap is null or balance_cap > 0);
 
 create table if not exists audit_log (
   id uuid primary key default gen_random_uuid(),

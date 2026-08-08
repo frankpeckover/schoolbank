@@ -39,6 +39,7 @@ export {
 } from "@/lib/actions/group-actions";
 export {
   getSchoolInfo,
+  getPublicSchoolInfo,
   updateSchoolInfo,
   uploadSchoolLogo,
 } from "@/lib/actions/school-actions";

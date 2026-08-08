@@ -17,6 +17,7 @@ import { GroupImportModal } from "@/components/admin-groups/group-import-modal";
 import { GroupListPanel } from "@/components/admin-groups/group-list-panel";
 import { GroupModal } from "@/components/admin-groups/group-modal";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 import { FixedNotification } from "@/components/ui/fixed-notification";
 import { IconButton } from "@/components/ui/icon-button";
 import { FileDownIcon, FileUpIcon, PlusIcon } from "@/components/ui/icons";
@@ -47,6 +48,8 @@ export function AdminGroupsPanel() {
   const [duplicatingGroup, setDuplicatingGroup] =
     useState<GroupListItem | null>(null);
   const [editingGroup, setEditingGroup] = useState<GroupListItem | null>(null);
+  const [pendingGroupStatusChange, setPendingGroupStatusChange] =
+    useState<GroupListItem | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isLoadingGroups, setIsLoadingGroups] = useState(true);
@@ -302,7 +305,16 @@ export function AdminGroupsPanel() {
     await refreshGroups();
   }
 
-  async function handleGroupStatusChange(group: GroupListItem) {
+  function handleGroupStatusChange(group: GroupListItem) {
+    setPendingGroupStatusChange(group);
+  }
+
+  async function confirmGroupStatusChange() {
+    if (!pendingGroupStatusChange) {
+      return;
+    }
+
+    const group = pendingGroupStatusChange;
     const nextActiveState = !group.isActive;
     const result = await setGroupActive(group.id, nextActiveState);
 
@@ -313,6 +325,7 @@ export function AdminGroupsPanel() {
 
     setMessage(nextActiveState ? "Group reactivated." : "Group archived.");
     setError(null);
+    setPendingGroupStatusChange(null);
     if (!nextActiveState && !showInactiveGroups && selectedGroupId === group.id) {
       setEditingGroup(null);
       setSelectedGroupId("");
@@ -501,6 +514,25 @@ export function AdminGroupsPanel() {
           onClose={() => setIsImportModalOpen(false)}
           onImportCompleted={refreshGroups}
           onImported={handleGroupsImported}
+        />
+      )}
+
+      {pendingGroupStatusChange && (
+        <ConfirmationModal
+          confirmLabel={
+            pendingGroupStatusChange.isActive
+              ? "Archive Group"
+              : "Reactivate Group"
+          }
+          description={`${pendingGroupStatusChange.isActive ? "Archive" : "Reactivate"} ${pendingGroupStatusChange.name}?`}
+          onCancel={() => setPendingGroupStatusChange(null)}
+          onConfirm={confirmGroupStatusChange}
+          title={
+            pendingGroupStatusChange.isActive
+              ? "Archive group"
+              : "Reactivate group"
+          }
+          tone={pendingGroupStatusChange.isActive ? "danger" : "primary"}
         />
       )}
     </AdminPageSection>

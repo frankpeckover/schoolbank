@@ -13,6 +13,7 @@ import { UsersTable } from "@/components/admin-users/users-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FixedNotification } from "@/components/ui/fixed-notification";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 import { IconButton } from "@/components/ui/icon-button";
 import { FileDownIcon, FileUpIcon, PlusIcon, UsersIcon } from "@/components/ui/icons";
 import {
@@ -37,6 +38,10 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
   const [duplicatingUserForm, setDuplicatingUserForm] =
     useState<Partial<UserFormState> | null>(null);
   const [editingUser, setEditingUser] = useState<UserListItem | null>(null);
+  const [pendingUserStatusChange, setPendingUserStatusChange] = useState<{
+    isActive: boolean;
+    user: UserListItem;
+  } | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -115,18 +120,32 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
     }
   }
 
-  async function handleSetUserActive(user: UserListItem, isActive: boolean) {
+  function handleSetUserActive(user: UserListItem, isActive: boolean) {
+    setPendingUserStatusChange({ isActive, user });
+  }
+
+  async function confirmSetUserActive() {
+    if (!pendingUserStatusChange) {
+      return;
+    }
+
     setError(null);
     setMessage(null);
 
-    const result = await setUserActive(user.id, isActive);
+    const result = await setUserActive(
+      pendingUserStatusChange.user.id,
+      pendingUserStatusChange.isActive,
+    );
 
     if (!result.ok) {
       setError(result.message);
       return;
     }
 
-    setMessage(isActive ? "User enabled." : "User disabled.");
+    setMessage(
+      pendingUserStatusChange.isActive ? "User enabled." : "User disabled.",
+    );
+    setPendingUserStatusChange(null);
     await refreshUsers();
   }
 
@@ -246,6 +265,23 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
           onClose={() => setEditingUser(null)}
           onSaved={() => handleUserSaved("User updated.")}
           user={editingUser}
+        />
+      )}
+
+      {pendingUserStatusChange && (
+        <ConfirmationModal
+          confirmLabel={
+            pendingUserStatusChange.isActive ? "Enable User" : "Disable User"
+          }
+          description={`${pendingUserStatusChange.isActive ? "Enable" : "Disable"} ${pendingUserStatusChange.user.displayName}?`}
+          onCancel={() => setPendingUserStatusChange(null)}
+          onConfirm={confirmSetUserActive}
+          title={
+            pendingUserStatusChange.isActive
+              ? "Enable user account"
+              : "Disable user account"
+          }
+          tone={pendingUserStatusChange.isActive ? "primary" : "danger"}
         />
       )}
     </AdminPageSection>

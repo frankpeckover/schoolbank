@@ -41,6 +41,23 @@ type LedgerEntryRow = {
 const primaryAccountName = "Primary account";
 
 export class LedgerService {
+  async getBalanceCap(client: PoolClient) {
+    const result = await client.query<{ balance_cap: number | null }>(
+      `
+        select balance_cap
+        from school_info
+        where id = 1
+        limit 1
+      `,
+    );
+
+    const balanceCap = result.rows[0]?.balance_cap;
+
+    return balanceCap === null || balanceCap === undefined
+      ? null
+      : Number(balanceCap);
+  }
+
   async ensureStudentAccount(client: PoolClient, userId: string) {
     const existingAccount = await client.query<{ id: string }>(
       `

@@ -4,6 +4,7 @@ import {
   requireSchoolSettingsManager,
   requireUser,
 } from "@/lib/actions/action-auth";
+import { assertSameOriginRequest } from "@/lib/security/origin";
 import { SchoolService } from "@/services/school-service";
 import type { UpdateSchoolInfoInput } from "@/services/school-service";
 
@@ -11,6 +12,11 @@ const schoolService = new SchoolService();
 
 export async function getSchoolInfo() {
   await requireUser();
+  return schoolService.getSchoolInfo();
+}
+
+export async function getPublicSchoolInfo() {
+  await assertSameOriginRequest();
   return schoolService.getSchoolInfo();
 }
 
