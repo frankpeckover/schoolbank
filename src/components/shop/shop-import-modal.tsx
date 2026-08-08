@@ -69,7 +69,7 @@ export function ShopImportModal({
 
   async function handleImport() {
     if (items.length === 0) {
-      setError("Choose a CSV file with at least one shop item.");
+      setError("Choose a CSV file with at least one reward item.");
       return;
     }
 
@@ -83,7 +83,7 @@ export function ShopImportModal({
       `${result.createdCount} created`,
       `${result.updatedCount} updated`,
     ].join(", ");
-    const successMessage = `Imported shop items: ${importedText}.`;
+    const successMessage = `Imported rewards: ${importedText}.`;
 
     setIsImporting(false);
     setErrors(result.errors);
@@ -97,7 +97,7 @@ export function ShopImportModal({
       <div className="app-modal theme-panel motion-pop w-full max-w-2xl p-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h3 className="text-xl font-semibold">Import Shop Items</h3>
+            <h3 className="text-xl font-semibold">Import Rewards</h3>
             <p className="mt-1 text-sm text-text-muted">
               Upload a CSV with headers: {csvHeaders}
             </p>
@@ -221,7 +221,7 @@ function parseShopItemsCsv(text: string): ParseResult {
   if (items.length === 0) {
     return {
       ok: false,
-      message: "CSV does not contain any shop items.",
+      message: "CSV does not contain any reward items.",
     };
   }
 

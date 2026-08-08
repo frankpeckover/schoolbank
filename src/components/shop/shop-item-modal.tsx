@@ -31,12 +31,12 @@ const imageHelpText = "PNG, JPG, WebP, or GIF. Max 2 MB.";
 const modalCopy = {
   close: "Close",
   cancel: "Cancel",
-  description: "Set the item details students will see.",
-  editTitle: "Edit Item",
+  description: "Set the reward details students will see.",
+  editTitle: "Edit Reward",
   errorClassName:
     "rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong",
-  newTitle: "New Item",
-  save: "Save Item",
+  newTitle: "New Reward",
+  save: "Save Reward",
   saving: "Saving...",
 } as const;
 
@@ -272,7 +272,7 @@ function ImageUploadField({
 }) {
   return (
     <div>
-      <span className={fieldClassNames.label}>Item Image</span>
+      <span className={fieldClassNames.label}>Reward Image</span>
       <div className="theme-subpanel mt-2 flex items-center gap-3 p-3">
         <ItemImagePreview imageUrl={currentImageUrl} itemName={itemName} />
         <div className="min-w-0 flex-1">
@@ -286,7 +286,7 @@ function ImageUploadField({
           <label
             className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-button-border bg-surface text-text-control transition hover:bg-panel-soft"
             htmlFor="itemImage"
-            title="Upload item image"
+            title="Upload reward image"
           >
             <PlusIcon />
           </label>
@@ -309,7 +309,7 @@ function ItemImagePreview({
   if (imageUrl) {
     return (
       <div
-        aria-label={`${itemName || "Shop item"} image`}
+        aria-label={`${itemName || "Reward item"} image`}
         className="h-20 w-20 shrink-0 rounded-md border border-border-subtle bg-cover bg-center"
         role="img"
         style={{ backgroundImage: `url("${imageUrl}")` }}

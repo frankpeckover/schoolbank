@@ -57,7 +57,7 @@ export function TransactionDetailsModal({
           />
           <TransactionDetail label="Reference" value={transaction.reference} />
           <TransactionDetail
-            label="Purchase status"
+            label="Reward status"
             value={transaction.purchaseStatus ?? "-"}
           />
           <TransactionDetail

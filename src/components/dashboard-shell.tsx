@@ -169,7 +169,7 @@ export function DashboardShell({
           />
         )}
 
-        {activeNavItem === "Shop" && (
+        {activeNavItem === "Rewards" && (
           <ShopPanel
             currencyName={schoolInfo.currencyName}
             currentUser={user}

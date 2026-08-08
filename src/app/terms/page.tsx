@@ -15,7 +15,7 @@ export default function TermsPage() {
       <LegalSection title="Purpose">
         <p>
           {appConfig.name} is designed to help schools manage a simulated
-          reward currency. Balances, shop items, goals, and ledger records are
+          reward currency. Balances, reward items, goals, and ledger records are
           educational and administrative tools only. They are not real money,
           stored value, banking products, or financial accounts.
         </p>
@@ -35,7 +35,7 @@ export default function TermsPage() {
         <p>
           Users should access only their own account or the accounts they are
           authorised to manage. Staff and administrators should use ledger,
-          group, timetable, shop, and reporting tools only for legitimate school
+          group, timetable, reward, and reporting tools only for legitimate school
           purposes.
         </p>
       </LegalSection>

@@ -17,7 +17,6 @@ import {
   CogIcon,
   EyeIcon,
   ListIcon,
-  LockerIcon,
   LogOutIcon,
   MoonIcon,
   PackageIcon,
@@ -35,36 +34,29 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 const defaultNavigationItems = [
   "Dashboard",
   "Analytics",
-  "Shop",
+  "Rewards",
   "Transaction Log",
 ] as const;
-const studentNavigationItems = ["Dashboard", "Shop"] as const;
+const studentNavigationItems = ["Dashboard", "Rewards"] as const;
 const adminNavigationItems = [
   "Dashboard",
   "Users",
   "Groups",
   "Timetable",
   "Analytics",
-  "Shop",
+  "Rewards",
   "Transaction Log",
   "Audit Log",
   "Error Log",
   "Settings",
 ] as const;
 
-const moduleNavigationItems = ["Locker"] as const;
-
-export type NavigationItem =
-  | (typeof adminNavigationItems)[number]
-  | (typeof moduleNavigationItems)[number];
+export type NavigationItem = (typeof adminNavigationItems)[number];
 
 type NavigationSection = {
   items: readonly NavigationItem[];
   title: string | null;
 };
-
-const externalNavigationItems = new Set<NavigationItem>(["Locker"]);
-const lockerLaunchPath = "/modules/locker/launch";
 
 type HeaderNavMenuProps = {
   activeItem: NavigationItem;
@@ -128,11 +120,6 @@ export function HeaderNavMenu({
   }, [isMobileMenuOpen]);
 
   function handleItemChange(item: NavigationItem) {
-    if (externalNavigationItems.has(item)) {
-      window.location.assign(lockerLaunchPath);
-      return;
-    }
-
     onItemChange(item);
     closeMenus();
   }
@@ -207,11 +194,6 @@ export function DesktopSideNav({
   const navigationSections = getNavigationSections(role);
 
   function handleItemChange(item: NavigationItem) {
-    if (externalNavigationItems.has(item)) {
-      window.location.assign(lockerLaunchPath);
-      return;
-    }
-
     onItemChange(item);
   }
 
@@ -766,10 +748,8 @@ function NavigationItemIcon({ item }: { item: NavigationItem }) {
       return <WalletIcon className={className} />;
     case "Analytics":
       return <TargetIcon className={className} />;
-    case "Shop":
+    case "Rewards":
       return <PackageIcon className={className} />;
-    case "Locker":
-      return <LockerIcon className={className} />;
     case "Transaction Log":
       return <ListIcon className={className} />;
     case "Users":
@@ -790,22 +770,12 @@ function NavigationItemIcon({ item }: { item: NavigationItem }) {
 }
 
 function getNavigationSections(role: Role): NavigationSection[] {
-  const userRole = { role };
-  const sections: NavigationSection[] = [
+  return [
     {
       items: getPrimaryNavigationItems(role),
       title: null,
     },
   ];
-
-  if (isAdmin(userRole) || isStudent(userRole)) {
-    sections.push({
-      items: moduleNavigationItems,
-      title: "Modules",
-    });
-  }
-
-  return sections;
 }
 
 function getPrimaryNavigationItems(role: Role): readonly NavigationItem[] {

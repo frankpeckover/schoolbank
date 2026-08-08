@@ -1,20 +1,36 @@
 # App Database Setup
 
-This folder has two DBeaver-friendly PostgreSQL setup scripts:
+This folder contains DBeaver-friendly PostgreSQL setup scripts.
+
+The platform database is still a single setup file:
 
 - `create-platform-database.sql`
-- `create-school-database.sql`
 
-Both files are plain SQL. They do not use `psql` backslash commands, so they can be run from DBeaver.
+Each school database is now split by service/module under:
 
-Normal SQL cannot create a database and then switch into it inside the same script. Create the empty database first, connect to that database, then run the relevant setup file.
+- `school/00-core-settings.sql`
+- `school/01-auth.sql`
+- `school/02-ledger.sql`
+- `school/03-groups-timetable.sql`
+- `school/04-rewards.sql`
+- `school/05-sso.sql`
+- `school/06-api-clients.sql`
+- `school/99-grants.sql`
+
+All files are plain SQL. They do not use `psql` backslash commands, so they can be run from DBeaver.
+
+Normal SQL cannot create a database and then switch into it inside the same script. Create the empty database first, connect to that database, then run the relevant setup files.
 
 ## Setup Order
 
 1. Create and set up the platform database once.
-2. Create and set up one school database per school.
-3. Put the platform database connection in the app `.env.local`.
-4. Put each school database connection in the platform database `organisations` table.
+2. Create one database per school.
+3. Connect to the school database.
+4. Run the required core school setup scripts.
+5. Run only the optional module scripts that organisation needs.
+6. Run `school/99-grants.sql` last.
+7. Put the platform database connection in the app `.env.local`.
+8. Put each school database connection in the platform database `organisations` table.
 
 ## Platform Database
 
@@ -57,40 +73,54 @@ LOCAL_ORGANISATION_SLUG=local
 
 Each school gets its own separate database. The platform database points to it through an `organisations` row.
 
-Run:
+Minimum app setup:
 
 ```txt
-database/create-school-database.sql
+database/school/00-core-settings.sql
+database/school/01-auth.sql
+database/school/02-ledger.sql
+database/school/99-grants.sql
+```
+
+Optional modules:
+
+```txt
+database/school/03-groups-timetable.sql
+database/school/04-rewards.sql
+database/school/05-sso.sql
+database/school/06-api-clients.sql
+```
+
+Current full app setup:
+
+```txt
+database/school/00-core-settings.sql
+database/school/01-auth.sql
+database/school/02-ledger.sql
+database/school/03-groups-timetable.sql
+database/school/04-rewards.sql
+database/school/05-sso.sql
+database/school/06-api-clients.sql
+database/school/99-grants.sql
 ```
 
 In DBeaver:
 
 1. Create a database, for example `app_dev`.
 2. Connect to `app_dev` as a PostgreSQL admin or database owner.
-3. Open `create-school-database.sql`.
-4. Change the `school_app_user` and `school_app_password` values near the bottom if needed.
-5. Run the whole file.
+3. Open each required school script.
+4. Run them in numbered order.
+5. Change `school_app_user` and `school_app_password` in `99-grants.sql` if needed.
+6. Run `99-grants.sql` last.
 
-The script creates:
-
-- all current app tables
-- indexes and constraints
-- default permissions
-- default roles
-- default role permissions
-- one `school_info` row
-- the initial admin user
-- the school app PostgreSQL login
-- grants for that login
-
-Initial admin login:
+Initial admin login from `01-auth.sql`:
 
 ```txt
 username: admin
 password: admin
 ```
 
-Default school database login created by the script:
+Default school database login created by `99-grants.sql`:
 
 ```txt
 username: dev_app_user
@@ -108,6 +138,19 @@ school_app_user_riverside
 ```
 
 Then add that username and password to the matching `organisations` row in the platform database.
+
+## Module Notes
+
+The current app still expects the enabled UI features to have their matching database tables.
+
+For example:
+
+- If rewards are visible in the app, run `04-rewards.sql`.
+- If groups or timetables are visible in the app, run `03-groups-timetable.sql`.
+- If SSO is enabled, run `05-sso.sql`.
+- If external API clients are enabled, run `06-api-clients.sql`.
+
+Do not run optional module scripts for organisations that will not use those modules.
 
 ## Useful Checks
 
@@ -145,7 +188,7 @@ order by name;
 External apps use API keys stored in the school database as hashed values. Generate a key and insert SQL from the app folder:
 
 ```txt
-npm run create-api-client -- --name "Shop app" --scopes balances:read,ledger:hold,ledger:void
+npm run create-api-client -- --name "Rewards app" --scopes balances:read,ledger:hold,ledger:void
 ```
 
 The command prints the raw key once, then prints SQL you can run against the school database in DBeaver. Store the raw key in the external app, not in this app.

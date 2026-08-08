@@ -100,7 +100,7 @@ export class ShopPurchaseService {
     if (!canRequestShopItems(currentUser)) {
       return {
         ok: false,
-        message: "Only students can request shop items.",
+        message: "Only students can request rewards.",
       };
     }
 
@@ -141,7 +141,7 @@ export class ShopPurchaseService {
         await client.query("rollback");
         return {
           ok: false,
-          message: "Not enough balance to purchase this item.",
+          message: "Not enough balance to request this reward.",
         };
       }
 
@@ -182,11 +182,11 @@ export class ShopPurchaseService {
       return { ok: true };
     } catch (error) {
       await client.query("rollback");
-      console.error("Request shop item failed", error);
+      console.error("Request reward item failed", error);
 
       return {
         ok: false,
-        message: "Could not request item.",
+        message: "Could not request reward.",
       };
     } finally {
       client.release();
@@ -200,7 +200,7 @@ export class ShopPurchaseService {
     if (!canManagePurchases(currentUser)) {
       return {
         ok: false,
-        message: "Only teachers can approve shop requests.",
+        message: "Only teachers can approve reward requests.",
       };
     }
 
@@ -215,7 +215,7 @@ export class ShopPurchaseService {
     if (!canManagePurchases(currentUser)) {
       return {
         ok: false,
-        message: "Only teachers can deny shop requests.",
+        message: "Only teachers can deny reward requests.",
       };
     }
 
@@ -388,11 +388,11 @@ async function decidePurchaseRequest(
     return { ok: true };
   } catch (error) {
     await client.query("rollback");
-    console.error("Decide shop request failed", error);
+    console.error("Decide reward request failed", error);
 
     return {
       ok: false,
-      message: "Could not update shop request.",
+      message: "Could not update reward request.",
     };
   } finally {
     client.release();

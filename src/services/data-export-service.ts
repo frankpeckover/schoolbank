@@ -127,7 +127,7 @@ const exportTables: ExportTable[] = [
     `,
   },
   {
-    fileName: "shop_items.csv",
+    fileName: "reward_items.csv",
     query: `
       select *
       from shop_items
@@ -135,7 +135,7 @@ const exportTables: ExportTable[] = [
     `,
   },
   {
-    fileName: "shop_requests.csv",
+    fileName: "reward_requests.csv",
     query: `
       select *
       from shop_purchases

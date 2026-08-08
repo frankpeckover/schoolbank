@@ -65,7 +65,7 @@ export function ShopItemCard({
                 item.quantity <= 0 ? "text-danger-strong" : "text-text-muted"
               }`}
             >
-              {item.quantity <= 0 ? "Sold out" : `${item.quantity} left`}
+              {item.quantity <= 0 ? "Unavailable" : `${item.quantity} left`}
             </span>
             {!item.isActive && (
               <span className="rounded-sm bg-danger-soft px-2 py-1 text-xs font-medium text-danger-strong">

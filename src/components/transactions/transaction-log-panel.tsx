@@ -61,9 +61,9 @@ const transactionTypeOptions = [
   { label: "Credit", value: "credit" },
   { label: "Debit", value: "debit" },
   { label: "Hold", value: "hold" },
-  { label: "Shop hold", value: "shop_hold" },
-  { label: "Shop purchase", value: "shop_purchase" },
-  { label: "Shop refund", value: "shop_refund" },
+  { label: "Reward hold", value: "shop_hold" },
+  { label: "Reward redemption", value: "shop_purchase" },
+  { label: "Reward refund", value: "shop_refund" },
   { label: "Manual adjustment", value: "manual_adjustment" },
   { label: "Void reversal", value: "void_reversal" },
 ];
@@ -75,7 +75,7 @@ const voidedStatusOptions = [
 ];
 
 const purchaseStatusOptions = [
-  { label: "Any purchase status", value: "" },
+  { label: "Any reward status", value: "" },
   { label: "Pending", value: "pending" },
   { label: "Approved", value: "approved" },
   { label: "Denied", value: "denied" },
@@ -390,7 +390,7 @@ function TransactionList({
                       value={filters.voidedStatus}
                     />
                     <TableHeaderFilterSelect
-                      label="Purchase status"
+                      label="Reward status"
                       onChange={(value) =>
                         updateFilter(
                           "purchaseStatus",

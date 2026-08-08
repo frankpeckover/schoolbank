@@ -33,9 +33,9 @@ export default function DataRetentionPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="Ledger and shop records">
+      <LegalSection title="Ledger and reward records">
         <p>
-          Ledger entries, balance changes, shop requests, approvals, denials,
+          Ledger entries, balance changes, reward requests, approvals, denials,
           voids, and refunds should generally be retained for the school year
           and any additional period needed for reporting or dispute resolution.
         </p>
@@ -48,7 +48,7 @@ export default function DataRetentionPage() {
       <LegalSection title="Audit and error logs">
         <p>
           Audit logs should be retained long enough to investigate account,
-          settings, import, shop, and administrative changes. Server error logs
+          settings, import, reward, and administrative changes. Server error logs
           should be retained only as long as needed for troubleshooting and
           operational review.
         </p>
@@ -73,7 +73,7 @@ export default function DataRetentionPage() {
       <LegalSection title="Exports and offboarding">
         <p>
           Schools should be able to export core records such as users, groups,
-          ledger activity, audit logs, timetable data, and shop records before
+          ledger activity, audit logs, timetable data, and reward records before
           ending use of the application.
         </p>
       </LegalSection>

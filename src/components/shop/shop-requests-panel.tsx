@@ -47,7 +47,7 @@ export function ShopRequestsPanel({
   maxVisibleRequests,
   onRequestActioned,
   showViewToggle = true,
-  title = "Shop Requests",
+  title = "Reward Requests",
 }: ShopRequestsPanelProps) {
   const [requests, setRequests] = useState<ShopPurchaseRequest[]>([]);
   const [activeView, setActiveView] = useState<"pending" | "recent">("pending");
@@ -64,7 +64,7 @@ export function ShopRequestsPanel({
       setRequests(loadedRequests);
       setError(null);
     } catch {
-      setError("Could not load shop requests.");
+      setError("Could not load reward requests.");
     } finally {
       setIsLoading(false);
     }
@@ -83,7 +83,7 @@ export function ShopRequestsPanel({
         }
       } catch {
         if (isMounted) {
-          setError("Could not load shop requests.");
+          setError("Could not load reward requests.");
         }
       } finally {
         if (isMounted) {
@@ -218,7 +218,7 @@ export function ShopRequestsPanel({
           isRequired
           onCancel={() => setDenyingRequestId(null)}
           onConfirm={handleDeny}
-          title="Deny Shop Request"
+          title="Deny Reward Request"
         />
       )}
     </section>

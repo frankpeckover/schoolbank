@@ -273,7 +273,7 @@ function AnalyticsMetricGrid({
       />
       <MetricCard
         icon={<ShoppingBagIcon />}
-        label="Shop requests"
+        label="Reward requests"
         tone="accent"
         value={
           summary
@@ -951,7 +951,7 @@ function PurchaseTrendCard({
     <section className={`${className} theme-panel min-w-0 p-4`}>
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-base font-semibold text-foreground">
-          Purchasing trends
+          Reward trends
         </h3>
         <span className="rounded-sm bg-chip-bg px-2 py-1 text-xs font-semibold text-chip-text">
           {scopeLabel}

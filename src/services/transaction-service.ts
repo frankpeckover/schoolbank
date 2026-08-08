@@ -749,9 +749,9 @@ function formatLedgerType(type: LedgerEntryType) {
     hold: "Hold",
     penalty: "Penalty",
     reward: "Reward",
-    shop_hold: "Shop hold",
-    shop_purchase: "Shop purchase",
-    shop_refund: "Shop refund",
+    shop_hold: "Reward hold",
+    shop_purchase: "Reward redemption",
+    shop_refund: "Reward refund",
     void_reversal: "Void reversal",
   };
 
@@ -841,7 +841,7 @@ function formatReference(row: TransactionLogRow) {
 
 function formatSource(row: TransactionLogRow) {
   if (row.shop_item_name) {
-    return `Shop: ${row.shop_item_name}`;
+    return `Reward: ${row.shop_item_name}`;
   }
 
   if (row.student_group_name) {

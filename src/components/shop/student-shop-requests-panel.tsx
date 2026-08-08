@@ -34,7 +34,7 @@ export function StudentShopRequestsPanel({
         }
       } catch {
         if (isMounted) {
-          setError("Could not load shop requests.");
+          setError("Could not load reward requests.");
         }
       } finally {
         if (isMounted) {
@@ -60,7 +60,7 @@ export function StudentShopRequestsPanel({
           <ShoppingBagIcon />
         </span>
         <div className="min-w-0">
-          <h2 className="text-xl font-semibold">My Orders</h2>
+          <h2 className="text-xl font-semibold">My Rewards</h2>
         </div>
       </div>
 
@@ -70,7 +70,7 @@ export function StudentShopRequestsPanel({
         )}
         {!isLoading && !error && requests.length === 0 && (
           <p className="theme-subpanel px-3 py-4 text-sm text-text-muted">
-            No orders yet.
+            No reward requests yet.
           </p>
         )}
         {!isLoading && !error && requests.length > 0 && (
@@ -117,7 +117,7 @@ function StudentRequestCard({
           </div>
           <div className="min-w-0">
             <h3 className="truncate text-sm font-semibold">{request.itemName}</h3>
-            <p className="text-xs text-text-muted">Reward order</p>
+            <p className="text-xs text-text-muted">Reward request</p>
           </div>
         </div>
         <span className="shrink-0 text-right text-sm font-semibold">

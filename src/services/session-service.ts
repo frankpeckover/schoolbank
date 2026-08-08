@@ -44,6 +44,7 @@ export class SessionService {
     );
 
     const cookieStore = await cookies();
+
     cookieStore.set(sessionCookieName, token, {
       expires: expiresAt,
       httpOnly: true,

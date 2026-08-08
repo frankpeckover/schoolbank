@@ -51,7 +51,7 @@ const themeInitScript = `
 
 export const metadata: Metadata = {
   title: appConfig.name,
-  description: "A school economy platform for fake currency rewards and spending.",
+  description: appConfig.description,
 };
 
 export default function RootLayout({

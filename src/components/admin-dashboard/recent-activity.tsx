@@ -23,7 +23,7 @@ export function RecentLedgerActivity({
       <div className="mt-3 min-w-0">
         {entries.length === 0 && (
           <EmptyState
-            description="Recent ledger entries will appear after credits, holds, purchases, or refunds are recorded."
+            description="Recent ledger entries will appear after credits, holds, reward redemptions, or refunds are recorded."
             icon={<WalletIcon />}
             title="No ledger activity yet"
           />
@@ -44,7 +44,7 @@ export function RecentAuditActivity({ entries }: { entries: AuditLogItem[] }) {
       <div className="mt-3 min-w-0">
         {entries.length === 0 && (
           <EmptyState
-            description="Administrative changes such as user imports, school settings, and shop updates will appear here."
+            description="Administrative changes such as user imports, school settings, and reward updates will appear here."
             title="No audit events yet"
           />
         )}

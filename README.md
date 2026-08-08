@@ -1,8 +1,8 @@
-# MeritBank
+# Internal Currency App
 
-MeritBank is a seedling-stage school economy app. The first build focuses on a small, useful loop:
+This is a seedling-stage internal currency ledger. The first build focuses on a small, useful loop:
 
-- teachers award or deduct fake currency
+- teachers award or deduct internal currency
 - students see balances, goals, and store options
 - admins manage the economy rules and review the ledger
 
@@ -28,6 +28,11 @@ Install Node.js 22 LTS or newer. Next.js also supports Node 20.9+, but the local
 Create `.env.local` from `.env.example` and adjust the platform database credentials:
 
 ```txt
+NEXT_PUBLIC_APP_NAME=IntraMynt
+NEXT_PUBLIC_APP_INITIALS=IM
+NEXT_PUBLIC_APP_LOGO_URL=/app-logo.svg
+NEXT_PUBLIC_APP_TAGLINE=Internal currency, made simple.
+
 PLATFORM_POSTGRES_HOST=localhost
 PLATFORM_POSTGRES_PORT=5432
 PLATFORM_POSTGRES_DATABASE=app_platform

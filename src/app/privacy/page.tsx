@@ -17,7 +17,7 @@ export default function PrivacyPage() {
           {appConfig.name} stores information needed to run a school reward
           wallet system. This can include names, usernames, email addresses,
           roles, profile images, groups, timetable assignments, account
-          balances, ledger activity, shop requests, audit records, and security
+          balances, ledger activity, reward requests, audit records, and security
           records such as sessions and password reset tokens.
         </p>
       </LegalSection>
@@ -26,7 +26,7 @@ export default function PrivacyPage() {
         <p>
           Information is used to authenticate users, show the correct student,
           staff, or admin view, record reward currency activity, manage groups
-          and shop requests, support reporting, and keep an audit trail of
+          and reward requests, support reporting, and keep an audit trail of
           important administrative actions.
         </p>
       </LegalSection>

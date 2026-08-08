@@ -66,7 +66,7 @@ export class ShopItemService {
     if (!canManageShopItems(currentUser)) {
       return {
         ok: false,
-        message: "Only staff can manage shop items.",
+        message: "Only staff can manage reward items.",
       };
     }
 
@@ -133,11 +133,11 @@ export class ShopItemService {
       return { ok: true };
     } catch (error) {
       await client.query("rollback");
-      console.error("Save shop item failed", error);
+      console.error("Save reward item failed", error);
 
       return {
         ok: false,
-        message: "Could not save shop item.",
+        message: "Could not save reward item.",
       };
     } finally {
       client.release();
@@ -148,7 +148,7 @@ export class ShopItemService {
     if (!canManageShopItems(currentUser)) {
       return {
         ok: false,
-        message: "Only staff can manage shop items.",
+        message: "Only staff can manage reward items.",
       };
     }
 
@@ -177,11 +177,11 @@ export class ShopItemService {
       await client.query("commit");
     } catch (error) {
       await client.query("rollback");
-      console.error("Remove shop item failed", error);
+      console.error("Remove reward item failed", error);
 
       return {
         ok: false,
-        message: "Could not remove shop item.",
+        message: "Could not remove reward item.",
       };
     } finally {
       client.release();
@@ -199,7 +199,7 @@ export class ShopItemService {
         createdCount: 0,
         errors: [
           {
-            message: "Only staff can manage shop items.",
+            message: "Only staff can manage reward items.",
             name: "",
             rowNumber: 0,
           },
@@ -288,13 +288,13 @@ export class ShopItemService {
       await client.query("commit");
     } catch (error) {
       await client.query("rollback");
-      console.error("Import shop items failed", error);
+      console.error("Import reward items failed", error);
 
       return {
         createdCount: 0,
         errors: [
           {
-            message: "Could not import shop items.",
+            message: "Could not import reward items.",
             name: "",
             rowNumber: 0,
           },
@@ -350,7 +350,7 @@ export class ShopItemService {
         imageUrl: `${imagePublicPath}/${fileName}`,
       };
     } catch (error) {
-      console.error("Upload shop item image failed", error);
+      console.error("Upload reward item image failed", error);
 
       return {
         ok: false,

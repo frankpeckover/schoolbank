@@ -222,18 +222,6 @@ export function ListIcon(props: IconProps) {
   );
 }
 
-export function LockerIcon(props: IconProps) {
-  return (
-    <IconBase {...props}>
-      <rect height="18" rx="2" width="12" x="6" y="3" />
-      <path d="M9 7h6" />
-      <path d="M9 11h6" />
-      <path d="M9 15h3" />
-      <path d="M15 15h.01" />
-    </IconBase>
-  );
-}
-
 export function PencilIcon(props: IconProps) {
   return (
     <IconBase {...props}>

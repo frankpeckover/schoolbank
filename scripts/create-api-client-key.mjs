@@ -100,7 +100,7 @@ function printUsageAndExit() {
   console.error(
     [
       "Usage:",
-      "  npm run create-api-client -- --name \"Shop app\" --scopes balances:read,ledger:hold,ledger:void",
+      "  npm run create-api-client -- --name \"Rewards app\" --scopes balances:read,ledger:hold,ledger:void",
       "",
       "Allowed scopes:",
       `  ${Array.from(allowedScopes).join(", ")}`,

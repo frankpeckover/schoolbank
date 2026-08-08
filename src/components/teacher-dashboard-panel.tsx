@@ -188,7 +188,7 @@ export function TeacherDashboardPanel({
               currencyName={currencyName}
               maxVisibleRequests={4}
               showViewToggle={false}
-              title="Shop Approvals"
+              title="Reward Approvals"
             />
 
             <div className="theme-panel mb-4 p-4">

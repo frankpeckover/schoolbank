@@ -83,7 +83,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
       setItems(loadedItems);
       setError(null);
     } catch {
-      setError("Could not load shop items.");
+      setError("Could not load reward items.");
     } finally {
       setIsLoading(false);
     }
@@ -115,7 +115,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
         }
       } catch {
         if (isMounted) {
-          setError("Could not load shop items.");
+          setError("Could not load reward items.");
         }
       } finally {
         if (isMounted) {
@@ -227,7 +227,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   function handleItemSaved() {
     setDuplicatingItem(null);
     setIsModalOpen(false);
-    setMessage("Shop item saved.");
+    setMessage("Reward item saved.");
     refreshItems();
   }
 
@@ -377,23 +377,23 @@ function ShopPanelHeader({
           <IconButton
             label="New item"
             onClick={onNewItem}
-            text="New Item"
+            text="New Reward"
             tone="primary"
           >
             <PlusIcon />
           </IconButton>
           <TableActionMenu
-            label="Open shop tools"
+            label="Open reward tools"
             items={[
               {
                 icon: <FileUpIcon />,
-                label: "Import shop items: CSV",
+                label: "Import rewards: CSV",
                 onSelect: onImportItems,
               },
               {
                 disabled: count === 0,
                 icon: <FileDownIcon />,
-                label: "Export shop items: CSV",
+                label: "Export rewards: CSV",
                 onSelect: onItemsExport,
               },
             ]}
@@ -442,7 +442,7 @@ function ShopManagementList({
   visibleItemCount: number;
 }) {
   if (isLoading) {
-    return <p className="mt-4 text-sm text-text-muted">Loading shop...</p>;
+    return <p className="mt-4 text-sm text-text-muted">Loading rewards...</p>;
   }
 
   if (visibleItemCount === 0) {
@@ -509,7 +509,7 @@ function ShopManagementList({
             <th className="py-2 pr-4 text-right font-semibold">
               <TableHeaderFilter
                 isActive={Boolean(filters.priceMin || filters.priceMax)}
-                label="Price"
+                label="Cost"
                 onClear={() => {
                   onPriceMaxChange("");
                   onPriceMinChange("");
@@ -640,7 +640,7 @@ function ShopManagementCard({
         <span>
           {formatAmount(item.price)} {currencyName}
         </span>
-        <span>{item.quantity} in stock</span>
+        <span>{item.quantity} available</span>
         <ShopItemStatusBadge item={item} />
       </div>
     </article>
@@ -673,7 +673,7 @@ function StudentShopGrid({
   return (
     <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {isLoading && (
-        <p className="text-sm text-text-muted">Loading shop...</p>
+        <p className="text-sm text-text-muted">Loading rewards...</p>
       )}
       {!isLoading &&
         pageItems.map((item) => (
@@ -808,7 +808,7 @@ function ShopItemStatusBadge({ item }: { item: ShopItem }) {
   if (item.quantity <= 0) {
     return (
       <span className="inline-flex rounded-sm bg-danger-soft px-2 py-1 text-xs font-semibold text-danger-strong">
-        Sold out
+        Unavailable
       </span>
     );
   }
@@ -834,10 +834,10 @@ function ShopEmptyState({
           ? isManagementView
             ? "Create the first reward item so students have something to request."
             : "Rewards will appear here once staff add them."
-          : "Try changing the shop filters."
+          : "Try changing the reward filters."
       }
       icon={<ShoppingBagIcon />}
-      title={totalItemCount === 0 ? "No shop items yet" : "No matching shop items"}
+      title={totalItemCount === 0 ? "No rewards yet" : "No matching rewards"}
     />
   );
 }
@@ -895,7 +895,7 @@ function parsePriceFilter(value: string) {
 
 function downloadShopItems(items: ShopItem[]) {
   downloadCsv(
-    "shop-items.csv",
+    "reward-items.csv",
     [
       "id",
       "name",

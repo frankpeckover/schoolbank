@@ -51,10 +51,10 @@ export function ShopItemDetailsModal({
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <ShopItemDetail label="Price" value={formatCurrencyAmount(item.price, currencyName)} />
+          <ShopItemDetail label="Cost" value={formatCurrencyAmount(item.price, currencyName)} />
           <ShopItemDetail
             label="Available"
-            value={item.quantity <= 0 ? "Sold out" : `${item.quantity} left`}
+            value={item.quantity <= 0 ? "Unavailable" : `${item.quantity} left`}
           />
         </div>
 

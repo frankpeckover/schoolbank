@@ -252,6 +252,11 @@ html[data-accent="custom"] {
   --font-mono: "Cascadia Code", Consolas, monospace;
 }
 
+html {
+  background: var(--background);
+  min-height: 100%;
+}
+
 body {
   background:
     linear-gradient(180deg, var(--background-gradient-start) 0, var(--background) 260px),
@@ -259,6 +264,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-numeric), Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
   font-weight: 400;
+  min-height: 100dvh;
 }
 
 h1,
@@ -322,7 +328,9 @@ button:not(:disabled):active {
 .app-shell-surface {
   background:
     linear-gradient(135deg, var(--shell-gradient-accent), transparent 34%),
-    linear-gradient(180deg, var(--shell-gradient-surface), transparent 18rem);
+    linear-gradient(180deg, var(--shell-gradient-surface), transparent 18rem),
+    var(--background);
+  min-height: 100dvh;
 }
 
 .professional-shell.app-shell-surface {
