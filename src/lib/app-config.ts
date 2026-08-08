@@ -12,10 +12,13 @@ export const appConfig = {
     getInitials(configuredAppName),
   logoUrl:
     process.env.NEXT_PUBLIC_APP_LOGO_URL?.trim() ||
-    "/brand/intramynt-app-icon.png",
+    "/brand/myntix-app-icon.png",
   lockupUrl:
     process.env.NEXT_PUBLIC_APP_LOCKUP_URL?.trim() ||
-    "/brand/intramynt-lockup.png",
+    "/brand/myntix-lockup.png",
+  wordmarkUrl:
+    process.env.NEXT_PUBLIC_APP_WORDMARK_URL?.trim() ||
+    "/brand/myntix-wordmark.png",
   name: configuredAppName,
   supportEmail:
     process.env.NEXT_PUBLIC_APP_SUPPORT_EMAIL?.trim() || "support@example.com",

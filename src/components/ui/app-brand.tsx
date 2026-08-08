@@ -3,11 +3,13 @@ import { appConfig } from "@/lib/app-config";
 type AppBrandProps = {
   showNameOnMobile?: boolean;
   size?: "default" | "large";
+  variant?: "default" | "wordmark";
 };
 
 export function AppBrand({
   showNameOnMobile = false,
   size = "default",
+  variant = "default",
 }: AppBrandProps) {
   const logoClassName =
     size === "large"
@@ -19,13 +21,15 @@ export function AppBrand({
     size === "large"
       ? "h-12 max-w-64 sm:h-14"
       : "h-9 max-w-[10.5rem]";
+  const brandImageUrl =
+    variant === "wordmark" ? appConfig.wordmarkUrl : appConfig.lockupUrl;
 
-  if (showNameOnMobile && appConfig.lockupUrl) {
+  if (showNameOnMobile && brandImageUrl) {
     return (
       <img
         alt={`${appConfig.name} logo`}
         className={`${lockupClassName} min-w-0 shrink object-contain object-left`}
-        src={appConfig.lockupUrl}
+        src={brandImageUrl}
       />
     );
   }

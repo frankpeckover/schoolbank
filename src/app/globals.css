@@ -520,11 +520,14 @@ html[data-theme="dark"] .professional-shell {
 
 .login-shell .login-panel button[type="submit"] {
   box-shadow: none;
+  background: #7ae4b7;
+  color: #183f3d;
   font-weight: 500;
 }
 
 .login-shell .login-panel button[type="submit"]:hover {
   box-shadow: none;
+  background: #70b895;
 }
 
 .login-shell .login-panel > .login-entry-item:first-child span {

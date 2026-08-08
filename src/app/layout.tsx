@@ -53,7 +53,7 @@ export const metadata: Metadata = {
   title: appConfig.name,
   description: appConfig.description,
   icons: {
-    apple: "/brand/intramynt-icon-180.png",
+    apple: "/brand/myntix-icon-180.png",
     icon: "/favicon.ico",
   },
 };

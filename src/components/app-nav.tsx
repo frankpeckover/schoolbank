@@ -216,7 +216,7 @@ export function DesktopSideNav({
           >
             {isExpanded && (
               <div className="min-w-0">
-                <AppBrand showNameOnMobile />
+                <AppBrand showNameOnMobile variant="wordmark" />
               </div>
             )}
             <button

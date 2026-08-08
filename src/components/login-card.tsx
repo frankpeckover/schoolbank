@@ -185,7 +185,7 @@ export function LoginCard({
             )}
 
             <button
-              className="login-entry-item w-full rounded-md bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70"
+              className="login-entry-item login-submit-button w-full rounded-md px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70"
               disabled={isSubmitting}
               type="submit"
             >
