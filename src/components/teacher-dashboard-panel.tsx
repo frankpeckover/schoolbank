@@ -16,6 +16,7 @@ import {
   ListPagination,
   usePagedList,
 } from "@/components/ui/list-pagination";
+import { CreditActionControl } from "@/components/ui/credit-action-control";
 import { SearchInput } from "@/components/ui/search-input";
 import { useDialogFocus } from "@/components/ui/use-dialog-focus";
 import {
@@ -339,21 +340,13 @@ function GroupCreditCard({
           </p>
         </div>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <button
-          className="rounded-md border border-success bg-success px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-success-hover"
-          onClick={onAdd}
-          type="button"
-        >
-          +
-        </button>
-        <button
-          className="rounded-md border border-danger bg-danger px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
-          onClick={onRemove}
-          type="button"
-        >
-          -
-        </button>
+      <div className="mt-3 flex justify-end">
+        <CreditActionControl
+          addAriaLabel={`Add credits to ${group.name}`}
+          onAdd={onAdd}
+          onRemove={onRemove}
+          removeAriaLabel={`Remove credits from ${group.name}`}
+        />
       </div>
     </article>
   );

@@ -5,6 +5,7 @@ import {
   ArrowUpIcon,
   MinusIcon,
 } from "@/components/ui/icons";
+import { CreditActionControl } from "@/components/ui/credit-action-control";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatAmount } from "@/lib/formatters";
 
@@ -56,22 +57,12 @@ export function StudentBalanceCard({
         />
 
         {hasActions && (
-          <div className="flex shrink-0 items-center gap-1.5">
-            <button
-              className="flex h-7 w-8 items-center justify-center rounded-md border border-success bg-success text-sm font-semibold leading-none text-white shadow-sm transition hover:bg-success-hover"
-              onClick={() => onAdd?.(student)}
-              type="button"
-            >
-              +
-            </button>
-            <button
-              className="flex h-7 w-8 items-center justify-center rounded-md border border-danger bg-danger text-sm font-semibold leading-none text-white shadow-sm transition hover:brightness-95"
-              onClick={() => onRemove?.(student)}
-              type="button"
-            >
-              -
-            </button>
-          </div>
+          <CreditActionControl
+            addAriaLabel={`Add ${currencyName} to ${student.displayName}`}
+            onAdd={onAdd ? () => onAdd(student) : undefined}
+            onRemove={onRemove ? () => onRemove(student) : undefined}
+            removeAriaLabel={`Remove ${currencyName} from ${student.displayName}`}
+          />
         )}
       </div>
     </article>
