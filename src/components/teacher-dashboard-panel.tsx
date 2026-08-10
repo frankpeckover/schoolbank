@@ -17,6 +17,7 @@ import {
   usePagedList,
 } from "@/components/ui/list-pagination";
 import { SearchInput } from "@/components/ui/search-input";
+import { useDialogFocus } from "@/components/ui/use-dialog-focus";
 import {
   getCurrentTeacherClass,
   listGroups,
@@ -370,6 +371,7 @@ function QuickAdjustmentModal({
   selection: AdjustmentTargetSelection;
 }) {
   const [error, setError] = useState<string | null>(null);
+  const dialogRef = useDialogFocus({ onEscape: onClose });
 
   const targetName =
     selection.kind === "group"
@@ -384,7 +386,9 @@ function QuickAdjustmentModal({
         aria-label={`${selection.direction === "add" ? "Add" : "Take"} ${currencyName}`}
         aria-modal="true"
         className="theme-panel motion-pop max-h-[90vh] w-full max-w-xl overflow-y-auto p-5 shadow-lg"
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -424,7 +428,10 @@ function QuickAdjustmentModal({
         />
 
         {error && (
-          <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
+          <p
+            className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong"
+            role="alert"
+          >
             {error}
           </p>
         )}

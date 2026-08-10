@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useDialogFocus } from "@/components/ui/use-dialog-focus";
 
 type TextReasonModalProps = {
   confirmLabel: string;
@@ -21,6 +22,7 @@ export function TextReasonModal({
 }: TextReasonModalProps) {
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const dialogRef = useDialogFocus({ onEscape: onCancel });
 
   function handleConfirm() {
     const trimmedReason = reason.trim();
@@ -39,7 +41,9 @@ export function TextReasonModal({
         aria-label={title}
         aria-modal="true"
         className="theme-panel motion-pop w-full max-w-md p-5 shadow-lg"
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
       >
         <div>
           <h3 className="text-xl font-semibold">{title}</h3>
@@ -63,7 +67,10 @@ export function TextReasonModal({
         />
 
         {error && (
-          <p className="mt-3 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
+          <p
+            className="mt-3 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong"
+            role="alert"
+          >
             {error}
           </p>
         )}

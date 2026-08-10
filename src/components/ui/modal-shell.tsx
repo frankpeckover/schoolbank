@@ -1,5 +1,8 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
+import { useDialogFocus } from "@/components/ui/use-dialog-focus";
 
 type ModalShellProps = {
   actions?: ReactNode;
@@ -20,13 +23,17 @@ export function ModalShell({
   onClose,
   title,
 }: ModalShellProps) {
+  const dialogRef = useDialogFocus({ onEscape: onClose });
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-6">
       <div
         aria-label={title}
         aria-modal="true"
         className={`app-modal theme-panel motion-pop max-h-full w-full ${maxWidthClassName} overflow-y-auto p-5 shadow-lg`}
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
       >
         <div className="flex items-start justify-between gap-4 border-b border-border-subtle pb-4">
           <div className="min-w-0">

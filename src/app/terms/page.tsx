@@ -3,6 +3,7 @@ import { LegalPage, LegalSection } from "@/components/legal/legal-page";
 import { appConfig } from "@/lib/app-config";
 
 export const metadata: Metadata = {
+  description: `Terms for using ${appConfig.name} as an internal reward wallet and administration tool.`,
   title: `Terms | ${appConfig.name}`,
 };
 

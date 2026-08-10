@@ -3,6 +3,7 @@ import { LegalPage, LegalSection } from "@/components/legal/legal-page";
 import { appConfig } from "@/lib/app-config";
 
 export const metadata: Metadata = {
+  description: `Data retention expectations for ${appConfig.name} users, ledger records, audit logs, and backups.`,
   title: `Data Retention | ${appConfig.name}`,
 };
 

@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { changeOwnPassword } from "@/lib/actions";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
+import { useDialogFocus } from "@/components/ui/use-dialog-focus";
 
 type ChangePasswordModalProps = {
   onClose: () => void;
@@ -17,6 +18,7 @@ export function ChangePasswordModal({
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const dialogRef = useDialogFocus({ onEscape: onClose });
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,7 +56,9 @@ export function ChangePasswordModal({
         aria-label="Change password"
         aria-modal="true"
         className="theme-panel motion-pop w-full max-w-md p-5 shadow-lg"
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
       >
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -90,12 +94,18 @@ export function ChangePasswordModal({
           />
 
           {error && (
-            <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
+            <p
+              className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong"
+              role="alert"
+            >
               {error}
             </p>
           )}
           {message && (
-            <p className="rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
+            <p
+              className="rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success"
+              role="status"
+            >
               {message}
             </p>
           )}

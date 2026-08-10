@@ -1,8 +1,11 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { formatCurrencyAmount } from "@/lib/formatters";
 import type { ShopItem } from "@/services/shop-service";
 import { CheckIcon, PencilIcon, ShoppingBagIcon, TicketIcon } from "@/components/ui/icons";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
+import { useDialogFocus } from "@/components/ui/use-dialog-focus";
 
 type ShopItemDetailsModalProps = {
   canManage: boolean;
@@ -23,13 +26,17 @@ export function ShopItemDetailsModal({
   onPurchase,
   requested,
 }: ShopItemDetailsModalProps) {
+  const dialogRef = useDialogFocus({ onEscape: onClose });
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
       <div
         aria-label={`Reward details: ${item.name}`}
         aria-modal="true"
         className="app-modal theme-panel motion-pop relative max-h-full w-full max-w-xl overflow-y-auto p-5 shadow-lg"
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
       >
         <ShopItemDetailsImage item={item} />
 

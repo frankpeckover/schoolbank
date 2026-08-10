@@ -29,6 +29,7 @@ export function SearchInput({
         id={id}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
+        type="search"
         value={value}
       />
     </div>

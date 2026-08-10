@@ -13,6 +13,7 @@ import { StudentGroupsSection } from "@/components/admin-users/student-groups-se
 import { UserFormFields } from "@/components/admin-users/user-form-fields";
 import { UserModalActions } from "@/components/admin-users/user-modal-actions";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
+import { useDialogFocus } from "@/components/ui/use-dialog-focus";
 import {
   emptyUserForm,
   type UserFormState,
@@ -44,6 +45,7 @@ export function UserModal({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const dialogRef = useDialogFocus({ onEscape: onClose });
 
   useEffect(() => {
     let isActive = true;
@@ -164,7 +166,9 @@ export function UserModal({
         aria-label={mode === "create" ? "New user" : "Edit user"}
         aria-modal="true"
         className="theme-panel motion-pop max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto p-4 shadow-lg sm:max-h-[90vh] sm:p-5"
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
       >
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -196,12 +200,18 @@ export function UserModal({
           )}
 
           {error && (
-            <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
+            <p
+              className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong"
+              role="alert"
+            >
               {error}
             </p>
           )}
           {message && (
-            <p className="rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
+            <p
+              className="rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success"
+              role="status"
+            >
               {message}
             </p>
           )}

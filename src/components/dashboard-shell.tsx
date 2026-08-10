@@ -119,6 +119,7 @@ export function DashboardShell({
           id="main-content"
           tabIndex={-1}
         >
+          <h1 className="sr-only">{getCurrentPageHeading(activeNavItem, user)}</h1>
           <header className="relative z-50 pb-2 pt-4">
             <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-3">
               <div className="lg:hidden">
@@ -238,12 +239,15 @@ function getGreetingName(user: SessionUser) {
 }
 
 function getBrowserTabTitle(activeNavItem: NavigationItem, user: SessionUser) {
-  const sectionName =
-    activeNavItem === "Dashboard"
-      ? getRoleDashboardTitle(user)
-      : activeNavItem;
+  return `${getCurrentPageHeading(activeNavItem, user)} | ${appConfig.name}`;
+}
 
-  return `${sectionName} | ${appConfig.name}`;
+function getCurrentPageHeading(activeNavItem: NavigationItem, user: SessionUser) {
+  if (activeNavItem === "Dashboard") {
+    return getRoleDashboardTitle(user);
+  }
+
+  return activeNavItem;
 }
 
 function getRoleDashboardTitle(user: SessionUser) {

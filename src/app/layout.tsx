@@ -56,6 +56,14 @@ export const metadata: Metadata = {
     apple: "/brand/myntix-icon-180.png",
     icon: "/favicon.ico",
   },
+  robots: {
+    follow: false,
+    googleBot: {
+      follow: false,
+      index: false,
+    },
+    index: false,
+  },
 };
 
 export default function RootLayout({

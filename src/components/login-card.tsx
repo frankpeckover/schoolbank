@@ -15,6 +15,7 @@ import { GlobalMaintenanceBanner } from "@/components/ui/global-maintenance-bann
 import { EyeIcon } from "@/components/ui/icons";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { SchoolLogo } from "@/components/ui/school-logo";
+import { useDialogFocus } from "@/components/ui/use-dialog-focus";
 import type { SchoolInfo } from "@/services/school-service";
 
 type LoginCardProps = {
@@ -220,7 +221,10 @@ export function LoginCard({
             </div>
 
             {error && (
-              <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
+              <p
+                className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong"
+                role="alert"
+              >
                 {error}
               </p>
             )}
@@ -300,6 +304,7 @@ function LoginMessage({
   return (
     <p
       className={`login-entry-item mb-4 rounded-md border px-3 py-2 text-sm font-medium ${toneClassName}`}
+      role={tone === "warning" ? "alert" : "status"}
     >
       {message}
     </p>
@@ -383,6 +388,7 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const dialogRef = useDialogFocus({ onEscape: onClose });
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -408,7 +414,9 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
         aria-label="Reset password"
         aria-modal="true"
         className="theme-panel login-panel motion-pop w-full max-w-md p-5 shadow-lg"
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
       >
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -440,12 +448,18 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
           </div>
 
           {message && (
-            <p className="rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
+            <p
+              className="rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success"
+              role="status"
+            >
               {message}
             </p>
           )}
           {error && (
-            <p className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
+            <p
+              className="rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong"
+              role="alert"
+            >
               {error}
             </p>
           )}

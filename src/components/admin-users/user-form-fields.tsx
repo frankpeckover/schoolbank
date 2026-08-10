@@ -127,6 +127,7 @@ function AccountFields({
 
       {mode === "create" && (
         <TextField
+          autoComplete="new-password"
           id="password"
           label="Password"
           onChange={(value) => onChange("password", value)}
@@ -186,12 +187,14 @@ function ProfileImageUploadField({
 }
 
 function TextField({
+  autoComplete,
   id,
   label,
   onChange,
   type = "text",
   value,
 }: {
+  autoComplete?: string;
   id: string;
   label: string;
   onChange: (value: string) => void;
@@ -204,6 +207,7 @@ function TextField({
         {label}
       </label>
       <input
+        autoComplete={autoComplete}
         className="mt-1.5 w-full rounded-md border border-border bg-surface px-3 py-2.5 text-sm outline-none ring-brand transition focus:ring-2 sm:mt-2 sm:py-3"
         id={id}
         onChange={(event) => onChange(event.target.value)}

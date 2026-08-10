@@ -15,8 +15,13 @@ export function PasswordResetSection({
     <div className="mt-4 border-t border-border-subtle pt-4 sm:mt-5 sm:pt-5">
       <h4 className="text-base font-semibold sm:text-lg">Reset Password</h4>
       <div className="mt-2 flex flex-col gap-2 sm:mt-3 sm:flex-row sm:gap-3">
+        <label className="sr-only" htmlFor="adminResetPassword">
+          New password
+        </label>
         <input
+          autoComplete="new-password"
           className="w-full rounded-md border border-border bg-surface px-3 py-2.5 text-sm outline-none ring-brand transition focus:ring-2 sm:py-3"
+          id="adminResetPassword"
           onChange={(event) => onNewPasswordChange(event.target.value)}
           placeholder="New password"
           type="password"

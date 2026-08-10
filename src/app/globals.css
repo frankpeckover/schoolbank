@@ -845,11 +845,12 @@ table tbody tr:last-child td {
   color: var(--text-muted);
 }
 
-.professional-shell button:focus-visible,
-.professional-shell a:focus-visible,
-.professional-shell input:focus-visible,
-.professional-shell select:focus-visible,
-.professional-shell textarea:focus-visible {
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--brand) 78%, white);
   outline-offset: 2px;
 }
