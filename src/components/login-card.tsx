@@ -140,7 +140,11 @@ export function LoginCard({
   }
 
   return (
-    <main className="login-shell flex min-h-screen flex-col bg-background text-foreground">
+    <main
+      className="login-shell flex min-h-screen flex-col bg-background text-foreground"
+      id="main-content"
+      tabIndex={-1}
+    >
       <GlobalMaintenanceBanner message={maintenanceMessage} />
       <div className="mx-auto flex w-full max-w-md flex-1 items-center px-4 py-5 sm:px-6 lg:px-8">
         <section className="login-panel login-entry w-full p-2 sm:p-0">
@@ -400,7 +404,12 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="theme-panel login-panel motion-pop w-full max-w-md p-5 shadow-lg">
+      <div
+        aria-label="Reset password"
+        aria-modal="true"
+        className="theme-panel login-panel motion-pop w-full max-w-md p-5 shadow-lg"
+        role="dialog"
+      >
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2 className="text-2xl font-semibold">Reset password</h2>

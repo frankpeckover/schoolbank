@@ -23,7 +23,10 @@ export function ModalShell({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-6">
       <div
+        aria-label={title}
+        aria-modal="true"
         className={`app-modal theme-panel motion-pop max-h-full w-full ${maxWidthClassName} overflow-y-auto p-5 shadow-lg`}
+        role="dialog"
       >
         <div className="flex items-start justify-between gap-4 border-b border-border-subtle pb-4">
           <div className="min-w-0">

@@ -101,7 +101,7 @@ export function DashboardShell({
   const shellRoleClassName = getShellRoleClassName(user);
 
   return (
-    <main className={`app-shell-surface min-h-screen overflow-x-hidden bg-background text-foreground ${shellRoleClassName}`}>
+    <div className={`app-shell-surface min-h-screen overflow-x-hidden bg-background text-foreground ${shellRoleClassName}`}>
       <GlobalMaintenanceBanner message={maintenanceMessage} />
       <div className="flex min-h-screen w-full min-w-0 overflow-x-hidden">
         <DesktopSideNav
@@ -114,7 +114,11 @@ export function DashboardShell({
           userDisplayName={user.displayName}
         />
 
-        <div className="mx-auto flex min-w-0 flex-1 flex-col px-4 py-2 sm:px-6 lg:max-w-[calc(96rem-15rem)] lg:px-8">
+        <main
+          className="mx-auto flex min-w-0 flex-1 flex-col px-4 py-2 sm:px-6 lg:max-w-[calc(96rem-15rem)] lg:px-8"
+          id="main-content"
+          tabIndex={-1}
+        >
           <header className="relative z-50 pb-2 pt-4">
             <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-3">
               <div className="lg:hidden">
@@ -223,9 +227,9 @@ export function DashboardShell({
           contactEmail={schoolInfo.contactEmail}
           schoolName={schoolName}
         />
-        </div>
+        </main>
       </div>
-    </main>
+    </div>
   );
 }
 

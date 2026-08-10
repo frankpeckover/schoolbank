@@ -318,7 +318,7 @@ function TransactionList({
           />
           <thead>
             <tr className="border-b border-border-subtle text-text-muted">
-              <th className="py-2 pr-4 font-semibold">
+              <th scope="col" className="py-2 pr-4 font-semibold">
                 <TableHeaderFilter
                   isActive={Boolean(filters.reason)}
                   label="Description"
@@ -332,7 +332,7 @@ function TransactionList({
                 </TableHeaderFilter>
               </th>
               {canViewAllTransactions && (
-                <th className="py-2 pr-4 font-semibold">
+                <th scope="col" className="py-2 pr-4 font-semibold">
                   <TableHeaderFilter
                     isActive={Boolean(filters.student)}
                     label="Account"
@@ -346,7 +346,7 @@ function TransactionList({
                   </TableHeaderFilter>
                 </th>
               )}
-              <th className="py-2 pr-4 font-semibold">
+              <th scope="col" className="py-2 pr-4 font-semibold">
                 <TableHeaderFilter
                   isActive={Boolean(filters.type)}
                   label="Type"
@@ -362,8 +362,8 @@ function TransactionList({
                   />
                 </TableHeaderFilter>
               </th>
-              <th className="py-2 pr-4 font-semibold">Time</th>
-              <th className="py-2 pr-4 font-semibold">
+              <th scope="col" className="py-2 pr-4 font-semibold">Time</th>
+              <th scope="col" className="py-2 pr-4 font-semibold">
                 <TableHeaderFilter
                   isActive={Boolean(
                     filters.purchaseStatus || filters.voidedStatus !== "active",
@@ -403,7 +403,7 @@ function TransactionList({
                   </div>
                 </TableHeaderFilter>
               </th>
-              <th className="py-2 pr-4 text-right font-semibold">
+              <th scope="col" className="py-2 pr-4 text-right font-semibold">
                 <TableHeaderFilter
                   isActive={Boolean(
                     filters.amountDirection ||
@@ -447,7 +447,7 @@ function TransactionList({
                   </div>
                 </TableHeaderFilter>
               </th>
-              <th className="py-2 text-right font-semibold">
+              <th scope="col" className="py-2 text-right font-semibold">
                 <span className="sr-only">Actions</span>
               </th>
             </tr>

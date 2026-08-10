@@ -168,8 +168,8 @@ function ErrorLogList({
           </colgroup>
           <thead>
             <tr className="border-b border-border-subtle text-text-muted">
-              <th className="py-2 pr-4 font-semibold">Time</th>
-              <th className="py-2 pr-4 font-semibold">
+              <th scope="col" className="py-2 pr-4 font-semibold">Time</th>
+              <th scope="col" className="py-2 pr-4 font-semibold">
                 <TableHeaderFilter
                   isActive={Boolean(filters.source)}
                   label="Source"
@@ -182,7 +182,7 @@ function ErrorLogList({
                   />
                 </TableHeaderFilter>
               </th>
-              <th className="py-2 pr-4 font-semibold">
+              <th scope="col" className="py-2 pr-4 font-semibold">
                 <TableHeaderFilter
                   isActive={Boolean(filters.message)}
                   label="Message"
@@ -195,7 +195,7 @@ function ErrorLogList({
                   />
                 </TableHeaderFilter>
               </th>
-              <th className="py-2 text-right font-semibold">
+              <th scope="col" className="py-2 text-right font-semibold">
                 <span className="sr-only">Actions</span>
               </th>
             </tr>

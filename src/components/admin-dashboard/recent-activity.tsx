@@ -67,9 +67,9 @@ function RecentAuditList({ entries }: { entries: AuditLogItem[] }) {
         <table className="admin-recent-activity-table w-full min-w-[460px] table-fixed border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-border-subtle text-text-muted">
-              <th className="py-2 pr-4 font-semibold">Time</th>
-              <th className="py-2 pr-4 font-semibold">Action</th>
-              <th className="py-2 font-semibold">Actor</th>
+              <th scope="col" className="py-2 pr-4 font-semibold">Time</th>
+              <th scope="col" className="py-2 pr-4 font-semibold">Action</th>
+              <th scope="col" className="py-2 font-semibold">Actor</th>
             </tr>
           </thead>
           <tbody>
@@ -138,10 +138,10 @@ function RecentLedgerList({
           </colgroup>
           <thead>
             <tr className="border-b border-border-subtle text-text-muted">
-              <th className="py-2 pr-4 font-semibold">Account</th>
-              <th className="py-2 pr-4 font-semibold">Description</th>
-              <th className="py-2 pr-4 font-semibold">Type</th>
-              <th className="py-2 text-right font-semibold">Amount</th>
+              <th scope="col" className="py-2 pr-4 font-semibold">Account</th>
+              <th scope="col" className="py-2 pr-4 font-semibold">Description</th>
+              <th scope="col" className="py-2 pr-4 font-semibold">Type</th>
+              <th scope="col" className="py-2 text-right font-semibold">Amount</th>
             </tr>
           </thead>
           <tbody>

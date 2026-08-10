@@ -260,8 +260,8 @@ function GeneratedPasswords({ users }: { users: ImportedUserCredential[] }) {
         <table className="hidden w-full text-left text-sm md:table">
           <thead className="text-text-muted">
             <tr>
-              <th className="py-2 pr-4 font-semibold">Username</th>
-              <th className="py-2 font-semibold">Password</th>
+              <th scope="col" className="py-2 pr-4 font-semibold">Username</th>
+              <th scope="col" className="py-2 font-semibold">Password</th>
             </tr>
           </thead>
           <tbody>

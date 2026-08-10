@@ -380,7 +380,12 @@ function QuickAdjustmentModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="theme-panel motion-pop max-h-[90vh] w-full max-w-xl overflow-y-auto p-5 shadow-lg">
+      <div
+        aria-label={`${selection.direction === "add" ? "Add" : "Take"} ${currencyName}`}
+        aria-modal="true"
+        className="theme-panel motion-pop max-h-[90vh] w-full max-w-xl overflow-y-auto p-5 shadow-lg"
+        role="dialog"
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3 className="truncate text-lg font-semibold">
@@ -391,6 +396,7 @@ function QuickAdjustmentModal({
             </p>
           </div>
           <button
+            aria-label="Close credit adjustment"
             className="rounded-md border border-button-border p-2 text-text-control transition hover:bg-panel-soft"
             onClick={onClose}
             type="button"

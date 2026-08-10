@@ -25,7 +25,12 @@ export function ShopItemDetailsModal({
 }: ShopItemDetailsModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="app-modal theme-panel motion-pop relative max-h-full w-full max-w-xl overflow-y-auto p-5 shadow-lg">
+      <div
+        aria-label={`Reward details: ${item.name}`}
+        aria-modal="true"
+        className="app-modal theme-panel motion-pop relative max-h-full w-full max-w-xl overflow-y-auto p-5 shadow-lg"
+        role="dialog"
+      >
         <ShopItemDetailsImage item={item} />
 
         <div className="mt-4 flex items-start justify-between gap-4">

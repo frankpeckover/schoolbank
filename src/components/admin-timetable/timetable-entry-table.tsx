@@ -83,7 +83,7 @@ export function TimetableEntryTable({
         </colgroup>
         <thead>
           <tr className="border-b border-border-subtle text-text-muted">
-            <th className="py-2 pr-3 font-semibold">
+            <th scope="col" className="py-2 pr-3 font-semibold">
               <RowSelectionCheckbox
                 checked={areAllVisibleEntriesSelected}
                 label={
@@ -94,7 +94,7 @@ export function TimetableEntryTable({
                 onChange={onVisibleEntriesSelectionChange}
               />
             </th>
-            <th className="py-2 pr-4 font-semibold">
+            <th scope="col" className="py-2 pr-4 font-semibold">
               <TableHeaderFilter
                 isActive={Boolean(filters.groupId)}
                 label="Group"
@@ -114,7 +114,7 @@ export function TimetableEntryTable({
                 />
               </TableHeaderFilter>
             </th>
-            <th className="py-2 pr-4 font-semibold">
+            <th scope="col" className="py-2 pr-4 font-semibold">
               <TableHeaderFilter
                 isActive={Boolean(filters.teacherUserId)}
                 label="Teacher"
@@ -134,7 +134,7 @@ export function TimetableEntryTable({
                 />
               </TableHeaderFilter>
             </th>
-            <th className="py-2 pr-4 font-semibold">
+            <th scope="col" className="py-2 pr-4 font-semibold">
               <TableHeaderFilter
                 isActive={Boolean(filters.dayOfWeek)}
                 label="Day"
@@ -154,8 +154,8 @@ export function TimetableEntryTable({
                 />
               </TableHeaderFilter>
             </th>
-            <th className="py-2 pr-4 font-semibold">Time</th>
-            <th className="py-2 pr-4 font-semibold">
+            <th scope="col" className="py-2 pr-4 font-semibold">Time</th>
+            <th scope="col" className="py-2 pr-4 font-semibold">
               <TableHeaderFilter
                 isActive={Boolean(filters.status)}
                 label="Status"
@@ -175,7 +175,7 @@ export function TimetableEntryTable({
                 />
               </TableHeaderFilter>
             </th>
-            <th className="py-2 text-right font-semibold">
+            <th scope="col" className="py-2 text-right font-semibold">
               <span className="sr-only">Actions</span>
             </th>
           </tr>

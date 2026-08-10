@@ -230,10 +230,10 @@ function GroupMembersTable({
             </colgroup>
             <thead className="text-text-muted">
               <tr className="border-b border-border-subtle">
-                <th className="py-2 pr-4 font-semibold">Select</th>
-                <th className="py-2 pr-4 font-semibold">Name</th>
-                <th className="py-2 pr-4 font-semibold">Username</th>
-                <th className="py-2 text-right font-semibold">
+                <th scope="col" className="py-2 pr-4 font-semibold">Select</th>
+                <th scope="col" className="py-2 pr-4 font-semibold">Name</th>
+                <th scope="col" className="py-2 pr-4 font-semibold">Username</th>
+                <th scope="col" className="py-2 text-right font-semibold">
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>

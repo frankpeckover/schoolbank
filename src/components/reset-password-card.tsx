@@ -45,7 +45,11 @@ export function ResetPasswordCard({ token }: ResetPasswordCardProps) {
   }
 
   return (
-    <main className="min-h-screen bg-background px-4 py-5 text-foreground sm:px-6 lg:px-8">
+    <main
+      className="min-h-screen bg-background px-4 py-5 text-foreground sm:px-6 lg:px-8"
+      id="main-content"
+      tabIndex={-1}
+    >
       <div className="mx-auto grid min-h-[calc(100vh-2.5rem)] w-full max-w-md content-center">
         <section className="theme-panel p-5">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-text-kicker">

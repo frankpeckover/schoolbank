@@ -307,7 +307,7 @@ function CompactShopRequestList({
           </colgroup>
           <thead>
             <tr className="border-b border-border-subtle text-text-muted">
-              <th className="py-2 pr-4 font-semibold">
+              <th scope="col" className="py-2 pr-4 font-semibold">
                 <TableHeaderFilter
                   isActive={Boolean(filters.item)}
                   label="Request"
@@ -320,7 +320,7 @@ function CompactShopRequestList({
                   />
                 </TableHeaderFilter>
               </th>
-              <th className="py-2 pr-4 font-semibold">
+              <th scope="col" className="py-2 pr-4 font-semibold">
                 <TableHeaderFilter
                   isActive={Boolean(filters.student)}
                   label="Student"
@@ -333,8 +333,8 @@ function CompactShopRequestList({
                   />
                 </TableHeaderFilter>
               </th>
-              <th className="py-2 pr-4 font-semibold">Cost</th>
-              <th className="py-2 pr-4 font-semibold">
+              <th scope="col" className="py-2 pr-4 font-semibold">Cost</th>
+              <th scope="col" className="py-2 pr-4 font-semibold">
                 <TableHeaderFilter
                   isActive={Boolean(filters.status)}
                   label="Status"
@@ -358,7 +358,7 @@ function CompactShopRequestList({
                   />
                 </TableHeaderFilter>
               </th>
-              <th className="py-2 text-right font-semibold">
+              <th scope="col" className="py-2 text-right font-semibold">
                 <span className="sr-only">Actions</span>
               </th>
             </tr>

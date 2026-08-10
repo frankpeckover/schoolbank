@@ -191,8 +191,8 @@ function AuditLogList({
           </colgroup>
           <thead>
             <tr className="border-b border-border-subtle text-text-muted">
-              <th className="py-2 pr-4 font-semibold">Time</th>
-              <th className="py-2 pr-4 font-semibold">
+              <th scope="col" className="py-2 pr-4 font-semibold">Time</th>
+              <th scope="col" className="py-2 pr-4 font-semibold">
                 <TableHeaderFilter
                   isActive={Boolean(filters.action)}
                   label="Action"
@@ -205,7 +205,7 @@ function AuditLogList({
                   />
                 </TableHeaderFilter>
               </th>
-              <th className="py-2 pr-4 font-semibold">
+              <th scope="col" className="py-2 pr-4 font-semibold">
                 <TableHeaderFilter
                   isActive={Boolean(filters.actor)}
                   label="Actor"
@@ -218,7 +218,7 @@ function AuditLogList({
                   />
                 </TableHeaderFilter>
               </th>
-              <th className="py-2 pr-4 font-semibold">
+              <th scope="col" className="py-2 pr-4 font-semibold">
                 <TableHeaderFilter
                   isActive={Boolean(filters.record)}
                   label="Record"
@@ -231,7 +231,7 @@ function AuditLogList({
                   />
                 </TableHeaderFilter>
               </th>
-              <th className="py-2 pr-4 font-semibold">
+              <th scope="col" className="py-2 pr-4 font-semibold">
                 <TableHeaderFilter
                   isActive={Boolean(filters.details)}
                   label="Details"
@@ -244,7 +244,7 @@ function AuditLogList({
                   />
                 </TableHeaderFilter>
               </th>
-              <th className="py-2 text-right font-semibold">
+              <th scope="col" className="py-2 text-right font-semibold">
                 <span className="sr-only">Actions</span>
               </th>
             </tr>

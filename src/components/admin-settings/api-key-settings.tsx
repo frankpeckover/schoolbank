@@ -168,11 +168,11 @@ export function ApiKeySettings() {
             <table className="w-full table-fixed text-left text-sm">
               <thead>
                 <tr className="border-b-2 border-border text-xs uppercase text-text-muted">
-                  <th className="w-[28%] px-4 py-3 font-medium">Name</th>
-                  <th className="w-[18%] px-4 py-3 font-medium">Prefix</th>
-                  <th className="w-[34%] px-4 py-3 font-medium">Scopes</th>
-                  <th className="w-[12%] px-4 py-3 font-medium">Status</th>
-                  <th className="w-[8%] px-4 py-3 font-medium"></th>
+                  <th scope="col" className="w-[28%] px-4 py-3 font-medium">Name</th>
+                  <th scope="col" className="w-[18%] px-4 py-3 font-medium">Prefix</th>
+                  <th scope="col" className="w-[34%] px-4 py-3 font-medium">Scopes</th>
+                  <th scope="col" className="w-[12%] px-4 py-3 font-medium">Status</th>
+                  <th scope="col" className="w-[8%] px-4 py-3 font-medium"></th>
                 </tr>
               </thead>
               <tbody>

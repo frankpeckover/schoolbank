@@ -107,7 +107,9 @@ function ToastCard({
 
   return (
     <div
+      aria-atomic="true"
       className={`pointer-events-auto motion-pop flex w-full max-w-md items-start justify-between gap-3 rounded-md border px-4 py-3 text-sm shadow-lg ${toneClassName}`}
+      aria-live={toast.tone === "error" ? "assertive" : "polite"}
       role={role}
     >
       <p className="min-w-0 break-words font-medium">{toast.text}</p>

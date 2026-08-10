@@ -100,8 +100,8 @@ function GroupMembersList({
           <table className="hidden w-full text-left text-sm md:table">
             <thead className="text-text-muted">
               <tr className="border-b border-border-subtle">
-                <th className="py-2 pr-4 font-semibold">Name</th>
-                <th className="py-2 font-semibold">Username</th>
+                <th scope="col" className="py-2 pr-4 font-semibold">Name</th>
+                <th scope="col" className="py-2 font-semibold">Username</th>
               </tr>
             </thead>
             <tbody>

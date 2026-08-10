@@ -35,7 +35,12 @@ export function TextReasonModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4">
-      <div className="theme-panel motion-pop w-full max-w-md p-5 shadow-lg">
+      <div
+        aria-label={title}
+        aria-modal="true"
+        className="theme-panel motion-pop w-full max-w-md p-5 shadow-lg"
+        role="dialog"
+      >
         <div>
           <h3 className="text-xl font-semibold">{title}</h3>
           <p className="mt-1 text-sm text-text-muted">{description}</p>

@@ -23,7 +23,7 @@ export function SearchInput({
     <div className={`relative ${className}`}>
       <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
       <input
-        aria-label={ariaLabel}
+        aria-label={ariaLabel ?? placeholder ?? "Search"}
         className="w-full rounded-md border border-border bg-surface py-3 pl-10 pr-3 text-sm outline-none ring-brand transition placeholder:text-text-muted focus:ring-2 disabled:cursor-not-allowed disabled:bg-panel-soft disabled:text-text-muted"
         disabled={disabled}
         id={id}

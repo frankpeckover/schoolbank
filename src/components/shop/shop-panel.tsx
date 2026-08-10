@@ -540,7 +540,7 @@ function ShopManagementList({
         </colgroup>
         <thead>
           <tr className="border-b border-border-subtle text-text-muted">
-            <th className="py-2 pr-3 font-semibold">
+            <th scope="col" className="py-2 pr-3 font-semibold">
               <RowSelectionCheckbox
                 checked={areAllVisibleItemsSelected}
                 label={
@@ -551,7 +551,7 @@ function ShopManagementList({
                 onChange={onVisibleItemsSelectionChange}
               />
             </th>
-            <th className="py-2 pr-4 font-semibold">
+            <th scope="col" className="py-2 pr-4 font-semibold">
               <TableHeaderFilter
                 isActive={Boolean(filters.search)}
                 label="Item"
@@ -564,7 +564,7 @@ function ShopManagementList({
                 />
               </TableHeaderFilter>
             </th>
-            <th className="py-2 pr-4 font-semibold">
+            <th scope="col" className="py-2 pr-4 font-semibold">
               <TableHeaderFilter
                 isActive={Boolean(filters.search)}
                 label="Description"
@@ -577,7 +577,7 @@ function ShopManagementList({
                 />
               </TableHeaderFilter>
             </th>
-            <th className="py-2 pr-4 text-right font-semibold">
+            <th scope="col" className="py-2 pr-4 text-right font-semibold">
               <TableHeaderFilter
                 isActive={Boolean(filters.priceMin || filters.priceMax)}
                 label="Cost"
@@ -602,8 +602,8 @@ function ShopManagementList({
                 </div>
               </TableHeaderFilter>
             </th>
-            <th className="py-2 pr-4 text-right font-semibold">Quantity</th>
-            <th className="py-2 pr-4 font-semibold">
+            <th scope="col" className="py-2 pr-4 text-right font-semibold">Quantity</th>
+            <th scope="col" className="py-2 pr-4 font-semibold">
               <TableHeaderFilter
                 isActive={filters.showArchivedItems}
                 label="Status"
@@ -626,7 +626,7 @@ function ShopManagementList({
                 />
               </TableHeaderFilter>
             </th>
-            <th className="py-2 text-right font-semibold">
+            <th scope="col" className="py-2 text-right font-semibold">
               <span className="sr-only">Actions</span>
             </th>
           </tr>

@@ -317,12 +317,31 @@ button:not(:disabled):active {
   transform: translateY(1px) scale(0.99);
 }
 
+#main-content {
+  scroll-margin-top: 1rem;
+}
+
 .motion-panel {
   animation: panel-enter var(--motion-standard) var(--motion-ease);
 }
 
 .motion-pop {
   animation: pop-enter var(--motion-standard) var(--motion-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  button:not(:disabled):active {
+    transform: none;
+  }
 }
 
 .app-shell-surface {

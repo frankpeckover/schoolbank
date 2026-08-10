@@ -135,7 +135,11 @@ export function HeaderNavMenu({
   }
 
   return (
-    <nav className="relative z-[100] flex items-center gap-2" ref={navRef}>
+    <nav
+      aria-label="Mobile navigation"
+      className="relative z-[100] flex items-center gap-2"
+      ref={navRef}
+    >
       <button
         aria-expanded={isMobileMenuOpen}
         aria-label="Open menu"
@@ -205,7 +209,8 @@ export function DesktopSideNav({
         aria-hidden="true"
         className={`hidden shrink-0 transition-[width] duration-200 lg:block ${widthClassName}`}
       />
-      <aside
+      <nav
+        aria-label="Primary navigation"
         className={`fixed inset-y-0 left-0 z-[90] hidden h-dvh shrink-0 transition-[width] duration-200 lg:block ${widthClassName}`}
       >
         <div className="flex h-full flex-col border-r border-border-subtle bg-surface">
@@ -254,7 +259,7 @@ export function DesktopSideNav({
             userDisplayName={userDisplayName}
           />
         </div>
-      </aside>
+      </nav>
     </>
   );
 }

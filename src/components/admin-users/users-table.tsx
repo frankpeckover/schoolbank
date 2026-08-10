@@ -89,7 +89,7 @@ export function UsersTable({
         </colgroup>
         <thead>
           <tr className="border-b border-border-subtle text-text-muted">
-            <th className="py-3 pr-3 font-semibold">
+            <th scope="col" className="py-3 pr-3 font-semibold">
               <RowSelectionCheckbox
                 checked={areAllVisibleUsersSelected}
                 label={
@@ -100,7 +100,7 @@ export function UsersTable({
                 onChange={onVisibleUsersSelectionChange}
               />
             </th>
-            <th className="py-3 pr-4 font-semibold">
+            <th scope="col" className="py-3 pr-4 font-semibold">
               <TableHeaderFilter
                 isActive={Boolean(filters.firstName || filters.lastName)}
                 label="Name"
@@ -122,7 +122,7 @@ export function UsersTable({
                 </div>
               </TableHeaderFilter>
             </th>
-            <th className="py-3 pr-4 font-semibold">
+            <th scope="col" className="py-3 pr-4 font-semibold">
               <TableHeaderFilter
                 isActive={Boolean(filters.username)}
                 label="Username"
@@ -135,7 +135,7 @@ export function UsersTable({
                 />
               </TableHeaderFilter>
             </th>
-            <th className="py-3 pr-4 font-semibold">
+            <th scope="col" className="py-3 pr-4 font-semibold">
               <TableHeaderFilter
                 isActive={Boolean(filters.email)}
                 label="Email"
@@ -148,7 +148,7 @@ export function UsersTable({
                 />
               </TableHeaderFilter>
             </th>
-            <th className="py-3 pr-4 font-semibold">
+            <th scope="col" className="py-3 pr-4 font-semibold">
               <TableHeaderFilter
                 isActive={Boolean(filters.role)}
                 label="Role"
@@ -168,7 +168,7 @@ export function UsersTable({
                 />
               </TableHeaderFilter>
             </th>
-            <th className="py-3 pr-4 font-semibold">
+            <th scope="col" className="py-3 pr-4 font-semibold">
               <TableHeaderFilter
                 isActive={Boolean(filters.lastActivity)}
                 label="Last activity"
@@ -191,7 +191,7 @@ export function UsersTable({
                 />
               </TableHeaderFilter>
             </th>
-            <th className="py-3 pr-4 font-semibold">
+            <th scope="col" className="py-3 pr-4 font-semibold">
               <TableHeaderFilter
                 isActive={showInactiveUsers}
                 label="Status"
@@ -210,7 +210,7 @@ export function UsersTable({
                 />
               </TableHeaderFilter>
             </th>
-            <th className="py-3 text-right font-semibold">
+            <th scope="col" className="py-3 text-right font-semibold">
               <span className="sr-only">Actions</span>
             </th>
           </tr>
