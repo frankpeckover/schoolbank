@@ -13,9 +13,17 @@ import { UsersTable } from "@/components/admin-users/users-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FixedNotification } from "@/components/ui/fixed-notification";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
+import { BulkSelectionControls } from "@/components/ui/bulk-selection-controls";
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 import { IconButton } from "@/components/ui/icon-button";
-import { FileDownIcon, FileUpIcon, PlusIcon, UsersIcon } from "@/components/ui/icons";
+import {
+  CheckIcon,
+  FileDownIcon,
+  FileUpIcon,
+  PlusIcon,
+  UsersIcon,
+  XIcon,
+} from "@/components/ui/icons";
 import {
   ListPagination,
   usePagedList,
@@ -42,6 +50,12 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
     isActive: boolean;
     user: UserListItem;
   } | null>(null);
+  const [pendingBulkUserStatusChange, setPendingBulkUserStatusChange] =
+    useState<{
+      isActive: boolean;
+      userIds: string[];
+    } | null>(null);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -124,6 +138,24 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
     setPendingUserStatusChange({ isActive, user });
   }
 
+  function handleUserSelectionChange(userId: string, isSelected: boolean) {
+    setSelectedUserIds((currentUserIds) =>
+      isSelected
+        ? [...new Set([...currentUserIds, userId])]
+        : currentUserIds.filter((currentUserId) => currentUserId !== userId),
+    );
+  }
+
+  function handleVisibleUsersSelectionChange(isSelected: boolean) {
+    const visibleUserIds = visibleUsers.map((user) => user.id);
+
+    setSelectedUserIds((currentUserIds) =>
+      isSelected
+        ? [...new Set([...currentUserIds, ...visibleUserIds])]
+        : currentUserIds.filter((userId) => !visibleUserIds.includes(userId)),
+    );
+  }
+
   async function confirmSetUserActive() {
     if (!pendingUserStatusChange) {
       return;
@@ -146,6 +178,36 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
       pendingUserStatusChange.isActive ? "User enabled." : "User disabled.",
     );
     setPendingUserStatusChange(null);
+    await refreshUsers();
+  }
+
+  async function confirmBulkSetUserActive() {
+    if (!pendingBulkUserStatusChange) {
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+
+    for (const userId of pendingBulkUserStatusChange.userIds) {
+      const result = await setUserActive(
+        userId,
+        pendingBulkUserStatusChange.isActive,
+      );
+
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+    }
+
+    setMessage(
+      `${pendingBulkUserStatusChange.userIds.length} users ${
+        pendingBulkUserStatusChange.isActive ? "enabled" : "disabled"
+      }.`,
+    );
+    setPendingBulkUserStatusChange(null);
+    setSelectedUserIds([]);
     await refreshUsers();
   }
 
@@ -176,7 +238,10 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
               onDuplicate={handleDuplicateUser}
               onEdit={setEditingUser}
               onShowInactiveUsersChange={setShowInactiveUsers}
+              onUserSelectionChange={handleUserSelectionChange}
               onUserActiveChange={handleSetUserActive}
+              onVisibleUsersSelectionChange={handleVisibleUsersSelectionChange}
+              selectedUserIds={selectedUserIds}
               showInactiveUsers={showInactiveUsers}
               toolbar={
                 <TableToolbar
@@ -209,11 +274,48 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
                     </>
                   }
                 >
-                  <ListCount
-                    count={visibleUsers.length}
-                    label="users"
-                    totalCount={filteredUsers.length}
-                  />
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <ListCount
+                      count={visibleUsers.length}
+                      label="users"
+                      totalCount={filteredUsers.length}
+                    />
+                    <BulkSelectionControls
+                      actions={[
+                        {
+                          icon: <CheckIcon />,
+                          label: "Enable selected",
+                          onSelect: () =>
+                            setPendingBulkUserStatusChange({
+                              isActive: true,
+                              userIds: selectedUserIds,
+                            }),
+                          tone: "primary",
+                        },
+                        {
+                          icon: <XIcon />,
+                          label: "Disable selected",
+                          onSelect: () =>
+                            setPendingBulkUserStatusChange({
+                              isActive: false,
+                              userIds: selectedUserIds,
+                            }),
+                          tone: "danger",
+                        },
+                      ]}
+                      allSelectedLabel="Select all users"
+                      isAllSelected={
+                        visibleUsers.length > 0 &&
+                        visibleUsers.every((user) =>
+                          selectedUserIds.includes(user.id),
+                        )
+                      }
+                      onVisibleSelectionChange={
+                        handleVisibleUsersSelectionChange
+                      }
+                      selectedCount={selectedUserIds.length}
+                    />
+                  </div>
                 </TableToolbar>
               }
               users={visibleUsers}
@@ -282,6 +384,25 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
               : "Disable user account"
           }
           tone={pendingUserStatusChange.isActive ? "primary" : "danger"}
+        />
+      )}
+
+      {pendingBulkUserStatusChange && (
+        <ConfirmationModal
+          confirmLabel={
+            pendingBulkUserStatusChange.isActive
+              ? "Enable Users"
+              : "Disable Users"
+          }
+          description={`${pendingBulkUserStatusChange.isActive ? "Enable" : "Disable"} ${pendingBulkUserStatusChange.userIds.length} selected users?`}
+          onCancel={() => setPendingBulkUserStatusChange(null)}
+          onConfirm={confirmBulkSetUserActive}
+          title={
+            pendingBulkUserStatusChange.isActive
+              ? "Enable selected users"
+              : "Disable selected users"
+          }
+          tone={pendingBulkUserStatusChange.isActive ? "primary" : "danger"}
         />
       )}
     </AdminPageSection>

@@ -154,7 +154,7 @@ export function LoginCard({
               <SchoolLogo
                 logoUrl={schoolInfo?.logoUrl ?? ""}
                 name={schoolName}
-                size="small"
+                size="medium"
               />
             )}
           </div>

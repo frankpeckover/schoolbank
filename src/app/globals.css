@@ -47,8 +47,8 @@
 
 :root {
   color-scheme: light;
-  --background: #f8fafc;
-  --background-gradient-start: #ffffff;
+  --background: #f4f7fa;
+  --background-gradient-start: #fbfcfe;
   --accent-primary: #183f3d;
   --accent-secondary: #70b895;
   --accent-highlight: #7ae4b7;
@@ -62,11 +62,11 @@
   --border-muted: #edf1f5;
   --border-strong: #aeb8c4;
   --button-border: #9ca8b6;
-  --text-muted: #5f6b7a;
-  --text-subtle: #667282;
-  --text-kicker: #5b6674;
-  --text-label: #525e6c;
-  --text-control: #364152;
+  --text-muted: #4f5b69;
+  --text-subtle: #596575;
+  --text-kicker: #4d5867;
+  --text-label: #475262;
+  --text-control: #2f3948;
   --brand: var(--accent-primary);
   --brand-hover: color-mix(in srgb, var(--accent-primary) 84%, black);
   --brand-soft: color-mix(in srgb, var(--accent-primary) 10%, white);
@@ -110,7 +110,7 @@
   --radius-control: 0.75rem;
   --radius-card: 1rem;
   --radius-panel: 1.25rem;
-  --font-numeric: "App Numerals", Sora, Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
+  --font-numeric: "App Numerals", Lato, "Segoe UI", Arial, Helvetica, sans-serif;
   --motion-fast: 140ms;
   --motion-standard: 180ms;
   --motion-ease: cubic-bezier(0.2, 0, 0, 1);
@@ -246,9 +246,9 @@ html[data-accent="custom"] {
   --color-wallet-highlight: var(--wallet-highlight);
   --color-progress-track: var(--progress-track);
   --color-activity-meta: var(--activity-meta);
-  --font-numeric: "App Numerals", Sora, Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
+  --font-numeric: "App Numerals", Lato, "Segoe UI", Arial, Helvetica, sans-serif;
   --font-sans: var(--font-numeric);
-  --font-heading: Sora, Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
+  --font-heading: Lato, "Segoe UI", Arial, Helvetica, sans-serif;
   --font-mono: "Cascadia Code", Consolas, monospace;
 }
 
@@ -262,7 +262,7 @@ body {
     linear-gradient(180deg, var(--background-gradient-start) 0, var(--background) 260px),
     var(--background);
   color: var(--foreground);
-  font-family: var(--font-numeric), Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
+  font-family: var(--font-numeric), Lato, "Segoe UI", Arial, Helvetica, sans-serif;
   font-weight: 400;
   min-height: 100dvh;
 }
@@ -273,7 +273,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: Sora, Manrope, "Segoe UI", Arial, Helvetica, sans-serif;
+  font-family: Lato, "Segoe UI", Arial, Helvetica, sans-serif;
 }
 
 .font-semibold {
@@ -647,6 +647,18 @@ table thead th {
 table th,
 table td {
   border-bottom: 1px solid var(--border-subtle);
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+
+table th {
+  padding-bottom: 0.5rem !important;
+  padding-top: 0.5rem !important;
+}
+
+table td {
+  padding-bottom: 0.75rem !important;
+  padding-top: 0.75rem !important;
 }
 
 table th:first-child,
@@ -742,15 +754,15 @@ table tbody tr:last-child td {
   color: var(--text-label);
   font-size: 0.72rem;
   letter-spacing: 0.04em;
-  padding-bottom: 0.35rem !important;
-  padding-top: 0.35rem !important;
+  padding-bottom: 0.5rem !important;
+  padding-top: 0.5rem !important;
   text-transform: uppercase;
 }
 
 .professional-shell table td {
   font-size: 0.84rem;
-  padding-bottom: 0.35rem !important;
-  padding-top: 0.35rem !important;
+  padding-bottom: 0.75rem !important;
+  padding-top: 0.75rem !important;
   vertical-align: middle;
 }
 

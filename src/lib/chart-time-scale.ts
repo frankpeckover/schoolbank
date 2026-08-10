@@ -1,4 +1,4 @@
-export type ChartTimeScale = "daily" | "weekly" | "monthly";
+export type ChartTimeScale = "daily" | "weekly" | "monthly" | "yearly";
 
 export type BalanceEvent = {
   amount: number;
@@ -144,6 +144,10 @@ function getBucketStart(date: Date, scale: ChartTimeScale) {
     bucketStart.setDate(1);
   }
 
+  if (scale === "yearly") {
+    bucketStart.setMonth(0, 1);
+  }
+
   return bucketStart;
 }
 
@@ -160,6 +164,10 @@ function addTimeScaleUnit(date: Date, scale: ChartTimeScale) {
 
   if (scale === "monthly") {
     nextDate.setMonth(nextDate.getMonth() + 1);
+  }
+
+  if (scale === "yearly") {
+    nextDate.setFullYear(nextDate.getFullYear() + 1);
   }
 
   return nextDate;
@@ -189,6 +197,12 @@ function getNiceTickStep(rawStep: number) {
 }
 
 function formatChartDate(date: Date, scale: ChartTimeScale) {
+  if (scale === "yearly") {
+    return new Intl.DateTimeFormat("en-AU", {
+      year: "numeric",
+    }).format(date);
+  }
+
   if (scale === "monthly") {
     return new Intl.DateTimeFormat("en-AU", {
       month: "short",
@@ -203,6 +217,12 @@ function formatChartDate(date: Date, scale: ChartTimeScale) {
 }
 
 function formatChartTooltipDate(date: Date, scale: ChartTimeScale) {
+  if (scale === "yearly") {
+    return new Intl.DateTimeFormat("en-AU", {
+      year: "numeric",
+    }).format(date);
+  }
+
   if (scale === "weekly") {
     const weekEnd = new Date(date);
     weekEnd.setDate(weekEnd.getDate() + 6);

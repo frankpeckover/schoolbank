@@ -127,9 +127,9 @@ export function DashboardShell({
                 <SchoolLogo
                   logoUrl={schoolInfo.logoUrl}
                   name={schoolName}
-                  size="small"
+                  size="medium"
                 />
-                <span className="max-w-40 truncate text-xs font-medium text-text-muted">
+                <span className="max-w-52 truncate text-sm font-medium text-text-muted">
                   {schoolName}
                 </span>
               </div>

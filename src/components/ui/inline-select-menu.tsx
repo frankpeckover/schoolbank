@@ -59,7 +59,7 @@ export function InlineSelectMenu<TValue extends number | string>({
       <button
         aria-expanded={isOpen}
         aria-label={ariaLabel}
-        className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-text-control transition hover:bg-panel-soft hover:text-foreground"
+        className="inline-flex h-[46px] items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 text-xs font-medium text-text-control transition hover:bg-panel-soft hover:text-foreground"
         onClick={() => setIsOpen((currentValue) => !currentValue)}
         type="button"
       >

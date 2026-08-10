@@ -60,6 +60,10 @@ type CirculationTooltipProps = {
 const ACTIVE_CHART_POINT_RADIUS = 5;
 const CHART_STROKE_WIDTH = 2;
 const CHART_CURSOR_WIDTH = 2;
+const circulationChartTimeScaleOptions = [
+  ...chartTimeScaleOptions,
+  { label: "Year", value: "yearly" as const },
+];
 
 export function AdminDashboardPanel({
   currencyName,
@@ -463,7 +467,7 @@ function ChartScaleControl({
     <InlineSelectMenu
       ariaLabel="Change circulation graph scale"
       onChange={onScaleChange}
-      options={chartTimeScaleOptions}
+      options={circulationChartTimeScaleOptions}
       value={selectedScale}
     />
   );

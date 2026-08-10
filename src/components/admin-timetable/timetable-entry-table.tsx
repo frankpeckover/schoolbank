@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 import { weekDays } from "@/components/admin-timetable/timetable-constants";
 import { CopyIcon, PencilIcon, TrashIcon } from "@/components/ui/icons";
+import {
+  MobileSelectionShell,
+  RowSelectionCheckbox,
+} from "@/components/ui/bulk-selection-controls";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { TableActionMenu } from "@/components/ui/table-action-menu";
 import {
@@ -19,7 +23,10 @@ export function TimetableEntryTable({
   onDeleteEntry,
   onDuplicateEntry,
   onEditEntry,
+  onEntrySelectionChange,
   onFiltersChange,
+  onVisibleEntriesSelectionChange,
+  selectedEntryIds,
   teachers,
   toolbar,
 }: {
@@ -29,7 +36,10 @@ export function TimetableEntryTable({
   onDeleteEntry: (entry: TimetableEntry) => void;
   onDuplicateEntry: (entry: TimetableEntry) => void;
   onEditEntry: (entry: TimetableEntry) => void;
+  onEntrySelectionChange: (entryId: string, isSelected: boolean) => void;
   onFiltersChange: (filters: TimetableFiltersState) => void;
+  onVisibleEntriesSelectionChange: (isSelected: boolean) => void;
+  selectedEntryIds: string[];
   teachers: TimetableTeacher[];
   toolbar?: ReactNode;
 }) {
@@ -39,6 +49,9 @@ export function TimetableEntryTable({
   ) {
     onFiltersChange({ ...filters, [field]: value });
   }
+  const areAllVisibleEntriesSelected =
+    entries.length > 0 &&
+    entries.every((entry) => selectedEntryIds.includes(entry.id));
 
   return (
     <>
@@ -50,7 +63,9 @@ export function TimetableEntryTable({
             key={entry.id}
             onDeleteEntry={onDeleteEntry}
             onDuplicateEntry={onDuplicateEntry}
+            onEntrySelectionChange={onEntrySelectionChange}
             onEditEntry={onEditEntry}
+            selected={selectedEntryIds.includes(entry.id)}
           />
         ))}
       </div>
@@ -58,8 +73,9 @@ export function TimetableEntryTable({
       {toolbar && <div className="hidden md:block">{toolbar}</div>}
       <table className="hidden w-full table-fixed border-collapse text-left text-sm md:table">
         <colgroup>
-          <col className="w-[28%]" />
-          <col className="w-[28%]" />
+          <col className="w-10" />
+          <col className="w-[26%]" />
+          <col className="w-[26%]" />
           <col className="w-[14%]" />
           <col className="w-[16%]" />
           <col className="w-[8%]" />
@@ -67,6 +83,17 @@ export function TimetableEntryTable({
         </colgroup>
         <thead>
           <tr className="border-b border-border-subtle text-text-muted">
+            <th className="py-2 pr-3 font-semibold">
+              <RowSelectionCheckbox
+                checked={areAllVisibleEntriesSelected}
+                label={
+                  areAllVisibleEntriesSelected
+                    ? "Clear selected timetable entries"
+                    : "Select all timetable entries"
+                }
+                onChange={onVisibleEntriesSelectionChange}
+              />
+            </th>
             <th className="py-2 pr-4 font-semibold">
               <TableHeaderFilter
                 isActive={Boolean(filters.groupId)}
@@ -156,6 +183,15 @@ export function TimetableEntryTable({
         <tbody>
           {entries.map((entry) => (
             <tr className="border-b border-border-subtle" key={entry.id}>
+              <td className="py-3 pr-3">
+                <RowSelectionCheckbox
+                  checked={selectedEntryIds.includes(entry.id)}
+                  label={`Select ${entry.groupName} timetable entry`}
+                  onChange={(isSelected) =>
+                    onEntrySelectionChange(entry.id, isSelected)
+                  }
+                />
+              </td>
               <td className="py-3 pr-4 font-semibold">{entry.groupName}</td>
               <td className="py-3 pr-4 text-text-muted">{entry.teacherName}</td>
               <td className="py-3 pr-4 text-text-muted">
@@ -187,34 +223,50 @@ function TimetableEntryMobileRow({
   entry,
   onDeleteEntry,
   onDuplicateEntry,
+  onEntrySelectionChange,
   onEditEntry,
+  selected,
 }: {
   entry: TimetableEntry;
   onDeleteEntry: (entry: TimetableEntry) => void;
   onDuplicateEntry: (entry: TimetableEntry) => void;
+  onEntrySelectionChange: (entryId: string, isSelected: boolean) => void;
   onEditEntry: (entry: TimetableEntry) => void;
+  selected: boolean;
 }) {
   return (
     <article className="theme-card p-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="truncate text-sm font-semibold">{entry.groupName}</h3>
-          <p className="mt-1 truncate text-sm text-text-muted">
-            {entry.teacherName}
-          </p>
+      <MobileSelectionShell
+        checkbox={
+          <RowSelectionCheckbox
+            checked={selected}
+            label={`Select ${entry.groupName} timetable entry`}
+            onChange={(isSelected) =>
+              onEntrySelectionChange(entry.id, isSelected)
+            }
+          />
+        }
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-semibold">{entry.groupName}</h3>
+            <p className="mt-1 truncate text-sm text-text-muted">
+              {entry.teacherName}
+            </p>
+          </div>
+          <TimetableActions
+            entry={entry}
+            onDeleteEntry={onDeleteEntry}
+            onDuplicateEntry={onDuplicateEntry}
+            onEditEntry={onEditEntry}
+          />
         </div>
-        <TimetableActions
-          entry={entry}
-          onDeleteEntry={onDeleteEntry}
-          onDuplicateEntry={onDuplicateEntry}
-          onEditEntry={onEditEntry}
-        />
-      </div>
-      <div className="mt-3 grid gap-2 text-sm text-text-muted">
-        <p>{weekDays[entry.dayOfWeek]}</p>
-        <p>{formatTimeRange(entry)}</p>
-        <TimetableStatusBadge isActive={entry.isActive} />
-      </div>
+        <div className="mt-3 grid gap-2 text-sm text-text-muted">
+          <p>{weekDays[entry.dayOfWeek]}</p>
+          <p>{formatTimeRange(entry)}</p>
+          <TimetableStatusBadge isActive={entry.isActive} />
+        </div>
+      </MobileSelectionShell>
     </article>
   );
 }

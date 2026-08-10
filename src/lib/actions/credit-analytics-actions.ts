@@ -1,13 +1,19 @@
 "use server";
 
 import { requireBalanceViewer } from "@/lib/actions/action-auth";
-import { CreditAnalyticsService } from "@/services/credit-analytics-service";
+import {
+  CreditAnalyticsService,
+  type CreditAnalyticsWindowInput,
+} from "@/services/credit-analytics-service";
 
 const creditAnalyticsService = new CreditAnalyticsService();
 
-export async function getCreditAnalyticsSummary(filter = "", windowDays = 30) {
+export async function getCreditAnalyticsSummary(
+  filter = "",
+  windowInput: CreditAnalyticsWindowInput = 30,
+) {
   await requireBalanceViewer();
-  return creditAnalyticsService.getSummary(filter, windowDays);
+  return creditAnalyticsService.getSummary(filter, windowInput);
 }
 
 export async function searchCreditAnalyticsScopes(searchTerm: string) {

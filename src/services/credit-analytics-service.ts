@@ -71,6 +71,13 @@ export type CreditAnalyticsSummaryResult = {
   trend: CreditAnalyticsTrendPoint[];
 };
 
+export type CreditAnalyticsWindowInput =
+  | number
+  | {
+      endDate: string;
+      startDate: string;
+    };
+
 type SummaryRow = {
   active_shop_requests: string;
   active_student_count: string;
@@ -139,10 +146,10 @@ const scopeSearchLimit = 8;
 export class CreditAnalyticsService {
   async getSummary(
     scopeKey = "cohort",
-    windowDays = defaultAnalyticsWindowDays,
+    windowInput: CreditAnalyticsWindowInput = defaultAnalyticsWindowDays,
   ): Promise<CreditAnalyticsSummaryResult> {
     const scope = parseScopeKey(scopeKey);
-    const analyticsWindowDays = sanitizeAnalyticsWindowDays(windowDays);
+    const analyticsWindow = sanitizeAnalyticsWindow(windowInput);
     const [
       summaryResult,
       bucketResult,
@@ -180,7 +187,8 @@ export class CreditAnalyticsService {
           coalesce(percentile_cont(0.5) within group (order by balance), 0) as median_balance,
           count(*) filter (where balance = 0 and is_active = true) as zero_balance_count,
           count(*) filter (
-            where last_activity_at >= now() - ($1::int * interval '1 day')
+            where last_activity_at >= $1::timestamp
+              and last_activity_at < $2::timestamp
               and is_active = true
           ) as students_with_recent_activity,
           coalesce((
@@ -191,7 +199,8 @@ export class CreditAnalyticsService {
             where ledger_entries.amount > 0
               and ledger_entries.status = 'posted'
               and ledger_entries.is_voided = false
-              and ledger_entries.created_at >= now() - ($1::int * interval '1 day')
+              and ledger_entries.created_at >= $1::timestamp
+              and ledger_entries.created_at < $2::timestamp
           ), 0) as credits_issued_30_days,
           coalesce((
             select abs(sum(ledger_entries.amount))
@@ -202,7 +211,8 @@ export class CreditAnalyticsService {
               and ledger_entries.status = 'posted'
               and ledger_entries.is_voided = false
               and ledger_entries.entry_type not in ('shop_hold', 'shop_purchase')
-              and ledger_entries.created_at >= now() - ($1::int * interval '1 day')
+              and ledger_entries.created_at >= $1::timestamp
+              and ledger_entries.created_at < $2::timestamp
           ), 0) as credits_removed_30_days,
           coalesce((
             select abs(sum(ledger_entries.amount))
@@ -221,7 +231,12 @@ export class CreditAnalyticsService {
               and shop_purchases.is_voided = false
           ), 0) as active_shop_requests
         from student_balances
-      `, [analyticsWindowDays, scope.kind, scope.id]),
+      `, [
+        analyticsWindow.startDate,
+        analyticsWindow.endDateExclusive,
+        scope.kind,
+        scope.id,
+      ]),
       db.query<BucketRow>(`
         with filtered_students as (${filteredStudentsQuery}),
         student_balances as (
@@ -245,7 +260,7 @@ export class CreditAnalyticsService {
           with raw_distribution as (
             select greatest(
               1,
-              ceil(greatest(coalesce(max(balance), 0), 1)::numeric / $4::int)
+              ceil(greatest(coalesce(max(balance), 0), 1)::numeric / $5::int)
             ) as raw_bucket_size
             from student_balances
             where is_active = true
@@ -272,13 +287,13 @@ export class CreditAnalyticsService {
           from distribution_magnitude
         ),
         bucket_series as (
-          select generate_series(0, $4::int) as bucket_order
+          select generate_series(0, $5::int) as bucket_order
         )
         select
           bucket_series.bucket_order,
           case
             when bucket_series.bucket_order = 0 then '0'
-            when bucket_series.bucket_order = $4 then
+            when bucket_series.bucket_order = $5 then
               ((bucket_series.bucket_order - 1) * distribution_settings.bucket_size + 1)::text
               || '+'
             else (
@@ -301,16 +316,17 @@ export class CreditAnalyticsService {
                 and (bucket_series.bucket_order * distribution_settings.bucket_size)
             )
             or (
-              bucket_series.bucket_order = $4
+              bucket_series.bucket_order = $5
               and student_balances.balance >=
                 ((bucket_series.bucket_order - 1) * distribution_settings.bucket_size + 1)
             )
           )
-        where $1::int > 0
+        where $5::int > 0
         group by bucket_series.bucket_order, distribution_settings.bucket_size
         order by bucket_series.bucket_order
       `, [
-        analyticsWindowDays,
+        analyticsWindow.startDate,
+        analyticsWindow.endDateExclusive,
         scope.kind,
         scope.id,
         balanceDistributionBucketCount,
@@ -319,24 +335,18 @@ export class CreditAnalyticsService {
         with filtered_students as (${filteredStudentsQuery}),
         days as (
           select generate_series(
-            case
-              when $1::int = 1 then date_trunc('day', now())
-              else (current_date - (($1::int - 1) * interval '1 day'))::timestamp
-            end,
-            case
-              when $1::int = 1 then date_trunc('hour', now())
-              else current_date::timestamp
-            end,
-            case
-              when $1::int = 1 then interval '1 hour'
+            $1::timestamp,
+            $2::timestamp - case
+              when $5::text = 'hour' then interval '1 hour'
               else interval '1 day'
-            end
+            end,
+            case when $5::text = 'hour' then interval '1 hour' else interval '1 day' end
           ) as bucket_date
         ),
         daily_ledger_entries as (
           select
             date_trunc(
-              case when $1::int = 1 then 'hour' else 'day' end,
+              case when $5::text = 'hour' then 'hour' else 'day' end,
               ledger_entries.created_at
             ) as bucket_date,
             ledger_entries.amount,
@@ -349,25 +359,21 @@ export class CreditAnalyticsService {
               ledger_entries.status = 'pending'
               and ledger_entries.is_voided = true
             )
-            and ledger_entries.created_at >= case
-              when $1::int = 1 then date_trunc('day', now())
-              else now() - ($1::int * interval '1 day')
-            end
+            and ledger_entries.created_at >= $1::timestamp
+            and ledger_entries.created_at < $2::timestamp
         ),
         daily_shop_purchases as (
           select
             date_trunc(
-              case when $1::int = 1 then 'hour' else 'day' end,
+              case when $5::text = 'hour' then 'hour' else 'day' end,
               shop_purchases.purchased_at
             ) as bucket_date,
             shop_purchases.status
           from shop_purchases
           join filtered_students on filtered_students.id = shop_purchases.purchased_by_user_id
           where shop_purchases.is_voided = false
-            and shop_purchases.purchased_at >= case
-              when $1::int = 1 then date_trunc('day', now())
-              else now() - ($1::int * interval '1 day')
-            end
+            and shop_purchases.purchased_at >= $1::timestamp
+            and shop_purchases.purchased_at < $2::timestamp
         )
         select
           days.bucket_date,
@@ -388,23 +394,23 @@ export class CreditAnalyticsService {
         left join daily_shop_purchases on daily_shop_purchases.bucket_date = days.bucket_date
         group by days.bucket_date
         order by days.bucket_date
-      `, [analyticsWindowDays, scope.kind, scope.id]),
+      `, [
+        analyticsWindow.startDate,
+        analyticsWindow.endDateExclusive,
+        scope.kind,
+        scope.id,
+        analyticsWindow.bucketMode,
+      ]),
       db.query<BalanceHistoryRow>(`
         with filtered_students as (${filteredStudentsQuery}),
         days as (
           select generate_series(
-            case
-              when $1::int = 1 then date_trunc('day', now())
-              else (current_date - (($1::int - 1) * interval '1 day'))::timestamp
-            end,
-            case
-              when $1::int = 1 then date_trunc('hour', now())
-              else current_date::timestamp
-            end,
-            case
-              when $1::int = 1 then interval '1 hour'
+            $1::timestamp,
+            $2::timestamp - case
+              when $5::text = 'hour' then interval '1 hour'
               else interval '1 day'
-            end
+            end,
+            case when $5::text = 'hour' then interval '1 hour' else interval '1 day' end
           ) as bucket_date
         )
         select
@@ -420,7 +426,7 @@ export class CreditAnalyticsService {
                 and ledger_entries.is_voided = true
               )
               and ledger_entries.created_at < days.bucket_date + case
-                when $1::int = 1 then interval '1 hour'
+                when $5::text = 'hour' then interval '1 hour'
                 else interval '1 day'
               end
           ) / nullif((select count(*) from filtered_students), 0)), 0) as average_balance,
@@ -435,13 +441,19 @@ export class CreditAnalyticsService {
                 and ledger_entries.is_voided = true
               )
               and ledger_entries.created_at < days.bucket_date + case
-                when $1::int = 1 then interval '1 hour'
+                when $5::text = 'hour' then interval '1 hour'
                 else interval '1 day'
               end
           ), 0) as total_balance
         from days
         order by days.bucket_date
-      `, [analyticsWindowDays, scope.kind, scope.id]),
+      `, [
+        analyticsWindow.startDate,
+        analyticsWindow.endDateExclusive,
+        scope.kind,
+        scope.id,
+        analyticsWindow.bucketMode,
+      ]),
       db.query<StudentBalanceRow>(`
         with student_balances as (${studentBalancesQuery})
         select
@@ -470,25 +482,30 @@ export class CreditAnalyticsService {
           and users.is_active = true
           and ledger_entries.status = 'posted'
           and ledger_entries.is_voided = false
-          and ledger_entries.created_at >= now() - ($1::int * interval '1 day')
+          and ledger_entries.created_at >= $1::timestamp
+          and ledger_entries.created_at < $2::timestamp
         group by users.id, users.first_name, users.last_name, users.username
         order by abs(coalesce(sum(ledger_entries.amount), 0)) desc,
           transaction_count desc,
           display_name asc
-        limit $2
-      `, [analyticsWindowDays, topStudentLimit]),
+        limit $3
+      `, [
+        analyticsWindow.startDate,
+        analyticsWindow.endDateExclusive,
+        topStudentLimit,
+      ]),
     ]);
 
     return {
       balanceBuckets: bucketResult.rows.map(mapBucketRow),
       balanceHistory: balanceHistoryResult.rows.map((row) =>
-        mapBalanceHistoryRow(row, analyticsWindowDays),
+        mapBalanceHistoryRow(row, analyticsWindow.bucketMode),
       ),
       movementLeaders: movementLeadersResult.rows.map(mapStudentMovementRow),
       summary: mapSummaryRow(summaryResult.rows[0]),
       topBalances: topBalancesResult.rows.map(mapStudentBalanceRow),
       trend: trendResult.rows.map((row) =>
-        mapTrendRow(row, analyticsWindowDays),
+        mapTrendRow(row, analyticsWindow.bucketMode),
       ),
     };
   }
@@ -574,9 +591,9 @@ const filteredStudentsQuery = `
   where roles.role_key = 'student'
     and users.is_active = true
     and (
-      $2 = 'cohort'
-      or ($2 = 'student' and users.id = nullif($3, '')::uuid)
-      or ($2 = 'group' and student_groups.id = nullif($3, '')::uuid)
+      $3 = 'cohort'
+      or ($3 = 'student' and users.id = nullif($4, '')::uuid)
+      or ($3 = 'group' and student_groups.id = nullif($4, '')::uuid)
     )
 `;
 
@@ -604,13 +621,13 @@ function mapBucketRow(row: BucketRow): CreditAnalyticsBucket {
 
 function mapBalanceHistoryRow(
   row: BalanceHistoryRow,
-  windowDays: number,
+  bucketMode: AnalyticsBucketMode,
 ): CreditAnalyticsBalanceHistoryPoint {
   const date = new Date(row.bucket_date);
 
   return {
     averageBalance: toNumber(row.average_balance),
-    label: formatAnalyticsBucketLabel(date, windowDays),
+    label: formatAnalyticsBucketLabel(date, bucketMode),
     timestamp: date.getTime(),
     totalBalance: toNumber(row.total_balance),
   };
@@ -627,7 +644,7 @@ function mapScopeSearchRow(row: ScopeSearchRow): CreditAnalyticsScope {
 
 function mapTrendRow(
   row: TrendRow,
-  windowDays: number,
+  bucketMode: AnalyticsBucketMode,
 ): CreditAnalyticsTrendPoint {
   const issued = toNumber(row.issued);
   const removed = toNumber(row.removed);
@@ -638,7 +655,7 @@ function mapTrendRow(
     approvedPurchases: toNumber(row.approved_purchases),
     deniedPurchases: toNumber(row.denied_purchases),
     issued,
-    label: formatAnalyticsBucketLabel(new Date(row.bucket_date), windowDays),
+    label: formatAnalyticsBucketLabel(new Date(row.bucket_date), bucketMode),
     net: issued - removed - spent,
     pendingPurchases: toNumber(row.pending_purchases),
     removed,
@@ -647,8 +664,8 @@ function mapTrendRow(
   };
 }
 
-function formatAnalyticsBucketLabel(date: Date, windowDays: number) {
-  if (windowDays === 1) {
+function formatAnalyticsBucketLabel(date: Date, bucketMode: AnalyticsBucketMode) {
+  if (bucketMode === "hour") {
     return new Intl.DateTimeFormat("en-AU", {
       hour: "numeric",
       hour12: false,
@@ -705,6 +722,63 @@ function parseScopeKey(scopeKey: string) {
   };
 }
 
+type AnalyticsBucketMode = "day" | "hour";
+
+type SanitizedAnalyticsWindow = {
+  bucketMode: AnalyticsBucketMode;
+  endDateExclusive: Date;
+  startDate: Date;
+};
+
+function sanitizeAnalyticsWindow(
+  windowInput: CreditAnalyticsWindowInput,
+): SanitizedAnalyticsWindow {
+  if (typeof windowInput === "number") {
+    const windowDays = sanitizeAnalyticsWindowDays(windowInput);
+    const now = new Date();
+
+    if (windowDays === 1) {
+      return {
+        bucketMode: "hour",
+        endDateExclusive: addHours(startOfHour(now), 1),
+        startDate: startOfDay(now),
+      };
+    }
+
+    const today = startOfDay(now);
+
+    return {
+      bucketMode: "day",
+      endDateExclusive: addDays(today, 1),
+      startDate: addDays(today, -(windowDays - 1)),
+    };
+  }
+
+  const startDate = parseDateOnly(windowInput.startDate);
+  const endDate = parseDateOnly(windowInput.endDate);
+
+  if (!startDate || !endDate || endDate < startDate) {
+    return sanitizeAnalyticsWindow(defaultAnalyticsWindowDays);
+  }
+
+  const cappedEndDate = addDays(
+    startDate,
+    Math.min(
+      maximumAnalyticsWindowDays - 1,
+      differenceInCalendarDays(startDate, endDate),
+    ),
+  );
+
+  return {
+    bucketMode:
+      differenceInCalendarDays(startDate, cappedEndDate) === 0
+        ? "hour"
+        : "day",
+    endDateExclusive: addDays(cappedEndDate, 1),
+    startDate,
+  };
+}
+
 function sanitizeAnalyticsWindowDays(windowDays: number) {
   if (!Number.isInteger(windowDays)) {
     return defaultAnalyticsWindowDays;
@@ -713,5 +787,68 @@ function sanitizeAnalyticsWindowDays(windowDays: number) {
   return Math.min(
     maximumAnalyticsWindowDays,
     Math.max(minimumAnalyticsWindowDays, windowDays),
+  );
+}
+
+function parseDateOnly(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return null;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return startOfDay(date);
+}
+
+function startOfDay(date: Date) {
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    0,
+    0,
+    0,
+    0,
+  );
+}
+
+function startOfHour(date: Date) {
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    date.getHours(),
+    0,
+    0,
+    0,
+  );
+}
+
+function addDays(date: Date, days: number) {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+}
+
+function addHours(date: Date, hours: number) {
+  const nextDate = new Date(date);
+  nextDate.setHours(nextDate.getHours() + hours);
+  return nextDate;
+}
+
+function differenceInCalendarDays(startDate: Date, endDate: Date) {
+  const millisecondsPerDay = 24 * 60 * 60 * 1000;
+  return Math.round(
+    (startOfDay(endDate).getTime() - startOfDay(startDate).getTime()) /
+      millisecondsPerDay,
   );
 }

@@ -14,6 +14,7 @@ import {
   type TimetableFiltersState,
 } from "@/components/admin-timetable/timetable-types";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
+import { BulkSelectionControls } from "@/components/ui/bulk-selection-controls";
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 import { FixedNotification } from "@/components/ui/fixed-notification";
 import { IconButton } from "@/components/ui/icon-button";
@@ -21,6 +22,7 @@ import {
   FileDownIcon,
   FileUpIcon,
   PlusIcon,
+  TrashIcon,
 } from "@/components/ui/icons";
 import {
   ListPagination,
@@ -61,6 +63,8 @@ export function AdminTimetablePanel() {
     useState<TimetableFiltersState>(emptyTimetableFilters);
   const [editingEntry, setEditingEntry] = useState<TimetableEntry | null>(null);
   const [deletingEntry, setDeletingEntry] = useState<TimetableEntry | null>(null);
+  const [deletingEntryIds, setDeletingEntryIds] = useState<string[]>([]);
+  const [selectedEntryIds, setSelectedEntryIds] = useState<string[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -157,6 +161,24 @@ export function AdminTimetablePanel() {
     setDeletingEntry(entry);
   }
 
+  function handleEntrySelectionChange(entryId: string, isSelected: boolean) {
+    setSelectedEntryIds((currentEntryIds) =>
+      isSelected
+        ? [...new Set([...currentEntryIds, entryId])]
+        : currentEntryIds.filter((currentEntryId) => currentEntryId !== entryId),
+    );
+  }
+
+  function handleVisibleEntriesSelectionChange(isSelected: boolean) {
+    const visibleEntryIds = visibleEntries.map((entry) => entry.id);
+
+    setSelectedEntryIds((currentEntryIds) =>
+      isSelected
+        ? [...new Set([...currentEntryIds, ...visibleEntryIds])]
+        : currentEntryIds.filter((entryId) => !visibleEntryIds.includes(entryId)),
+    );
+  }
+
   async function confirmDeleteEntry() {
     if (!deletingEntry) {
       return;
@@ -171,6 +193,27 @@ export function AdminTimetablePanel() {
 
     setDeletingEntry(null);
     setMessage("Timetable entry deleted.");
+    setError(null);
+    await refreshTimetable();
+  }
+
+  async function confirmBulkDeleteEntries() {
+    if (deletingEntryIds.length === 0) {
+      return;
+    }
+
+    for (const entryId of deletingEntryIds) {
+      const result = await deleteTimetableEntry(entryId);
+
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+    }
+
+    setDeletingEntryIds([]);
+    setSelectedEntryIds([]);
+    setMessage(`${deletingEntryIds.length} timetable entries deleted.`);
     setError(null);
     await refreshTimetable();
   }
@@ -274,6 +317,17 @@ export function AdminTimetablePanel() {
         />
       )}
 
+      {deletingEntryIds.length > 0 && (
+        <ConfirmationModal
+          confirmLabel="Delete Entries"
+          description={`Delete ${deletingEntryIds.length} selected timetable entries?`}
+          onCancel={() => setDeletingEntryIds([])}
+          onConfirm={confirmBulkDeleteEntries}
+          title="Delete selected timetable entries"
+          tone="danger"
+        />
+      )}
+
       <div>
         {isLoading && (
           <p className="text-sm text-text-muted">Loading timetable...</p>
@@ -296,8 +350,11 @@ export function AdminTimetablePanel() {
               groups={groups}
               onDeleteEntry={handleDeleteEntry}
               onDuplicateEntry={handleDuplicateEntry}
+              onEntrySelectionChange={handleEntrySelectionChange}
               onEditEntry={handleEditEntry}
               onFiltersChange={setFilters}
+              onVisibleEntriesSelectionChange={handleVisibleEntriesSelectionChange}
+              selectedEntryIds={selectedEntryIds}
               teachers={teachers}
               toolbar={
                 <TableToolbar
@@ -332,9 +389,32 @@ export function AdminTimetablePanel() {
                     </>
                   }
                 >
-                  <p className="text-sm font-semibold text-text-muted">
-                    Showing {visibleEntries.length} of {filteredEntries.length} timetable entries.
-                  </p>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-semibold text-text-muted">
+                      Showing {visibleEntries.length} of {filteredEntries.length} timetable entries.
+                    </p>
+                    <BulkSelectionControls
+                      actions={[
+                        {
+                          icon: <TrashIcon />,
+                          label: "Delete selected",
+                          onSelect: () => setDeletingEntryIds(selectedEntryIds),
+                          tone: "danger",
+                        },
+                      ]}
+                      allSelectedLabel="Select all timetable entries"
+                      isAllSelected={
+                        visibleEntries.length > 0 &&
+                        visibleEntries.every((entry) =>
+                          selectedEntryIds.includes(entry.id),
+                        )
+                      }
+                      onVisibleSelectionChange={
+                        handleVisibleEntriesSelectionChange
+                      }
+                      selectedCount={selectedEntryIds.length}
+                    />
+                  </div>
                 </TableToolbar>
               }
             />

@@ -373,7 +373,7 @@ function SideNavAccountMenu({
       <button
         aria-expanded={isAccountMenuOpen}
         aria-label="Open account menu"
-        className={`flex h-10 w-full items-center text-xs font-normal transition ${
+        className={`flex h-10 w-full items-center text-xs font-light tracking-[0.01em] transition ${
           isAccountMenuOpen
             ? "bg-brand-soft text-foreground"
             : "text-text-muted hover:bg-surface-muted hover:text-text-control"
@@ -524,7 +524,7 @@ function SideNavButton({
     <button
       aria-current={isActive ? "page" : undefined}
       aria-label={item}
-      className={`flex h-9 w-full items-center text-[0.74rem] font-normal transition ${
+      className={`flex h-9 w-full items-center text-[0.72rem] font-light tracking-[0.012em] transition ${
         isActive
           ? "bg-brand-soft text-foreground"
           : "text-text-muted hover:bg-surface-muted hover:text-text-control"
@@ -571,7 +571,7 @@ function MenuItemButton({
   return (
     <button
       aria-current={isActive ? "page" : undefined}
-      className={`block w-full px-3 py-2.5 text-left text-xs font-normal transition ${
+      className={`block w-full px-3 py-2.5 text-left text-xs font-light tracking-[0.01em] transition ${
         isActive
           ? "bg-brand-soft text-foreground"
           : "text-text-muted hover:bg-surface-muted hover:text-text-control"
@@ -644,18 +644,47 @@ function AccountMenuItems({
   onThemeToggle: () => void;
 }) {
   const colorInputValue = getColorInputValue(customAccentColor);
+  const [isCustomColorPickerOpen, setIsCustomColorPickerOpen] =
+    useState(false);
+
+  function handleAccentThemeChange(nextAccentTheme: AccentTheme) {
+    if (nextAccentTheme === "custom") {
+      setIsCustomColorPickerOpen((currentValue) => !currentValue);
+      onAccentThemeChange("custom");
+      return;
+    }
+
+    setIsCustomColorPickerOpen(false);
+    onAccentThemeChange(nextAccentTheme);
+  }
+
+  function handleCustomAccentColorChange(nextCustomAccentColor: string) {
+    onCustomAccentColorChange(nextCustomAccentColor);
+  }
 
   return (
     <>
       <button
-        className={`flex w-full items-center gap-2 border-l-2 border-transparent px-3 py-2.5 text-left text-xs font-normal text-text-muted transition hover:bg-surface-muted hover:text-text-control ${
+        className={`flex w-full items-center gap-3 border-l-2 border-transparent px-3 py-2.5 text-left text-xs font-light tracking-[0.01em] text-text-muted transition hover:bg-surface-muted hover:text-text-control ${
           hasTopBorder ? "mt-2 border-t border-border-subtle" : ""
         }`}
         onClick={onThemeToggle}
         type="button"
       >
         {isDarkMode ? <SunIcon /> : <MoonIcon />}
-        <span>{isDarkMode ? "Light theme" : "Dark theme"}</span>
+        <span className="min-w-0 flex-1">Dark theme</span>
+        <span
+          aria-hidden="true"
+          className={`relative h-5 w-9 shrink-0 rounded-full transition ${
+            isDarkMode ? "bg-brand" : "bg-border-strong"
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition ${
+              isDarkMode ? "left-4" : "left-0.5"
+            }`}
+          />
+        </span>
       </button>
       <div className="px-3 py-3">
         <p className="text-xs font-light uppercase tracking-[0.14em] text-text-kicker">
@@ -663,65 +692,69 @@ function AccountMenuItems({
         </p>
         <div className="mt-3 flex items-center gap-2">
           {accentThemeOptions.map((option) => (
-            <button
-              aria-label={`${option.label} accent`}
-              aria-pressed={accentTheme === option.value}
-              className={`h-7 w-7 rounded-full border transition ${
-                accentTheme === option.value
-                  ? "border-foreground ring-2 ring-brand-soft-strong"
-                  : "border-border-subtle hover:scale-105"
-              }`}
-              key={option.value}
-              onClick={() => onAccentThemeChange(option.value)}
-              style={{
-                backgroundColor:
+            <div className="relative" key={option.value}>
+              <button
+                aria-expanded={
                   option.value === "custom"
-                    ? customAccentColor
-                    : option.swatch,
-              }}
-              title={option.label}
-              type="button"
-            />
+                    ? isCustomColorPickerOpen
+                    : undefined
+                }
+                aria-label={`${option.label} accent`}
+                aria-pressed={accentTheme === option.value}
+                className={`h-7 w-7 rounded-full border transition ${
+                  accentTheme === option.value
+                    ? "border-foreground ring-2 ring-brand-soft-strong"
+                    : "border-border-subtle hover:scale-105"
+                }`}
+                onClick={() => handleAccentThemeChange(option.value)}
+                style={{
+                  background:
+                    option.value === "custom"
+                      ? "conic-gradient(from 45deg, #ef4444, #f59e0b, #22c55e, #06b6d4, #6366f1, #d946ef, #ef4444)"
+                      : option.swatch,
+                }}
+                title={option.label}
+                type="button"
+              />
+              {option.value === "custom" && isCustomColorPickerOpen && (
+                <div className="motion-pop absolute right-0 top-9 z-[120] w-44 border border-border bg-surface p-3 shadow-lg">
+                  <label className="block text-xs font-light text-text-muted">
+                    Custom colour
+                    <input
+                      aria-label="Custom accent colour"
+                      className="color-swatch-input mt-2 h-9 w-full cursor-pointer rounded-md border border-border bg-transparent p-0"
+                      onChange={(event) =>
+                        handleCustomAccentColorChange(event.target.value)
+                      }
+                      type="color"
+                      value={colorInputValue}
+                    />
+                  </label>
+                  <input
+                    aria-label="Custom accent hex"
+                    className="mt-2 w-full rounded-md border border-border bg-surface px-2.5 py-2 text-xs font-light uppercase text-text-control outline-none ring-brand transition placeholder:text-text-muted focus:border-brand focus:ring-2"
+                    maxLength={7}
+                    onChange={(event) =>
+                      handleCustomAccentColorChange(event.target.value)
+                    }
+                    placeholder="#7AE4B7"
+                    value={customAccentColor}
+                  />
+                </div>
+              )}
+            </div>
           ))}
-        </div>
-        <div className="mt-3 rounded-md border border-border-subtle bg-panel-soft p-2">
-          <div className="mb-2">
-            <span className="text-xs font-light text-text-muted">
-              Custom colour
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              aria-label="Custom accent colour"
-              className="color-swatch-input h-10 w-10 shrink-0 cursor-pointer rounded-full border border-border bg-transparent p-0.5"
-              onChange={(event) =>
-                onCustomAccentColorChange(event.target.value)
-              }
-              type="color"
-              value={colorInputValue}
-            />
-            <input
-              aria-label="Custom accent hex"
-              className="min-w-0 flex-1 rounded-md border border-border bg-surface px-3 py-2 text-xs font-light uppercase text-text-control outline-none ring-brand transition placeholder:text-text-muted focus:border-brand focus:ring-2"
-              maxLength={7}
-              onChange={(event) =>
-                onCustomAccentColorChange(event.target.value)
-              }
-              placeholder="#2563EB"
-              value={customAccentColor}
-            />
-          </div>
         </div>
       </div>
       <button
-        className="block w-full border-l-2 border-transparent px-3 py-2.5 text-left text-xs font-normal text-text-muted transition hover:bg-surface-muted hover:text-text-control"
+        className="block w-full border-l-2 border-transparent px-3 py-2.5 text-left text-xs font-light tracking-[0.01em] text-text-muted transition hover:bg-surface-muted hover:text-text-control"
         onClick={onPasswordChange}
         type="button"
       >
         Change password
       </button>
       <button
-        className="flex w-full items-center gap-2 border-l-2 border-transparent px-3 py-2.5 text-left text-xs font-normal text-text-muted transition hover:bg-surface-muted hover:text-text-control"
+        className="flex w-full items-center gap-2 border-l-2 border-transparent px-3 py-2.5 text-left text-xs font-light tracking-[0.01em] text-text-muted transition hover:bg-surface-muted hover:text-text-control"
         onClick={onLogout}
         type="button"
       >

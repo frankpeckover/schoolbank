@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -62,6 +62,8 @@ type AnalyticsWindowOption = {
   label: string;
 };
 
+type AnalyticsWindowKey = number | "custom";
+
 const analyticsSearchDebounceMs = 300;
 const analyticsWindowOptions: AnalyticsWindowOption[] = [
   { days: 1, label: "Today" },
@@ -79,7 +81,14 @@ export function CreditAnalyticsPanel({
   const [scopeResults, setScopeResults] = useState<CreditAnalyticsScope[]>([]);
   const [selectedScope, setSelectedScope] =
     useState<CreditAnalyticsScope | null>(null);
-  const [selectedWindowDays, setSelectedWindowDays] = useState(30);
+  const [selectedWindowKey, setSelectedWindowKey] =
+    useState<AnalyticsWindowKey>(30);
+  const [customStartDate, setCustomStartDate] = useState(() =>
+    formatDateInput(addDays(new Date(), -29)),
+  );
+  const [customEndDate, setCustomEndDate] = useState(() =>
+    formatDateInput(new Date()),
+  );
   const [balanceHistory, setBalanceHistory] = useState<
     CreditAnalyticsBalanceHistoryPoint[]
   >([]);
@@ -94,6 +103,22 @@ export function CreditAnalyticsPanel({
   const selectedScopeKey = selectedScope
     ? `${selectedScope.kind}:${selectedScope.id}`
     : "cohort";
+  const selectedWindowInput = useMemo(
+    () =>
+      selectedWindowKey === "custom"
+        ? {
+            endDate: customEndDate,
+            startDate: customStartDate,
+          }
+        : selectedWindowKey,
+    [customEndDate, customStartDate, selectedWindowKey],
+  );
+  const selectedWindowLabel =
+    selectedWindowKey === "custom"
+      ? formatCustomWindowLabel(customStartDate, customEndDate)
+      : selectedWindowKey === 1
+        ? "today"
+        : `${selectedWindowKey} days`;
 
   useEffect(() => {
     let isMounted = true;
@@ -133,7 +158,7 @@ export function CreditAnalyticsPanel({
       try {
         const analytics = await getCreditAnalyticsSummary(
           selectedScopeKey,
-          selectedWindowDays,
+          selectedWindowInput,
         );
 
         if (isMounted) {
@@ -162,7 +187,7 @@ export function CreditAnalyticsPanel({
       isMounted = false;
       window.clearTimeout(timeoutId);
     };
-  }, [selectedScopeKey, selectedWindowDays]);
+  }, [customEndDate, customStartDate, selectedScopeKey, selectedWindowInput]);
 
   function handleScopeSelected(scope: CreditAnalyticsScope) {
     setSelectedScope(scope);
@@ -179,7 +204,7 @@ export function CreditAnalyticsPanel({
   return (
     <div className="mt-5">
       <FixedNotification error={error} />
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
+      <div className="flex items-start gap-2 sm:gap-3">
         <div className="min-w-0 flex-1">
           <AnalyticsScopePicker
             onScopeClear={handleScopeCleared}
@@ -191,17 +216,25 @@ export function CreditAnalyticsPanel({
           />
         </div>
         <AnalyticsWindowSelector
-          onWindowChange={setSelectedWindowDays}
-          selectedWindowDays={selectedWindowDays}
+          onWindowChange={setSelectedWindowKey}
+          selectedWindowKey={selectedWindowKey}
         />
       </div>
+      {selectedWindowKey === "custom" && (
+        <CustomAnalyticsDateRange
+          endDate={customEndDate}
+          onEndDateChange={setCustomEndDate}
+          onStartDateChange={setCustomStartDate}
+          startDate={customStartDate}
+        />
+      )}
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-6">
         <AnalyticsMetricGrid
           className="lg:col-span-2"
           currencyName={currencyName}
           isLoading={isLoading}
-          selectedWindowDays={selectedWindowDays}
+          selectedWindowLabel={selectedWindowLabel}
           summary={summary}
         />
         <NetMovementCard
@@ -247,23 +280,20 @@ function AnalyticsMetricGrid({
   className,
   currencyName,
   isLoading,
-  selectedWindowDays,
+  selectedWindowLabel,
   summary,
 }: {
   className: string;
   currencyName: string;
   isLoading: boolean;
-  selectedWindowDays: number;
+  selectedWindowLabel: string;
   summary: CreditAnalyticsSummary | null;
 }) {
-  const activeWalletLabel =
-    selectedWindowDays === 1 ? "Active today" : `Active ${selectedWindowDays} days`;
-
   return (
     <section className={`${className} grid grid-cols-2 gap-3`}>
       <MetricCard
         icon={<UsersIcon />}
-        label={activeWalletLabel}
+        label={`Active ${selectedWindowLabel}`}
         tone="brand"
         value={
           summary
@@ -307,22 +337,62 @@ function AnalyticsMetricGrid({
 
 function AnalyticsWindowSelector({
   onWindowChange,
-  selectedWindowDays,
+  selectedWindowKey,
 }: {
-  onWindowChange: (days: number) => void;
-  selectedWindowDays: number;
+  onWindowChange: (windowKey: AnalyticsWindowKey) => void;
+  selectedWindowKey: AnalyticsWindowKey;
 }) {
   return (
-    <div className="flex h-[46px] items-center">
+    <div className="flex h-[46px] shrink-0 items-center">
       <InlineSelectMenu
         ariaLabel="Change analytics time window"
         onChange={onWindowChange}
-        options={analyticsWindowOptions.map((option) => ({
-          label: option.label,
-          value: option.days,
-        }))}
-        value={selectedWindowDays}
+        options={[
+          ...analyticsWindowOptions.map((option) => ({
+            label: option.label,
+            value: option.days,
+          })),
+          { label: "Custom", value: "custom" as const },
+        ]}
+        value={selectedWindowKey}
       />
+    </div>
+  );
+}
+
+function CustomAnalyticsDateRange({
+  endDate,
+  onEndDateChange,
+  onStartDateChange,
+  startDate,
+}: {
+  endDate: string;
+  onEndDateChange: (date: string) => void;
+  onStartDateChange: (date: string) => void;
+  startDate: string;
+}) {
+  return (
+    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+      <label className="text-xs font-medium text-text-muted">
+        Start
+        <input
+          className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-control outline-none ring-brand transition focus:ring-2"
+          max={endDate}
+          onChange={(event) => onStartDateChange(event.target.value)}
+          type="date"
+          value={startDate}
+        />
+      </label>
+      <label className="text-xs font-medium text-text-muted">
+        End
+        <input
+          className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-control outline-none ring-brand transition focus:ring-2"
+          min={startDate}
+          onChange={(event) => onEndDateChange(event.target.value)}
+          type="date"
+          value={endDate}
+        />
+      </label>
     </div>
   );
 }
@@ -1049,4 +1119,30 @@ function PurchaseTrendChart({
       </ResponsiveContainer>
     </div>
   );
+}
+
+function addDays(date: Date, days: number) {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+}
+
+function formatDateInput(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatCustomWindowLabel(startDate: string, endDate: string) {
+  if (!startDate || !endDate) {
+    return "custom range";
+  }
+
+  if (startDate === endDate) {
+    return startDate;
+  }
+
+  return `${startDate} to ${endDate}`;
 }

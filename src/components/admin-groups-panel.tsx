@@ -17,10 +17,17 @@ import { GroupImportModal } from "@/components/admin-groups/group-import-modal";
 import { GroupListPanel } from "@/components/admin-groups/group-list-panel";
 import { GroupModal } from "@/components/admin-groups/group-modal";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
+import { BulkSelectionControls } from "@/components/ui/bulk-selection-controls";
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 import { FixedNotification } from "@/components/ui/fixed-notification";
 import { IconButton } from "@/components/ui/icon-button";
-import { FileDownIcon, FileUpIcon, PlusIcon } from "@/components/ui/icons";
+import {
+  CheckIcon,
+  FileDownIcon,
+  FileUpIcon,
+  PlusIcon,
+  XIcon,
+} from "@/components/ui/icons";
 import { TableActionMenu } from "@/components/ui/table-action-menu";
 import { TableToolbar } from "@/components/ui/table-toolbar";
 import { downloadCsv } from "@/lib/client-csv";
@@ -45,11 +52,17 @@ export function AdminGroupsPanel() {
   const [showInactiveGroups, setShowInactiveGroups] = useState(false);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [duplicatingGroup, setDuplicatingGroup] =
     useState<GroupListItem | null>(null);
   const [editingGroup, setEditingGroup] = useState<GroupListItem | null>(null);
   const [pendingGroupStatusChange, setPendingGroupStatusChange] =
     useState<GroupListItem | null>(null);
+  const [pendingBulkGroupStatusChange, setPendingBulkGroupStatusChange] =
+    useState<{
+      groupIds: string[];
+      isActive: boolean;
+    } | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isLoadingGroups, setIsLoadingGroups] = useState(true);
@@ -309,6 +322,24 @@ export function AdminGroupsPanel() {
     setPendingGroupStatusChange(group);
   }
 
+  function handleGroupSelectionChange(groupId: string, isSelected: boolean) {
+    setSelectedGroupIds((currentGroupIds) =>
+      isSelected
+        ? [...new Set([...currentGroupIds, groupId])]
+        : currentGroupIds.filter((currentGroupId) => currentGroupId !== groupId),
+    );
+  }
+
+  function handleVisibleGroupsSelectionChange(isSelected: boolean) {
+    const visibleGroupIds = filteredGroups.map((group) => group.id);
+
+    setSelectedGroupIds((currentGroupIds) =>
+      isSelected
+        ? [...new Set([...currentGroupIds, ...visibleGroupIds])]
+        : currentGroupIds.filter((groupId) => !visibleGroupIds.includes(groupId)),
+    );
+  }
+
   async function confirmGroupStatusChange() {
     if (!pendingGroupStatusChange) {
       return;
@@ -328,6 +359,38 @@ export function AdminGroupsPanel() {
     setPendingGroupStatusChange(null);
     if (!nextActiveState && !showInactiveGroups && selectedGroupId === group.id) {
       setEditingGroup(null);
+      setSelectedGroupId("");
+      setMembers([]);
+    }
+    await refreshGroups();
+  }
+
+  async function confirmBulkGroupStatusChange() {
+    if (!pendingBulkGroupStatusChange) {
+      return;
+    }
+
+    for (const groupId of pendingBulkGroupStatusChange.groupIds) {
+      const result = await setGroupActive(
+        groupId,
+        pendingBulkGroupStatusChange.isActive,
+      );
+
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+    }
+
+    setMessage(
+      `${pendingBulkGroupStatusChange.groupIds.length} groups ${
+        pendingBulkGroupStatusChange.isActive ? "reactivated" : "archived"
+      }.`,
+    );
+    setError(null);
+    setPendingBulkGroupStatusChange(null);
+    setSelectedGroupIds([]);
+    if (!pendingBulkGroupStatusChange.isActive) {
       setSelectedGroupId("");
       setMembers([]);
     }
@@ -415,11 +478,14 @@ export function AdminGroupsPanel() {
         onDuplicateGroup={duplicateGroup}
         onEditGroup={editGroup}
         onGroupSelect={selectGroup}
+        onGroupSelectionChange={handleGroupSelectionChange}
         onGroupStatusChange={handleGroupStatusChange}
+        onVisibleGroupsSelectionChange={handleVisibleGroupsSelectionChange}
         onSearchChange={setGroupSearch}
         onShowArchivedChange={handleShowInactiveGroupsChange}
         search={groupSearch}
         selectedGroupId={selectedGroupId}
+        selectedGroupIds={selectedGroupIds}
         showArchived={showInactiveGroups}
         toolbar={
           <TableToolbar
@@ -455,11 +521,46 @@ export function AdminGroupsPanel() {
               </>
             }
           >
-            {groups.length > 0 && (
-              <p className="text-sm font-semibold text-text-muted">
-                Showing {filteredGroups.length} of {groups.length} groups.
-              </p>
-            )}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              {groups.length > 0 && (
+                <p className="text-sm font-semibold text-text-muted">
+                  Showing {filteredGroups.length} of {groups.length} groups.
+                </p>
+              )}
+              <BulkSelectionControls
+                actions={[
+                  {
+                    icon: <XIcon />,
+                    label: "Archive selected",
+                    onSelect: () =>
+                      setPendingBulkGroupStatusChange({
+                        groupIds: selectedGroupIds,
+                        isActive: false,
+                      }),
+                    tone: "danger",
+                  },
+                  {
+                    icon: <CheckIcon />,
+                    label: "Reactivate selected",
+                    onSelect: () =>
+                      setPendingBulkGroupStatusChange({
+                        groupIds: selectedGroupIds,
+                        isActive: true,
+                      }),
+                    tone: "primary",
+                  },
+                ]}
+                allSelectedLabel="Select all groups"
+                isAllSelected={
+                  filteredGroups.length > 0 &&
+                  filteredGroups.every((group) =>
+                    selectedGroupIds.includes(group.id),
+                  )
+                }
+                onVisibleSelectionChange={handleVisibleGroupsSelectionChange}
+                selectedCount={selectedGroupIds.length}
+              />
+            </div>
           </TableToolbar>
         }
       />
@@ -533,6 +634,25 @@ export function AdminGroupsPanel() {
               : "Reactivate group"
           }
           tone={pendingGroupStatusChange.isActive ? "danger" : "primary"}
+        />
+      )}
+
+      {pendingBulkGroupStatusChange && (
+        <ConfirmationModal
+          confirmLabel={
+            pendingBulkGroupStatusChange.isActive
+              ? "Reactivate Groups"
+              : "Archive Groups"
+          }
+          description={`${pendingBulkGroupStatusChange.isActive ? "Reactivate" : "Archive"} ${pendingBulkGroupStatusChange.groupIds.length} selected groups?`}
+          onCancel={() => setPendingBulkGroupStatusChange(null)}
+          onConfirm={confirmBulkGroupStatusChange}
+          title={
+            pendingBulkGroupStatusChange.isActive
+              ? "Reactivate selected groups"
+              : "Archive selected groups"
+          }
+          tone={pendingBulkGroupStatusChange.isActive ? "primary" : "danger"}
         />
       )}
     </AdminPageSection>

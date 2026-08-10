@@ -3,6 +3,10 @@
 import type { ReactNode } from "react";
 import { CheckIcon, CopyIcon, EyeIcon, PencilIcon, XIcon } from "@/components/ui/icons";
 import {
+  MobileSelectionShell,
+  RowSelectionCheckbox,
+} from "@/components/ui/bulk-selection-controls";
+import {
   ListPagination,
   usePagedList,
 } from "@/components/ui/list-pagination";
@@ -21,11 +25,14 @@ type GroupListPanelProps = {
   onDuplicateGroup: (group: GroupListItem) => void;
   onEditGroup: (group: GroupListItem) => void;
   onGroupSelect: (group: GroupListItem) => void;
+  onGroupSelectionChange: (groupId: string, isSelected: boolean) => void;
   onGroupStatusChange: (group: GroupListItem) => void;
+  onVisibleGroupsSelectionChange: (isSelected: boolean) => void;
   onSearchChange: (value: string) => void;
   onShowArchivedChange: (showArchived: boolean) => void;
   search: string;
   selectedGroupId: string;
+  selectedGroupIds: string[];
   showArchived: boolean;
   toolbar?: ReactNode;
 };
@@ -36,11 +43,14 @@ export function GroupListPanel({
   onDuplicateGroup,
   onEditGroup,
   onGroupSelect,
+  onGroupSelectionChange,
   onGroupStatusChange,
+  onVisibleGroupsSelectionChange,
   onSearchChange,
   onShowArchivedChange,
   search,
   selectedGroupId,
+  selectedGroupIds,
   showArchived,
   toolbar,
 }: GroupListPanelProps) {
@@ -67,11 +77,14 @@ export function GroupListPanel({
               onDuplicateGroup={onDuplicateGroup}
               onEditGroup={onEditGroup}
               onGroupSelect={onGroupSelect}
+              onGroupSelectionChange={onGroupSelectionChange}
               onGroupStatusChange={onGroupStatusChange}
+              onVisibleGroupsSelectionChange={onVisibleGroupsSelectionChange}
               onSearchChange={onSearchChange}
               onShowArchivedChange={onShowArchivedChange}
               search={search}
               selectedGroupId={selectedGroupId}
+              selectedGroupIds={selectedGroupIds}
               showArchived={showArchived}
               toolbar={toolbar}
             />
@@ -93,11 +106,14 @@ function GroupList({
   onDuplicateGroup,
   onEditGroup,
   onGroupSelect,
+  onGroupSelectionChange,
   onGroupStatusChange,
+  onVisibleGroupsSelectionChange,
   onSearchChange,
   onShowArchivedChange,
   search,
   selectedGroupId,
+  selectedGroupIds,
   showArchived,
   toolbar,
 }: {
@@ -105,14 +121,21 @@ function GroupList({
   onDuplicateGroup: (group: GroupListItem) => void;
   onEditGroup: (group: GroupListItem) => void;
   onGroupSelect: (group: GroupListItem) => void;
+  onGroupSelectionChange: (groupId: string, isSelected: boolean) => void;
   onGroupStatusChange: (group: GroupListItem) => void;
+  onVisibleGroupsSelectionChange: (isSelected: boolean) => void;
   onSearchChange: (value: string) => void;
   onShowArchivedChange: (showArchived: boolean) => void;
   search: string;
   selectedGroupId: string;
+  selectedGroupIds: string[];
   showArchived: boolean;
   toolbar?: ReactNode;
 }) {
+  const areAllVisibleGroupsSelected =
+    groups.length > 0 &&
+    groups.every((group) => selectedGroupIds.includes(group.id));
+
   return (
     <>
       {toolbar && <div className="mb-3 md:hidden">{toolbar}</div>}
@@ -125,7 +148,9 @@ function GroupList({
             onDuplicateGroup={onDuplicateGroup}
             onEditGroup={onEditGroup}
             onGroupSelect={onGroupSelect}
+            onGroupSelectionChange={onGroupSelectionChange}
             onGroupStatusChange={onGroupStatusChange}
+            selected={selectedGroupIds.includes(group.id)}
           />
         ))}
       </div>
@@ -133,14 +158,26 @@ function GroupList({
       {toolbar && <div className="hidden md:block">{toolbar}</div>}
       <table className="hidden w-full table-fixed border-collapse text-left text-sm md:table">
         <colgroup>
+          <col className="w-10" />
           <col className="w-[28%]" />
-          <col className="w-[42%]" />
+          <col className="w-[38%]" />
           <col className="w-[12%]" />
           <col className="w-[10%]" />
           <col className="w-12" />
         </colgroup>
         <thead>
           <tr className="border-b border-border-subtle text-text-muted">
+            <th className="py-2 pr-3 font-semibold">
+              <RowSelectionCheckbox
+                checked={areAllVisibleGroupsSelected}
+                label={
+                  areAllVisibleGroupsSelected
+                    ? "Clear selected groups"
+                    : "Select all groups"
+                }
+                onChange={onVisibleGroupsSelectionChange}
+              />
+            </th>
             <th className="py-2 pr-4 font-semibold">
               <TableHeaderFilter
                 isActive={Boolean(search)}
@@ -200,6 +237,15 @@ function GroupList({
               }`}
               key={group.id}
             >
+              <td className="py-3 pr-3">
+                <RowSelectionCheckbox
+                  checked={selectedGroupIds.includes(group.id)}
+                  label={`Select ${group.name}`}
+                  onChange={(isSelected) =>
+                    onGroupSelectionChange(group.id, isSelected)
+                  }
+                />
+              </td>
               <td className="py-3 pr-4 font-semibold">{group.name}</td>
               <td className="py-3 pr-4 text-text-muted">
                 {group.description || "-"}
@@ -233,14 +279,18 @@ function GroupCard({
   onDuplicateGroup,
   onEditGroup,
   onGroupSelect,
+  onGroupSelectionChange,
   onGroupStatusChange,
+  selected,
 }: {
   group: GroupListItem;
   isSelected: boolean;
   onDuplicateGroup: (group: GroupListItem) => void;
   onEditGroup: (group: GroupListItem) => void;
   onGroupSelect: (group: GroupListItem) => void;
+  onGroupSelectionChange: (groupId: string, isSelected: boolean) => void;
   onGroupStatusChange: (group: GroupListItem) => void;
+  selected: boolean;
 }) {
   return (
     <article
@@ -250,29 +300,41 @@ function GroupCard({
           : "border-border-subtle bg-surface"
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <button
-          className="min-w-0 flex-1 text-left"
-          onClick={() => onGroupSelect(group)}
-          type="button"
-        >
-          <h3 className="truncate text-sm font-semibold">{group.name}</h3>
-          <p className="mt-1 truncate text-sm text-text-muted">
-            {group.description || "No description"}
-          </p>
-        </button>
-        <GroupActions
-          group={group}
-          onDuplicateGroup={onDuplicateGroup}
-          onEditGroup={onEditGroup}
-          onGroupSelect={onGroupSelect}
-          onGroupStatusChange={onGroupStatusChange}
-        />
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-text-muted">
-        <span>{group.memberCount} members</span>
-        <GroupStatusBadge group={group} />
-      </div>
+      <MobileSelectionShell
+        checkbox={
+          <RowSelectionCheckbox
+            checked={selected}
+            label={`Select ${group.name}`}
+            onChange={(isSelected) =>
+              onGroupSelectionChange(group.id, isSelected)
+            }
+          />
+        }
+      >
+        <div className="flex items-start justify-between gap-3">
+          <button
+            className="min-w-0 flex-1 text-left"
+            onClick={() => onGroupSelect(group)}
+            type="button"
+          >
+            <h3 className="truncate text-sm font-semibold">{group.name}</h3>
+            <p className="mt-1 truncate text-sm text-text-muted">
+              {group.description || "No description"}
+            </p>
+          </button>
+          <GroupActions
+            group={group}
+            onDuplicateGroup={onDuplicateGroup}
+            onEditGroup={onEditGroup}
+            onGroupSelect={onGroupSelect}
+            onGroupStatusChange={onGroupStatusChange}
+          />
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-text-muted">
+          <span>{group.memberCount} members</span>
+          <GroupStatusBadge group={group} />
+        </div>
+      </MobileSelectionShell>
     </article>
   );
 }

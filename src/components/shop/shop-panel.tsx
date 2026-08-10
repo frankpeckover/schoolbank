@@ -16,6 +16,11 @@ import { ShopImportModal } from "@/components/shop/shop-import-modal";
 import { ShopItemCard } from "@/components/shop/shop-item-card";
 import { ShopItemDetailsModal } from "@/components/shop/shop-item-details-modal";
 import { ShopItemModal } from "@/components/shop/shop-item-modal";
+import {
+  BulkSelectionControls,
+  MobileSelectionShell,
+  RowSelectionCheckbox,
+} from "@/components/ui/bulk-selection-controls";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FixedNotification } from "@/components/ui/fixed-notification";
 import { IconButton } from "@/components/ui/icon-button";
@@ -35,13 +40,14 @@ import {
   ListPagination,
   usePagedList,
 } from "@/components/ui/list-pagination";
-import { PanelToolbar } from "@/components/ui/panel-toolbar";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 import { TableActionMenu } from "@/components/ui/table-action-menu";
 import {
   TableHeaderFilter,
   TableHeaderFilterInput,
   TableHeaderFilterSelect,
 } from "@/components/ui/table-header-filter";
+import { TableToolbar } from "@/components/ui/table-toolbar";
 
 type ShopPanelProps = {
   currencyName: string;
@@ -68,6 +74,8 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   const [requestedItemIds, setRequestedItemIds] = useState<string[]>([]);
   const [duplicatingItem, setDuplicatingItem] = useState<ShopItem | null>(null);
   const [editingItem, setEditingItem] = useState<ShopItem | null>(null);
+  const [removingItemIds, setRemovingItemIds] = useState<string[]>([]);
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [viewingItem, setViewingItem] = useState<ShopItem | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -201,6 +209,45 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
     refreshItems();
   }
 
+  function handleItemSelectionChange(itemId: string, isSelected: boolean) {
+    setSelectedItemIds((currentItemIds) =>
+      isSelected
+        ? [...new Set([...currentItemIds, itemId])]
+        : currentItemIds.filter((currentItemId) => currentItemId !== itemId),
+    );
+  }
+
+  function handleVisibleItemsSelectionChange(isSelected: boolean) {
+    const visibleItemIds = pageItems.map((item) => item.id);
+
+    setSelectedItemIds((currentItemIds) =>
+      isSelected
+        ? [...new Set([...currentItemIds, ...visibleItemIds])]
+        : currentItemIds.filter((itemId) => !visibleItemIds.includes(itemId)),
+    );
+  }
+
+  async function confirmBulkRemoveItems() {
+    if (removingItemIds.length === 0) {
+      return;
+    }
+
+    for (const itemId of removingItemIds) {
+      const result = await removeShopItem(itemId);
+
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+    }
+
+    setMessage(`${removingItemIds.length} reward items archived.`);
+    setError(null);
+    setRemovingItemIds([]);
+    setSelectedItemIds([]);
+    await refreshItems();
+  }
+
   async function handlePurchase(itemId: string) {
     const result = await requestShopItem(itemId);
 
@@ -252,15 +299,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
     <section className="motion-panel mt-5">
       <FixedNotification error={error} message={message} />
 
-      {canManage ? (
-        <ShopPanelHeader
-          count={pageItems.length}
-          onImportItems={() => setIsImportModalOpen(true)}
-          onItemsExport={() => downloadShopItems(visibleItems)}
-          onNewItem={openNewItemModal}
-          totalCount={visibleItems.length}
-        />
-      ) : (
+      {!canManage && (
         <StudentShopWallet balance={balance} currencyName={currencyName} />
       )}
 
@@ -272,14 +311,21 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
           items={pageItems}
           onDuplicate={openDuplicateItemModal}
           onEdit={openEditItemModal}
+          onImportItems={() => setIsImportModalOpen(true)}
+          onItemsExport={() => downloadShopItems(visibleItems)}
+          onNewItem={openNewItemModal}
           onPriceMaxChange={(value) => updateFilter("priceMax", value)}
           onPriceMinChange={(value) => updateFilter("priceMin", value)}
           onRemove={handleRemove}
           onSearchChange={(value) => updateFilter("search", value)}
+          onSelectionChange={handleItemSelectionChange}
+          onVisibleItemsSelectionChange={handleVisibleItemsSelectionChange}
           onShowArchivedItemsChange={(value) =>
             updateFilter("showArchivedItems", value)
           }
+          onBulkRemove={(itemIds) => setRemovingItemIds(itemIds)}
           onView={setViewingItem}
+          selectedItemIds={selectedItemIds}
           totalItemCount={items.length}
           visibleItemCount={visibleItems.length}
         />
@@ -353,60 +399,18 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
           requested={requestedItemIds.includes(viewingItem.id)}
         />
       )}
-    </section>
-  );
-}
 
-function ShopPanelHeader({
-  count,
-  onImportItems,
-  onItemsExport,
-  onNewItem,
-  totalCount,
-}: {
-  count: number;
-  onImportItems: () => void;
-  onItemsExport: () => void;
-  onNewItem: () => void;
-  totalCount: number;
-}) {
-  return (
-    <PanelToolbar
-      actions={
-        <div className="flex items-center gap-2">
-          <IconButton
-            label="New item"
-            onClick={onNewItem}
-            text="New Reward"
-            tone="primary"
-          >
-            <PlusIcon />
-          </IconButton>
-          <TableActionMenu
-            label="Open reward tools"
-            items={[
-              {
-                icon: <FileUpIcon />,
-                label: "Import rewards: CSV",
-                onSelect: onImportItems,
-              },
-              {
-                disabled: count === 0,
-                icon: <FileDownIcon />,
-                label: "Export rewards: CSV",
-                onSelect: onItemsExport,
-              },
-            ]}
-          />
-        </div>
-      }
-    >
-      {totalCount > 0 && (
-        <p className="text-sm font-semibold text-text-muted">
-          Showing {count} of {totalCount} items.
-        </p>
+      {removingItemIds.length > 0 && (
+        <ConfirmationModal
+          confirmLabel="Archive Rewards"
+          description={`Archive ${removingItemIds.length} selected reward items?`}
+          onCancel={() => setRemovingItemIds([])}
+          onConfirm={confirmBulkRemoveItems}
+          title="Archive selected rewards"
+          tone="danger"
+        />
       )}
-    </PanelToolbar>
+    </section>
   );
 }
 
@@ -417,12 +421,19 @@ function ShopManagementList({
   items,
   onDuplicate,
   onEdit,
+  onImportItems,
+  onItemsExport,
+  onNewItem,
   onPriceMaxChange,
   onPriceMinChange,
   onRemove,
   onSearchChange,
+  onBulkRemove,
+  onSelectionChange,
+  onVisibleItemsSelectionChange,
   onShowArchivedItemsChange,
   onView,
+  selectedItemIds,
   totalItemCount,
   visibleItemCount,
 }: {
@@ -432,15 +443,25 @@ function ShopManagementList({
   items: ShopItem[];
   onDuplicate: (item: ShopItem) => void;
   onEdit: (item: ShopItem) => void;
+  onImportItems: () => void;
+  onItemsExport: () => void;
+  onNewItem: () => void;
   onPriceMaxChange: (value: string) => void;
   onPriceMinChange: (value: string) => void;
   onRemove: (itemId: string) => void;
   onSearchChange: (value: string) => void;
+  onBulkRemove: (itemIds: string[]) => void;
+  onSelectionChange: (itemId: string, isSelected: boolean) => void;
+  onVisibleItemsSelectionChange: (isSelected: boolean) => void;
   onShowArchivedItemsChange: (value: boolean) => void;
   onView: (item: ShopItem) => void;
+  selectedItemIds: string[];
   totalItemCount: number;
   visibleItemCount: number;
 }) {
+  const areAllVisibleItemsSelected =
+    items.length > 0 && items.every((item) => selectedItemIds.includes(item.id));
+
   if (isLoading) {
     return <p className="mt-4 text-sm text-text-muted">Loading rewards...</p>;
   }
@@ -455,24 +476,63 @@ function ShopManagementList({
 
   return (
     <>
-      <div className="mt-4 grid gap-3 md:hidden">
-        {items.map((item) => (
-          <ShopManagementCard
-            currencyName={currencyName}
-            item={item}
-            key={item.id}
-            onDuplicate={onDuplicate}
-            onEdit={onEdit}
-            onRemove={onRemove}
-            onView={onView}
+      <TableToolbar
+        actions={
+          <>
+            <IconButton
+              label="New item"
+              onClick={onNewItem}
+              text="New Reward"
+              tone="primary"
+            >
+              <PlusIcon />
+            </IconButton>
+            <TableActionMenu
+              label="Open reward table tools"
+              items={[
+                {
+                  icon: <FileUpIcon />,
+                  label: "Import rewards: CSV",
+                  onSelect: onImportItems,
+                },
+                {
+                  disabled: visibleItemCount === 0,
+                  icon: <FileDownIcon />,
+                  label: "Export rewards: CSV",
+                  onSelect: onItemsExport,
+                },
+              ]}
+            />
+          </>
+        }
+      >
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-semibold text-text-muted">
+            Showing {items.length} of {visibleItemCount} rewards.
+          </p>
+          <BulkSelectionControls
+            actions={[
+              {
+                disabled: selectedItemIds.length === 0,
+                icon: <TrashIcon />,
+                label: "Archive selected",
+                onSelect: () => onBulkRemove(selectedItemIds),
+                tone: "danger",
+              },
+            ]}
+            allSelectedLabel="Select all rewards"
+            isAllSelected={areAllVisibleItemsSelected}
+            onVisibleSelectionChange={onVisibleItemsSelectionChange}
+            selectedCount={selectedItemIds.length}
           />
-        ))}
-      </div>
+        </div>
+      </TableToolbar>
 
-      <table className="mt-4 hidden w-full table-fixed border-collapse text-left text-sm md:table">
+      <table className="hidden w-full table-fixed border-collapse text-left text-sm md:table">
         <colgroup>
-          <col className="w-[28%]" />
-          <col className="w-[34%]" />
+          <col className="w-10" />
+          <col className="w-[26%]" />
+          <col className="w-[32%]" />
           <col className="w-[12%]" />
           <col className="w-[12%]" />
           <col className="w-[10%]" />
@@ -480,6 +540,17 @@ function ShopManagementList({
         </colgroup>
         <thead>
           <tr className="border-b border-border-subtle text-text-muted">
+            <th className="py-2 pr-3 font-semibold">
+              <RowSelectionCheckbox
+                checked={areAllVisibleItemsSelected}
+                label={
+                  areAllVisibleItemsSelected
+                    ? "Clear selected rewards"
+                    : "Select all rewards"
+                }
+                onChange={onVisibleItemsSelectionChange}
+              />
+            </th>
             <th className="py-2 pr-4 font-semibold">
               <TableHeaderFilter
                 isActive={Boolean(filters.search)}
@@ -563,6 +634,15 @@ function ShopManagementList({
         <tbody>
           {items.map((item) => (
             <tr className="border-b border-border-subtle" key={item.id}>
+              <td className="py-3 pr-3">
+                <RowSelectionCheckbox
+                  checked={selectedItemIds.includes(item.id)}
+                  label={`Select ${item.name}`}
+                  onChange={(isSelected) =>
+                    onSelectionChange(item.id, isSelected)
+                  }
+                />
+              </td>
               <td className="py-3 pr-4">
                 <div className="flex min-w-0 items-center gap-3">
                   <ShopTableImage item={item} />
@@ -597,6 +677,21 @@ function ShopManagementList({
           ))}
         </tbody>
       </table>
+      <div className="mt-4 grid gap-3 md:hidden">
+        {items.map((item) => (
+          <ShopManagementCard
+            currencyName={currencyName}
+            item={item}
+            key={item.id}
+            onDuplicate={onDuplicate}
+            onEdit={onEdit}
+            onRemove={onRemove}
+            onSelectionChange={onSelectionChange}
+            onView={onView}
+            selected={selectedItemIds.includes(item.id)}
+          />
+        ))}
+      </div>
     </>
   );
 }
@@ -607,42 +702,56 @@ function ShopManagementCard({
   onDuplicate,
   onEdit,
   onRemove,
+  onSelectionChange,
   onView,
+  selected,
 }: {
   currencyName: string;
   item: ShopItem;
   onDuplicate: (item: ShopItem) => void;
   onEdit: (item: ShopItem) => void;
   onRemove: (itemId: string) => void;
+  onSelectionChange: (itemId: string, isSelected: boolean) => void;
   onView: (item: ShopItem) => void;
+  selected: boolean;
 }) {
   return (
     <article className="rounded-md bg-surface p-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <ShopTableImage item={item} />
-          <div className="min-w-0">
-            <h3 className="truncate text-sm font-semibold">{item.name}</h3>
-            <p className="mt-1 truncate text-sm text-text-muted">
-              {item.description || "No description"}
-            </p>
+      <MobileSelectionShell
+        checkbox={
+          <RowSelectionCheckbox
+            checked={selected}
+            label={`Select ${item.name}`}
+            onChange={(isSelected) => onSelectionChange(item.id, isSelected)}
+          />
+        }
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <ShopTableImage item={item} />
+            <div className="min-w-0">
+              <h3 className="truncate text-sm font-semibold">{item.name}</h3>
+              <p className="mt-1 truncate text-sm text-text-muted">
+                {item.description || "No description"}
+              </p>
+            </div>
           </div>
+          <ShopManagementActions
+            item={item}
+            onDuplicate={onDuplicate}
+            onEdit={onEdit}
+            onRemove={onRemove}
+            onView={onView}
+          />
         </div>
-        <ShopManagementActions
-          item={item}
-          onDuplicate={onDuplicate}
-          onEdit={onEdit}
-          onRemove={onRemove}
-          onView={onView}
-        />
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-text-muted">
-        <span>
-          {formatAmount(item.price)} {currencyName}
-        </span>
-        <span>{item.quantity} available</span>
-        <ShopItemStatusBadge item={item} />
-      </div>
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-text-muted">
+          <span>
+            {formatAmount(item.price)} {currencyName}
+          </span>
+          <span>{item.quantity} available</span>
+          <ShopItemStatusBadge item={item} />
+        </div>
+      </MobileSelectionShell>
     </article>
   );
 }
