@@ -239,6 +239,11 @@ export class CreditAnalyticsService {
       ]),
       db.query<BucketRow>(`
         with filtered_students as (${filteredStudentsQuery}),
+        analytics_window as (
+          select
+            $1::timestamp as start_date,
+            $2::timestamp as end_date
+        ),
         student_balances as (
           select
             users.id,
@@ -305,6 +310,7 @@ export class CreditAnalyticsService {
           count(student_balances.id) as count
         from bucket_series
         cross join distribution_settings
+        cross join analytics_window
         left join student_balances
           on student_balances.is_active = true
           and (
@@ -416,7 +422,7 @@ export class CreditAnalyticsService {
         select
           days.bucket_date,
           coalesce(round((
-            select sum(ledger_entries.amount)
+            select coalesce(sum(ledger_entries.amount), 0)::numeric
             from ledger_entries
             join accounts on accounts.id = ledger_entries.account_id
             join filtered_students on filtered_students.id = accounts.user_id
@@ -429,7 +435,7 @@ export class CreditAnalyticsService {
                 when $5::text = 'hour' then interval '1 hour'
                 else interval '1 day'
               end
-          ) / nullif((select count(*) from filtered_students), 0)), 0) as average_balance,
+          ) / nullif((select count(*) from filtered_students)::numeric, 0)), 0) as average_balance,
           coalesce((
             select sum(ledger_entries.amount)
             from ledger_entries

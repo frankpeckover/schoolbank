@@ -47,16 +47,16 @@
 
 :root {
   color-scheme: light;
-  --background: #f4f7fa;
-  --background-gradient-start: #fbfcfe;
+  --background: #f6f9f7;
+  --background-gradient-start: #fcfdfc;
   --accent-primary: #183f3d;
   --accent-secondary: #70b895;
   --accent-highlight: #7ae4b7;
   --custom-accent-primary: #2563eb;
   --foreground: #111827;
   --surface: #ffffff;
-  --panel-soft: #f3f6f9;
-  --surface-hover: #eef2f6;
+  --panel-soft: #f4f7f5;
+  --surface-hover: #f0f4f2;
   --border: #d1d7df;
   --border-subtle: #e0e5eb;
   --border-muted: #edf1f5;
@@ -606,7 +606,7 @@ table {
 }
 
 .table-toolbar-band {
-  background: color-mix(in srgb, var(--panel-soft) 74%, var(--surface));
+  background: var(--surface);
   border: 0;
   border-radius: var(--radius-card) var(--radius-card) 0 0;
   padding: 0.7rem 1.25rem;
@@ -672,7 +672,7 @@ table td:last-child {
 }
 
 table thead th {
-  background: color-mix(in srgb, var(--panel-soft) 74%, var(--surface));
+  background: var(--surface);
   border-bottom: 2px solid var(--border-strong);
 }
 
