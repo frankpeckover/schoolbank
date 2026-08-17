@@ -87,6 +87,10 @@ export const db = {
   },
 };
 
+export async function assertCurrentTenantExists() {
+  await resolveTenantTarget();
+}
+
 async function connectTenantClient(tenantTarget: TenantTarget) {
   if (tenantTarget.mode === "schema") {
     return connectSchemaTenantClient(tenantTarget);
