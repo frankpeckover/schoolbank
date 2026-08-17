@@ -8,7 +8,6 @@ APP_NAME="${APP_NAME:-myntix}"
 APP_DIR="${APP_DIR:-/opt/myntix/app}"
 APP_USER="${APP_USER:-myntix}"
 BRANCH="${BRANCH:-main}"
-PORT="${PORT:-3000}"
 REPO_URL="${REPO_URL:-https://github.com/frankpeckover/schoolbank.git}"
 SERVICE_NAME="${SERVICE_NAME:-myntix}"
 
@@ -62,8 +61,9 @@ Type=simple
 User=${APP_USER}
 WorkingDirectory=${APP_DIR}
 Environment=NODE_ENV=production
-Environment=PORT=${PORT}
-ExecStart=/usr/bin/npm run start -- --hostname 0.0.0.0 --port ${PORT}
+EnvironmentFile=-${APP_DIR}/.env.production
+EnvironmentFile=-${APP_DIR}/.env.local
+ExecStart=/usr/bin/npm run start
 Restart=always
 RestartSec=5
 

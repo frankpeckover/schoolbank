@@ -8,7 +8,7 @@
     "prebuild": "npm run check:env",
     "build": "next build",
     "create-api-client": "node scripts/create-api-client-key.mjs",
-    "start": "next start",
+    "start": "node scripts/start-production.mjs",
     "lint": "eslint"
   },
   "dependencies": {

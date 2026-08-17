@@ -67,6 +67,8 @@ At minimum, production needs these values:
 ```txt
 APP_BASE_URL=https://your-domain.example
 APP_ROOT_DOMAIN=your-domain.example
+APP_HOST=0.0.0.0
+APP_PORT=3000
 LOCAL_ORGANISATION_SLUG=dev
 
 PLATFORM_POSTGRES_HOST=your-postgres-host
@@ -97,8 +99,10 @@ Then build and start:
 ```bash
 npm ci
 npm run build
-npm run start -- --hostname 0.0.0.0 --port 3000
+npm run start
 ```
+
+`APP_PORT` is the internal port the Next.js process listens on. It can stay as `3000` behind Nginx, Caddy, Traefik, or Cloudflare Tunnel. Do not expose the app port directly to the internet.
 
 If you see this during build:
 
@@ -121,11 +125,12 @@ sudo APP_DIR=/opt/myntix/app \
   REPO_URL=https://github.com/frankpeckover/schoolbank.git \
   BRANCH=main \
   SERVICE_NAME=myntix \
-  PORT=3000 \
   bash scripts/deploy-proxmox-lxc.sh
 ```
 
-Keep production secrets out of git. `.env`, `.env.local`, `.env.production.local`, and uploaded runtime files are ignored.
+The deploy script creates a systemd service that reads `${APP_DIR}/.env.production` and `${APP_DIR}/.env.local`, then runs `npm run start`. Change ports by editing `APP_PORT` in the env file, not the service command.
+
+Keep production secrets out of git. `.env`, `.env.local`, `.env.production`, `.env.production.local`, and uploaded runtime files are ignored.
 
 ## Deployment Checklist
 

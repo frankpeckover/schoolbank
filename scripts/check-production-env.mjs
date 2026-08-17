@@ -1,14 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
-
-const envFileNames = [
-  ".env",
-  ".env.production",
-  ".env.local",
-  ".env.production.local",
-];
+import { loadEnvironment } from "./env-file-loader.mjs";
 
 const requiredVariables = [
   "APP_BASE_URL",
@@ -50,8 +42,9 @@ const env = loadEnvironment();
 const missingRequired = getMissingVariables(requiredVariables, env);
 const missingSchema = getMissingVariables(schemaTenantVariables, env);
 const missingRecommended = getMissingVariables(recommendedVariables, env);
+const invalidPort = getInvalidPortMessage(env.APP_PORT);
 
-if (missingRequired.length > 0 || missingSchema.length > 0) {
+if (missingRequired.length > 0 || missingSchema.length > 0 || invalidPort) {
   console.error("Production environment is not ready.");
 
   if (missingRequired.length > 0) {
@@ -67,6 +60,10 @@ if (missingRequired.length > 0 || missingSchema.length > 0) {
     );
   }
 
+  if (invalidPort) {
+    console.error(invalidPort);
+  }
+
   process.exit(1);
 }
 
@@ -76,59 +73,20 @@ if (missingRecommended.length > 0) {
 
 console.log("Production environment check passed.");
 
-function loadEnvironment() {
-  const loadedEnv = { ...process.env };
-
-  for (const fileName of envFileNames) {
-    const filePath = resolve(process.cwd(), fileName);
-
-    if (!existsSync(filePath)) {
-      continue;
-    }
-
-    Object.assign(loadedEnv, parseEnvFile(filePath));
-  }
-
-  return loadedEnv;
-}
-
-function parseEnvFile(filePath) {
-  const parsed = {};
-  const content = readFileSync(filePath, "utf8");
-
-  for (const line of content.split(/\r?\n/)) {
-    const trimmedLine = line.trim();
-
-    if (!trimmedLine || trimmedLine.startsWith("#")) {
-      continue;
-    }
-
-    const separatorIndex = trimmedLine.indexOf("=");
-
-    if (separatorIndex === -1) {
-      continue;
-    }
-
-    const key = trimmedLine.slice(0, separatorIndex).trim();
-    const value = trimmedLine.slice(separatorIndex + 1).trim();
-
-    parsed[key] = stripWrappingQuotes(value);
-  }
-
-  return parsed;
-}
-
-function stripWrappingQuotes(value) {
-  if (
-    (value.startsWith('"') && value.endsWith('"')) ||
-    (value.startsWith("'") && value.endsWith("'"))
-  ) {
-    return value.slice(1, -1);
-  }
-
-  return value;
-}
-
 function getMissingVariables(variableNames, env) {
   return variableNames.filter((name) => !String(env[name] ?? "").trim());
+}
+
+function getInvalidPortMessage(value) {
+  if (!String(value ?? "").trim()) {
+    return null;
+  }
+
+  const port = Number(value);
+
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    return "APP_PORT must be an integer between 1 and 65535.";
+  }
+
+  return null;
 }
