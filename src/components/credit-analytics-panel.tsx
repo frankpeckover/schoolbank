@@ -124,9 +124,15 @@ export function CreditAnalyticsPanel({
     let isMounted = true;
 
     if (scopeQuery.trim().length < 2) {
-      setScopeResults([]);
+      const timeoutId = window.setTimeout(() => {
+        if (isMounted) {
+          setScopeResults([]);
+        }
+      }, 0);
+
       return () => {
         isMounted = false;
+        window.clearTimeout(timeoutId);
       };
     }
 

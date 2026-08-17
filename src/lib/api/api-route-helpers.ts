@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { apiError, apiSuccess } from "@/lib/api/api-response";
+import { apiError } from "@/lib/api/api-response";
 import type {
   ApiClient,
   ApiFailure,

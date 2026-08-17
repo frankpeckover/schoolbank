@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Lato } from "next/font/google";
 import { appConfig } from "@/lib/app-config";
 import {
   accentThemeStorageKey,
@@ -9,6 +10,13 @@ import {
 import { themeStorageKey } from "@/lib/theme-config";
 import "./globals.css";
 import { SessionChecker } from "@/components/session-checker";
+
+const lato = Lato({
+  display: "swap",
+  subsets: ["latin"],
+  variable: "--font-lato",
+  weight: ["300", "400", "700", "900"],
+});
 
 const themeInitScript = `
 (() => {
@@ -74,15 +82,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=Sora:wght@400;500;600;700;800&display=swap"
-          rel="stylesheet"
-        />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className={`${lato.variable} min-h-full flex flex-col`}>
         <a
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-md focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-foreground focus:shadow-lg focus:ring-2 focus:ring-brand"
           href="#main-content"

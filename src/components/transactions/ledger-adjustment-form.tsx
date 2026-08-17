@@ -106,7 +106,6 @@ export function LedgerAdjustmentForm({
     let isActive = true;
 
     if (!shouldLoadGroups(step, target, selectedGroupId, selectedGroup)) {
-      setIsLoadingGroups(false);
       return () => {
         isActive = false;
       };
@@ -170,13 +169,19 @@ export function LedgerAdjustmentForm({
       return;
     }
 
-    setDirection(preferredDirection);
-    setTarget("group");
-    setSelectedGroupId(preferredGroupId);
-    setSelectedStudents([]);
-    setStudentQuery("");
-    setStudentResults(emptyStudentResults);
-    setStep("amount");
+    const timeoutId = window.setTimeout(() => {
+      setDirection(preferredDirection);
+      setTarget("group");
+      setSelectedGroupId(preferredGroupId);
+      setSelectedStudents([]);
+      setStudentQuery("");
+      setStudentResults(emptyStudentResults);
+      setStep("amount");
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [preferredDirection, preferredGroupId, preferredGroupSelectionVersion]);
 
   useEffect(() => {
@@ -191,13 +196,19 @@ export function LedgerAdjustmentForm({
       return;
     }
 
-    setDirection(preferredDirection);
-    setTarget("student");
-    setSelectedStudents(nextStudents);
-    setSelectedGroupId("");
-    setStudentQuery("");
-    setStudentResults(emptyStudentResults);
-    setStep("amount");
+    const timeoutId = window.setTimeout(() => {
+      setDirection(preferredDirection);
+      setTarget("student");
+      setSelectedStudents(nextStudents);
+      setSelectedGroupId("");
+      setStudentQuery("");
+      setStudentResults(emptyStudentResults);
+      setStep("amount");
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [
     preferredDirection,
     preferredStudent,

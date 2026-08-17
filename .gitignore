@@ -11,6 +11,8 @@ dist/
 # Environment files
 .env
 .env.local
+.env.production
+.env.production.*
 .env.*.local
 
 # Logs
@@ -45,6 +47,10 @@ exports/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Local installers and downloaded tooling
+*.msi
+*.exe
 
 # Secrets
 *.pem

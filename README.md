@@ -1,12 +1,12 @@
-# Internal Currency App
+# Myntix
 
-This is a seedling-stage internal currency ledger. The first build focuses on a small, useful loop:
+Myntix is an internal currency ledger for organisations. The core loop is:
 
 - teachers award or deduct internal currency
 - students see balances, goals, and store options
 - admins manage the economy rules and review the ledger
 
-The current app is a minimal authenticated shell backed by PostgreSQL. The signed-in user controls which empty dashboard frame is shown, and each view currently has a skeleton navigation bar with Dashboard and Settings.
+The app is a Next.js application backed by PostgreSQL. Tenants are resolved through a platform database and can use either a dedicated database or a schema inside a shared app database.
 
 ## Tech Stack
 
@@ -15,15 +15,9 @@ The current app is a minimal authenticated shell backed by PostgreSQL. The signe
 - Tailwind CSS
 - ESLint
 
-Planned next additions:
-
-- Prisma
-- PostgreSQL connection
-- Real sessions
-
 ## Getting Started
 
-Install Node.js 22 LTS or newer. Next.js also supports Node 20.9+, but the local machine should be upgraded from Node 20.7 before regular development.
+Install Node.js 20.9 or newer. Node.js 22 LTS is preferred for new installs.
 
 Create `.env.local` from `.env.example` and adjust the platform database credentials:
 
@@ -59,10 +53,89 @@ username: admin
 password: admin
 ```
 
-## Early Roadmap
+## Production Deployment
 
-1. Rebuild the teacher dashboard one workflow at a time.
-2. Rebuild the student dashboard with student-only data.
-3. Rebuild the admin dashboard around setup and audit tools.
-4. Add database tables only when the matching feature is built.
-5. Add proper password hashing after the basic login flow is stable.
+Create a production env file before building:
+
+```bash
+cp .env.example .env.production
+nano .env.production
+```
+
+At minimum, production needs these values:
+
+```txt
+APP_BASE_URL=https://your-domain.example
+APP_ROOT_DOMAIN=your-domain.example
+LOCAL_ORGANISATION_SLUG=dev
+
+PLATFORM_POSTGRES_HOST=your-postgres-host
+PLATFORM_POSTGRES_PORT=5432
+PLATFORM_POSTGRES_DATABASE=your-platform-database
+PLATFORM_POSTGRES_USER=your-platform-user
+PLATFORM_POSTGRES_PASSWORD=your-platform-password
+
+APP_POSTGRES_HOST=your-postgres-host
+APP_POSTGRES_PORT=5432
+APP_POSTGRES_DATABASE=your-shared-app-database
+APP_POSTGRES_USER=your-shared-app-user
+APP_POSTGRES_PASSWORD=your-shared-app-password
+
+SESSION_TOKEN_HASH_SECRET=long-random-secret
+SSO_SECRET_ENCRYPTION_KEY=long-random-secret
+API_KEY_HASH_SECRET=long-random-secret
+```
+
+Validate the environment before building:
+
+```bash
+npm run check:env
+```
+
+Then build and start:
+
+```bash
+npm ci
+npm run build
+npm run start -- --hostname 0.0.0.0 --port 3000
+```
+
+If you see this during build:
+
+```txt
+Missing required environment variable: APP_ROOT_DOMAIN
+```
+
+the server does not have `APP_ROOT_DOMAIN` available to `npm run build`. Add it to `.env.production`, `.env.local`, or the systemd service environment, then rebuild from a clean `.next` directory:
+
+```bash
+rm -rf .next
+npm run check:env
+npm run build
+```
+
+For an LXC/Proxmox deployment, use:
+
+```bash
+sudo APP_DIR=/opt/myntix/app \
+  REPO_URL=https://github.com/frankpeckover/schoolbank.git \
+  BRANCH=main \
+  SERVICE_NAME=myntix \
+  PORT=3000 \
+  bash scripts/deploy-proxmox-lxc.sh
+```
+
+Keep production secrets out of git. `.env`, `.env.local`, `.env.production.local`, and uploaded runtime files are ignored.
+
+## Deployment Checklist
+
+1. Node.js 20.9+ installed.
+2. PostgreSQL reachable from the app server.
+3. Platform database created.
+4. Tenant database or schema created.
+5. `.env.production` or `.env.local` present on the server.
+6. `npm run check:env` passes.
+7. `npm run build` passes.
+8. Reverse proxy passes `Host`, `X-Forwarded-Host`, `X-Forwarded-Proto`, and `X-Forwarded-For`.
+9. HTTPS is terminated by the reverse proxy or Cloudflare Tunnel.
+10. Postgres is not exposed publicly.

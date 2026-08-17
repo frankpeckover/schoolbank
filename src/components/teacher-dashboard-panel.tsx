@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { ShopRequestsPanel } from "@/components/shop/shop-requests-panel";
 import { StudentBalanceCard } from "@/components/student-balance-card";
@@ -63,6 +63,7 @@ export function TeacherDashboardPanel({
   const [message, setMessage] = useState<string | null>(null);
   const [selection, setSelection] =
     useState<AdjustmentTargetSelection | null>(null);
+  const selectionVersionRef = useRef(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -121,11 +122,12 @@ export function TeacherDashboardPanel({
     direction: AdjustmentDirection,
   ) {
     setMessage(null);
+    selectionVersionRef.current += 1;
     setSelection({
       direction,
       kind: "students",
       students,
-      version: Date.now(),
+      version: selectionVersionRef.current,
     });
   }
 
@@ -134,11 +136,12 @@ export function TeacherDashboardPanel({
     direction: AdjustmentDirection,
   ) {
     setMessage(null);
+    selectionVersionRef.current += 1;
     setSelection({
       direction,
       group,
       kind: "group",
-      version: Date.now(),
+      version: selectionVersionRef.current,
     });
   }
 

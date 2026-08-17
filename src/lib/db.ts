@@ -7,6 +7,7 @@ import {
 } from "@/lib/server-env";
 
 type TenantDatabaseConfig = {
+  mode: "database";
   database: string;
   host: string;
   password: string;
@@ -15,13 +16,23 @@ type TenantDatabaseConfig = {
   user: string;
 };
 
-type OrganisationDatabaseRow = {
+type TenantSchemaConfig = {
+  mode: "schema";
+  schemaName: string;
   slug: string;
-  database_host: string;
+};
+
+type TenantTarget = TenantDatabaseConfig | TenantSchemaConfig;
+
+type OrganisationTenantRow = {
+  slug: string;
+  tenancy_mode: string | null;
+  schema_name: string | null;
+  database_host: string | null;
   database_port: number | null;
-  database_name: string;
-  database_user: string;
-  database_password: string;
+  database_name: string | null;
+  database_user: string | null;
+  database_password: string | null;
   is_active: boolean;
 };
 
@@ -46,28 +57,63 @@ const allowOrganisationHeaderOverride =
 declare global {
   var appTenantPools: Map<string, Pool> | undefined;
   var appPlatformPool: Pool | undefined;
+  var appSharedSchemaPool: Pool | undefined;
 }
 
 export const db = {
   async connect(): Promise<PoolClient> {
-    const pool = await getTenantPool();
+    const tenantTarget = await resolveTenantTarget();
 
-    return pool.connect();
+    return connectTenantClient(tenantTarget);
   },
 
   async query<Row extends QueryResultRow = QueryResultRow>(
     text: string,
     values?: unknown[],
   ): Promise<QueryResult<Row>> {
-    const pool = await getTenantPool();
+    const tenantTarget = await resolveTenantTarget();
 
-    return pool.query<Row>(text, values);
+    if (tenantTarget.mode === "database") {
+      return getDatabaseTenantPool(tenantTarget).query<Row>(text, values);
+    }
+
+    const client = await connectTenantClient(tenantTarget);
+
+    try {
+      return await client.query<Row>(text, values);
+    } finally {
+      client.release();
+    }
   },
 };
 
-async function getTenantPool() {
-  const tenantConfig = await resolveTenantDatabaseConfig();
-  const poolKey = getTenantPoolKey(tenantConfig);
+async function connectTenantClient(tenantTarget: TenantTarget) {
+  if (tenantTarget.mode === "schema") {
+    return connectSchemaTenantClient(tenantTarget);
+  }
+
+  const pool = getDatabaseTenantPool(tenantTarget);
+
+  return pool.connect();
+}
+
+async function connectSchemaTenantClient(tenantTarget: TenantSchemaConfig) {
+  const client = await getSharedSchemaPool().connect();
+
+  try {
+    await client.query(
+      `set search_path to ${quoteIdentifier(tenantTarget.schemaName)}, public`,
+    );
+  } catch (error) {
+    client.release(error instanceof Error ? error : undefined);
+    throw error;
+  }
+
+  return wrapSchemaTenantClient(client);
+}
+
+function getDatabaseTenantPool(tenantConfig: TenantDatabaseConfig) {
+  const poolKey = getDatabaseTenantPoolKey(tenantConfig);
   const pools = getTenantPools();
   const existingPool = pools.get(poolKey);
 
@@ -88,10 +134,10 @@ async function getTenantPool() {
   return pool;
 }
 
-async function resolveTenantDatabaseConfig(): Promise<TenantDatabaseConfig> {
+async function resolveTenantTarget(): Promise<TenantTarget> {
   const tenantLookup = await resolveTenantLookup();
 
-  return getOrganisationDatabaseConfig(tenantLookup);
+  return getOrganisationTenantTarget(tenantLookup);
 }
 
 async function resolveTenantLookup(): Promise<TenantLookup> {
@@ -137,10 +183,14 @@ function getTenantLookupFromHost(host: string): TenantLookup {
   };
 }
 
-async function getOrganisationDatabaseConfig(lookup: TenantLookup) {
-  const result = await getPlatformPool().query<OrganisationDatabaseRow>(
+async function getOrganisationTenantTarget(
+  lookup: TenantLookup,
+): Promise<TenantTarget> {
+  const result = await getPlatformPool().query<OrganisationTenantRow>(
     `
       select slug,
+             tenancy_mode,
+             schema_name,
              database_host,
              database_port,
              database_name,
@@ -164,9 +214,20 @@ async function getOrganisationDatabaseConfig(lookup: TenantLookup) {
 
   validateOrganisationDatabaseConfig(organisation);
 
+  if (getTenancyMode(organisation) === "schema") {
+    const schemaName = validateOrganisationSchemaConfig(organisation);
+
+    return {
+      mode: "schema",
+      schemaName,
+      slug: organisation.slug,
+    };
+  }
+
   return {
     database: organisation.database_name,
     host: organisation.database_host,
+    mode: "database",
     password: organisation.database_password,
     port: organisation.database_port ?? defaultPostgresPort,
     slug: organisation.slug,
@@ -194,9 +255,38 @@ function getPlatformPool() {
   return platformPool;
 }
 
+function getSharedSchemaPool() {
+  if (globalThis.appSharedSchemaPool) {
+    return globalThis.appSharedSchemaPool;
+  }
+
+  const sharedSchemaPool = new Pool({
+    database: getRequiredServerEnv("APP_POSTGRES_DATABASE"),
+    host: getRequiredServerEnv("APP_POSTGRES_HOST"),
+    password: getRequiredServerEnv("APP_POSTGRES_PASSWORD"),
+    port: getServerEnvNumber("APP_POSTGRES_PORT", defaultPostgresPort),
+    user: getRequiredServerEnv("APP_POSTGRES_USER"),
+  });
+
+  if (process.env.NODE_ENV !== "production") {
+    globalThis.appSharedSchemaPool = sharedSchemaPool;
+  }
+
+  return sharedSchemaPool;
+}
+
 function validateOrganisationDatabaseConfig(
-  organisation: OrganisationDatabaseRow,
-) {
+  organisation: OrganisationTenantRow,
+): asserts organisation is OrganisationTenantRow & {
+  database_host: string;
+  database_name: string;
+  database_password: string;
+  database_user: string;
+} {
+  if (getTenancyMode(organisation) !== "database") {
+    return;
+  }
+
   const missingFields = [
     ["database_host", organisation.database_host],
     ["database_name", organisation.database_name],
@@ -213,6 +303,24 @@ function validateOrganisationDatabaseConfig(
   }
 }
 
+function validateOrganisationSchemaConfig(organisation: OrganisationTenantRow) {
+  const schemaName = organisation.schema_name?.trim() ?? "";
+
+  if (!schemaName) {
+    throw new Error(
+      `Organisation "${organisation.slug}" is missing schema_name for schema tenancy.`,
+    );
+  }
+
+  validateSchemaName(schemaName, organisation.slug);
+
+  return schemaName;
+}
+
+function getTenancyMode(organisation: OrganisationTenantRow) {
+  return organisation.tenancy_mode === "schema" ? "schema" : "database";
+}
+
 function getTenantPools() {
   if (!globalThis.appTenantPools) {
     globalThis.appTenantPools = new Map<string, Pool>();
@@ -221,8 +329,9 @@ function getTenantPools() {
   return globalThis.appTenantPools;
 }
 
-function getTenantPoolKey(config: TenantDatabaseConfig) {
+function getDatabaseTenantPoolKey(config: TenantDatabaseConfig) {
   return [
+    config.mode,
     config.slug,
     config.host,
     config.port,
@@ -244,4 +353,41 @@ function isLocalHost(host: string) {
 
 function normaliseSlug(value: string) {
   return value.trim().toLowerCase();
+}
+
+function validateSchemaName(schemaName: string, organisationSlug: string) {
+  if (!/^[a-z][a-z0-9_]*$/.test(schemaName) || schemaName.startsWith("pg_")) {
+    throw new Error(
+      `Organisation "${organisationSlug}" has invalid schema_name "${schemaName}".`,
+    );
+  }
+}
+
+function quoteIdentifier(value: string) {
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
+function wrapSchemaTenantClient(client: PoolClient) {
+  const originalRelease = client.release.bind(client);
+  let hasReleased = false;
+
+  client.release = ((error?: Error | boolean) => {
+    if (hasReleased) {
+      return;
+    }
+
+    hasReleased = true;
+
+    if (error) {
+      originalRelease(error);
+      return;
+    }
+
+    void client
+      .query("reset search_path")
+      .catch(() => undefined)
+      .finally(() => originalRelease());
+  }) as typeof client.release;
+
+  return client;
 }

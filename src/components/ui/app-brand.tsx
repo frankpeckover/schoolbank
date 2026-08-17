@@ -28,6 +28,7 @@ export function AppBrand({
 
   if (showNameOnMobile && brandImageUrl) {
     return (
+      // eslint-disable-next-line @next/next/no-img-element -- Branding paths are runtime-configurable and may not be known to next/image.
       <img
         alt={`${appConfig.name} logo`}
         className={`${lockupClassName} min-w-0 shrink object-contain object-left`}
@@ -53,6 +54,7 @@ export function AppBrand({
 function AppLogo({ className }: { className: string }) {
   if (appConfig.logoUrl) {
     return (
+      // eslint-disable-next-line @next/next/no-img-element -- Branding paths are runtime-configurable and may not be known to next/image.
       <img
         alt={`${appConfig.name} logo`}
         className={`${className} shrink-0 object-contain`}

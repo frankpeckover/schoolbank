@@ -246,9 +246,9 @@ html[data-accent="custom"] {
   --color-wallet-highlight: var(--wallet-highlight);
   --color-progress-track: var(--progress-track);
   --color-activity-meta: var(--activity-meta);
-  --font-numeric: "App Numerals", Lato, "Segoe UI", Arial, Helvetica, sans-serif;
+  --font-numeric: "App Numerals", var(--font-lato), "Segoe UI", Arial, Helvetica, sans-serif;
   --font-sans: var(--font-numeric);
-  --font-heading: Lato, "Segoe UI", Arial, Helvetica, sans-serif;
+  --font-heading: var(--font-lato), "Segoe UI", Arial, Helvetica, sans-serif;
   --font-mono: "Cascadia Code", Consolas, monospace;
 }
 
@@ -262,7 +262,7 @@ body {
     linear-gradient(180deg, var(--background-gradient-start) 0, var(--background) 260px),
     var(--background);
   color: var(--foreground);
-  font-family: var(--font-numeric), Lato, "Segoe UI", Arial, Helvetica, sans-serif;
+  font-family: var(--font-numeric), var(--font-lato), "Segoe UI", Arial, Helvetica, sans-serif;
   font-weight: 400;
   min-height: 100dvh;
 }
@@ -273,7 +273,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: Lato, "Segoe UI", Arial, Helvetica, sans-serif;
+  font-family: var(--font-lato), "Segoe UI", Arial, Helvetica, sans-serif;
 }
 
 .font-semibold {

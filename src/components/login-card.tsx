@@ -58,20 +58,26 @@ export function LoginCard({
     nextUrl.searchParams.delete("sso");
     window.history.replaceState({}, "", nextUrl);
 
-    if (ssoStatus === "account_required") {
-      setMessageTone("success");
-      setMessage(
-        "You were authenticated successfully. Please ask an admin to create your account before signing in.",
-      );
-      return;
-    }
+    const timeoutId = window.setTimeout(() => {
+      if (ssoStatus === "account_required") {
+        setMessageTone("success");
+        setMessage(
+          "You were authenticated successfully. Please ask an admin to create your account before signing in.",
+        );
+        return;
+      }
 
-    if (ssoStatus === "sso_unavailable") {
-      setError("That SSO provider is not currently enabled for this school.");
-      return;
-    }
+      if (ssoStatus === "sso_unavailable") {
+        setError("That SSO provider is not currently enabled for this school.");
+        return;
+      }
 
-    setError(getSsoErrorMessage(ssoStatus));
+      setError(getSsoErrorMessage(ssoStatus));
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, []);
 
   useEffect(() => {

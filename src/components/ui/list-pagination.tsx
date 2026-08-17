@@ -12,7 +12,13 @@ export function usePagedList<Item>(items: Item[]) {
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
 
   useEffect(() => {
-    setPage(1);
+    const timeoutId = window.setTimeout(() => {
+      setPage(1);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [items.length, pageSize]);
 
   const safePage = Math.min(page, totalPages);

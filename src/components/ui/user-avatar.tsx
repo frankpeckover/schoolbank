@@ -35,6 +35,7 @@ export function UserAvatar({
       title={displayName}
     >
       {shouldShowImage ? (
+        // eslint-disable-next-line @next/next/no-img-element -- User-uploaded avatar sources are runtime data, not fixed build assets.
         <img
           alt=""
           className="h-full w-full object-cover"

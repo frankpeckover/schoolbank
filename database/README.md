@@ -6,7 +6,7 @@ The platform database is still a single setup file:
 
 - `create-platform-database.sql`
 
-Each school database is now split by service/module under:
+Each school/app schema is split by service/module under:
 
 - `school/00-core-settings.sql`
 - `school/01-auth.sql`
@@ -21,20 +21,26 @@ All files are plain SQL. They do not use `psql` backslash commands, so they can 
 
 Normal SQL cannot create a database and then switch into it inside the same script. Create the empty database first, connect to that database, then run the relevant setup files.
 
+The app supports two tenant modes:
+
+- `database`: one isolated database per organisation.
+- `schema`: one shared app database with one schema per organisation.
+
 ## Setup Order
 
 1. Create and set up the platform database once.
-2. Create one database per school.
-3. Connect to the school database.
-4. Run the required core school setup scripts.
-5. Run only the optional module scripts that organisation needs.
-6. Run `school/99-grants.sql` last.
-7. Put the platform database connection in the app `.env.local`.
-8. Put each school database connection in the platform database `organisations` table.
+2. Choose the tenant mode for the organisation.
+3. For `database` mode, create one database for the school and connect to it.
+4. For `schema` mode, create one schema inside the shared app database and set the SQL editor search path to that schema.
+5. Run the required core school setup scripts.
+6. Run only the optional module scripts that organisation needs.
+7. Run `school/99-grants.sql` last.
+8. Put the platform database connection in the app `.env.local`.
+9. Put each organisation target in the platform database `organisations` table.
 
 ## Platform Database
 
-The platform database is the one database the web app connects to directly from environment variables. It stores the lookup records that tell the app which school database to use for each domain/subdomain.
+The platform database stores the lookup records that tell the app which tenant target to use for each domain/subdomain.
 
 Run:
 
@@ -69,9 +75,21 @@ APP_ROOT_DOMAIN=app.example.com
 LOCAL_ORGANISATION_SLUG=local
 ```
 
-## School Database
+For schema-mode organisations, the app also expects a shared app database connection:
 
-Each school gets its own separate database. The platform database points to it through an `organisations` row.
+```txt
+APP_POSTGRES_HOST=
+APP_POSTGRES_PORT=5432
+APP_POSTGRES_DATABASE=myntix_app
+APP_POSTGRES_USER=shared_app_user
+APP_POSTGRES_PASSWORD=
+```
+
+For database-mode organisations, credentials are still stored in the matching `organisations` row.
+
+## School Tenant Setup
+
+Each organisation can either use an isolated database or a schema in the shared app database.
 
 Minimum app setup:
 
@@ -104,6 +122,8 @@ database/school/06-api-clients.sql
 database/school/99-grants.sql
 ```
 
+### Database Mode
+
 In DBeaver:
 
 1. Create a database, for example `app_dev`.
@@ -111,7 +131,87 @@ In DBeaver:
 3. Open each required school script.
 4. Run them in numbered order.
 5. Change `school_app_user` and `school_app_password` in `99-grants.sql` if needed.
-6. Run `99-grants.sql` last.
+6. Leave `target_schema` in `99-grants.sql` as `public`.
+7. Run `99-grants.sql` last.
+
+Example platform row:
+
+```sql
+insert into organisations (
+  slug,
+  name,
+  primary_domain,
+  tenancy_mode,
+  schema_name,
+  database_host,
+  database_port,
+  database_name,
+  database_user,
+  database_password
+)
+values (
+  'springfield',
+  'Springfield School',
+  'springfield.myntix.com',
+  'database',
+  null,
+  'postgres.example.com',
+  5432,
+  'springfield_app',
+  'springfield_app_user',
+  'change_me'
+);
+```
+
+### Schema Mode
+
+In DBeaver:
+
+1. Create or connect to the shared app database, for example `myntix_app`.
+2. Create the organisation schema:
+
+```sql
+create schema if not exists springfield;
+set search_path to springfield, public;
+```
+
+3. Run each required school setup script in the same SQL editor/connection after the `set search_path`.
+4. In `99-grants.sql`, change:
+
+```sql
+target_schema text := 'springfield';
+```
+
+5. Run `99-grants.sql` last.
+
+Example platform row:
+
+```sql
+insert into organisations (
+  slug,
+  name,
+  primary_domain,
+  tenancy_mode,
+  schema_name,
+  database_host,
+  database_port,
+  database_name,
+  database_user,
+  database_password
+)
+values (
+  'springfield',
+  'Springfield School',
+  'springfield.myntix.com',
+  'schema',
+  'springfield',
+  null,
+  null,
+  null,
+  null,
+  null
+);
+```
 
 Initial admin login from `01-auth.sql`:
 
@@ -120,14 +220,14 @@ username: admin
 password: admin
 ```
 
-Default school database login created by `99-grants.sql`:
+Default school database/schema login created by `99-grants.sql`:
 
 ```txt
 username: dev_app_user
 password: gB6eYM688eR
 ```
 
-The seeded `local` organisation in `create-platform-database.sql` points to this default login. If you change the school database login, update the matching `organisations` row in the platform database as well.
+The seeded `local` organisation in `create-platform-database.sql` points to this default login in database mode. If you change the school database login, update the matching `organisations` row in the platform database as well.
 
 Use a different database login per school when you move beyond local development, for example:
 
@@ -137,7 +237,7 @@ school_app_user_springfield
 school_app_user_riverside
 ```
 
-Then add that username and password to the matching `organisations` row in the platform database.
+Then add that username and password to the matching `organisations` row in the platform database for database-mode tenants. For schema-mode tenants, put the shared app database login in `.env.local`.
 
 ## Module Notes
 
@@ -157,7 +257,7 @@ Do not run optional module scripts for organisations that will not use those mod
 Platform database:
 
 ```sql
-select slug, name, primary_domain, database_name, database_user, is_active
+select slug, name, primary_domain, tenancy_mode, schema_name, database_name, database_user, is_active
 from organisations
 order by slug;
 ```

@@ -42,15 +42,15 @@ else
   git clone --branch "$BRANCH" "$REPO_URL" "$APP_DIR"
 fi
 
-if [ ! -f "$APP_DIR/.env.local" ]; then
-  echo "Missing $APP_DIR/.env.local"
-  echo "Create it from .env.example and add the production values before starting the service."
+if [ ! -f "$APP_DIR/.env.production" ] && [ ! -f "$APP_DIR/.env.local" ]; then
+  echo "Missing $APP_DIR/.env.production or $APP_DIR/.env.local"
+  echo "Create one from .env.example and add the production values before starting the service."
   exit 1
 fi
 
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 
-sudo -u "$APP_USER" bash -lc "cd '$APP_DIR' && npm ci && npm run build"
+sudo -u "$APP_USER" bash -lc "cd '$APP_DIR' && npm ci && npm run check:env && npm run build"
 
 cat >"/etc/systemd/system/${SERVICE_NAME}.service" <<SERVICE
 [Unit]
