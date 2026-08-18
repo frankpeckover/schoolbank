@@ -1,4 +1,6 @@
 import { db } from "@/lib/db";
+import type { SessionUser } from "@/lib/session";
+import { AuditService } from "@/services/audit-service";
 
 export type ImportGroupMembershipInput = {
   description?: string;
@@ -35,8 +37,13 @@ type ImportUserRow = {
   role_key: string;
 };
 
+const auditService = new AuditService();
+
 export class GroupImportService {
-  async importGroups(input: ImportGroupsInput): Promise<ImportGroupsResult> {
+  async importGroups(
+    currentUser: SessionUser,
+    input: ImportGroupsInput,
+  ): Promise<ImportGroupsResult> {
     const errors: ImportGroupError[] = [];
     let createdGroupCount = 0;
     let createdMembershipCount = 0;
@@ -95,6 +102,17 @@ export class GroupImportService {
           createdMembershipCount += 1;
         }
       }
+
+      await auditService.logWithClient(client, {
+        action: "student_group.imported",
+        actorUserId: currentUser.id,
+        details: {
+          createdGroupCount,
+          createdMembershipCount,
+          errorCount: errors.length,
+        },
+        entityType: "student_group",
+      });
 
       await client.query("commit");
 

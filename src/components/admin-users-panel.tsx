@@ -330,6 +330,27 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
         )}
         {!isLoading && !error && filteredUsers.length === 0 && (
           <EmptyState
+            action={
+              users.length === 0 ? (
+                <div className="flex flex-wrap justify-center gap-2">
+                  <IconButton
+                    label="New user"
+                    onClick={() => setIsCreateModalOpen(true)}
+                    text="New User"
+                    tone="primary"
+                  >
+                    <PlusIcon />
+                  </IconButton>
+                  <IconButton
+                    label="Import users: CSV"
+                    onClick={() => setIsImportModalOpen(true)}
+                    text="Import Users: CSV"
+                  >
+                    <FileUpIcon />
+                  </IconButton>
+                </div>
+              ) : undefined
+            }
             description={
               users.length === 0
                 ? "Add a user or import a CSV to start setting up accounts."

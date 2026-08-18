@@ -16,6 +16,9 @@ export const appConfig = {
   lockupUrl:
     process.env.NEXT_PUBLIC_APP_LOCKUP_URL?.trim() ||
     "/brand/myntix-lockup.png",
+  marketingSiteUrl:
+    process.env.NEXT_PUBLIC_MARKETING_SITE_URL?.trim() ||
+    "https://myntix.com",
   wordmarkUrl:
     process.env.NEXT_PUBLIC_APP_WORDMARK_URL?.trim() ||
     "/brand/myntix-wordmark.png",

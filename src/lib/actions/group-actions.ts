@@ -51,8 +51,8 @@ export async function updateGroup(input: UpdateGroupInput) {
 }
 
 export async function importGroups(input: ImportGroupsInput) {
-  await requireGroupManager();
-  return groupImportService.importGroups(input);
+  const currentUser = await requireGroupManager();
+  return groupImportService.importGroups(currentUser, input);
 }
 
 export async function addStudentToGroup(groupId: string, userId: string) {

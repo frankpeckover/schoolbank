@@ -3,8 +3,10 @@
 import { useState, type ChangeEvent } from "react";
 import { importTimetableEntries } from "@/lib/actions";
 import { parseCsvObjects } from "@/lib/csv";
+import { CsvColumnGuide } from "@/components/ui/csv-column-guide";
 import { CsvFileInput } from "@/components/ui/csv-file-input";
-import { ModalCloseButton } from "@/components/ui/modal-close-button";
+import { CsvTemplateButton } from "@/components/ui/csv-template-button";
+import { ImportModalLayout } from "@/components/ui/import-modal-layout";
 import type {
   ImportTimetableEntryError,
   ImportTimetableEntryInput,
@@ -26,6 +28,18 @@ type ParseResult =
     };
 
 const csvHeaders = "teacher_username,group_name,day,start_time,end_time";
+const csvHeaderColumns = csvHeaders.split(",");
+const csvColumns = [
+  { name: "teacher_username" },
+  { name: "group_name" },
+  { name: "day" },
+  { name: "start_time" },
+  { name: "end_time" },
+];
+const timetableTemplateRows = [
+  ["teacher.demo", "Grade 4", "Monday", "09:00", "10:00"],
+  ["teacher.demo", "Music", "Wednesday", "11:30", "12:15"],
+];
 
 export function TimetableImportModal({
   onClose,
@@ -89,42 +103,10 @@ export function TimetableImportModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="app-modal theme-panel motion-pop w-full max-w-2xl p-5 shadow-lg">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h3 className="text-xl font-semibold">Import Timetable</h3>
-            <p className="mt-1 text-sm text-text-muted">
-              Upload a CSV with headers: {csvHeaders}
-            </p>
-            <p className="mt-1 text-sm text-text-muted">
-              Teachers and groups must already exist. Day can be a weekday name
-              or a number from 0 to 6.
-            </p>
-          </div>
-          <ModalCloseButton onClick={onClose} />
-        </div>
-
-        <CsvFileInput
-          fileName={fileName}
-          id="timetableCsvFile"
-          onChange={handleFileChange}
-        />
-
-        {message && (
-          <p className="mt-4 rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
-            {message}
-          </p>
-        )}
-        {error && (
-          <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-            {error}
-          </p>
-        )}
-
-        {errors.length > 0 && <ImportErrors errors={errors} />}
-
-        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+    <ImportModalLayout
+      description="Teachers and groups must already exist. Day can be a weekday name or a number from 0 to 6."
+      footer={
+        <>
           <button
             className="rounded-md border border-button-border px-4 py-2 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
             onClick={onClose}
@@ -140,9 +122,43 @@ export function TimetableImportModal({
           >
             {isImporting ? "Importing..." : "Import Timetable"}
           </button>
+        </>
+      }
+      onClose={onClose}
+      title="Import Timetable"
+    >
+        <CsvColumnGuide
+          columns={csvColumns}
+          note="All timetable columns are required. Times should use 24-hour format, for example 09:00."
+        />
+
+        <CsvFileInput
+          fileName={fileName}
+          id="timetableCsvFile"
+          onChange={handleFileChange}
+        />
+        <div className="mt-3">
+          <CsvTemplateButton
+            filename="timetable-import-template.csv"
+            headers={csvHeaderColumns}
+            rows={timetableTemplateRows}
+          />
         </div>
-      </div>
-    </div>
+
+        {message && (
+          <p className="mt-4 rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
+            {message}
+          </p>
+        )}
+        {error && (
+          <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
+            {error}
+          </p>
+        )}
+
+        {errors.length > 0 && <ImportErrors errors={errors} />}
+
+    </ImportModalLayout>
   );
 }
 

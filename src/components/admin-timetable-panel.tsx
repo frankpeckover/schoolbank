@@ -16,6 +16,7 @@ import {
 import { AdminPageSection } from "@/components/ui/admin-page-section";
 import { BulkSelectionControls } from "@/components/ui/bulk-selection-controls";
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
+import { EmptyState } from "@/components/ui/empty-state";
 import { FixedNotification } from "@/components/ui/fixed-notification";
 import { IconButton } from "@/components/ui/icon-button";
 import {
@@ -333,9 +334,31 @@ export function AdminTimetablePanel() {
           <p className="text-sm text-text-muted">Loading timetable...</p>
         )}
         {!isLoading && entries.length === 0 && (
-          <p className="text-sm text-text-muted">
-            Timetable entries will appear here after they are created.
-          </p>
+          <EmptyState
+            action={
+              <div className="flex flex-wrap justify-center gap-2">
+                <IconButton
+                  ariaExpanded={isCreateModalOpen}
+                  label="Add timetable entry"
+                  onClick={handleNewEntryToggle}
+                  text="New Entry"
+                  tone="primary"
+                >
+                  <PlusIcon />
+                </IconButton>
+                <IconButton
+                  label="Import timetable: CSV"
+                  onClick={() => setIsImportModalOpen(true)}
+                  text="Import Timetable: CSV"
+                >
+                  <FileUpIcon />
+                </IconButton>
+              </div>
+            }
+            description="Create a timetable entry or import a CSV to start mapping teachers to groups."
+            icon={<PlusIcon />}
+            title="No timetable entries yet"
+          />
         )}
         {!isLoading && entries.length > 0 && filteredEntries.length === 0 && (
           <p className="text-sm text-text-muted">

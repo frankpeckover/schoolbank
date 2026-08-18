@@ -3,8 +3,10 @@
 import { useState, type ChangeEvent } from "react";
 import { importShopItems } from "@/lib/actions";
 import { parseCsvObjects } from "@/lib/csv";
+import { CsvColumnGuide } from "@/components/ui/csv-column-guide";
 import { CsvFileInput } from "@/components/ui/csv-file-input";
-import { ModalCloseButton } from "@/components/ui/modal-close-button";
+import { CsvTemplateButton } from "@/components/ui/csv-template-button";
+import { ImportModalLayout } from "@/components/ui/import-modal-layout";
 import type {
   ImportShopItemError,
   ImportShopItemInput,
@@ -27,6 +29,18 @@ type ParseResult =
     };
 
 const csvHeaders = "name,description,price,quantity,image_url";
+const csvHeaderColumns = csvHeaders.split(",");
+const csvColumns = [
+  { name: "name" },
+  { name: "price" },
+  { name: "quantity" },
+  { name: "description", optional: true },
+  { name: "image_url", optional: true },
+];
+const shopTemplateRows = [
+  ["Homework Pass", "One homework pass approved by staff", 50, 10, ""],
+  ["Canteen Voucher", "", 100, 5, ""],
+];
 
 export function ShopImportModal({
   onClose,
@@ -93,41 +107,10 @@ export function ShopImportModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="app-modal theme-panel motion-pop w-full max-w-2xl p-5 shadow-lg">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h3 className="text-xl font-semibold">Import Rewards</h3>
-            <p className="mt-1 text-sm text-text-muted">
-              Upload a CSV with headers: {csvHeaders}
-            </p>
-            <p className="mt-1 text-sm text-text-muted">
-              Existing items with the same name are updated.
-            </p>
-          </div>
-          <ModalCloseButton onClick={onClose} />
-        </div>
-
-        <CsvFileInput
-          fileName={fileName}
-          id="shopCsvFile"
-          onChange={handleFileChange}
-        />
-
-        {message && (
-          <p className="mt-4 rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
-            {message}
-          </p>
-        )}
-        {error && (
-          <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
-            {error}
-          </p>
-        )}
-
-        {errors.length > 0 && <ImportErrors errors={errors} />}
-
-        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+    <ImportModalLayout
+      description="Existing items with the same name are updated."
+      footer={
+        <>
           <button
             className="rounded-md border border-button-border px-4 py-2 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
             onClick={onClose}
@@ -143,9 +126,43 @@ export function ShopImportModal({
           >
             {isImporting ? "Importing..." : "Import Items"}
           </button>
+        </>
+      }
+      onClose={onClose}
+      title="Import Rewards"
+    >
+        <CsvColumnGuide
+          columns={csvColumns}
+          note="Optional columns can be left blank but the header should stay in the file. Price and quantity must be zero or greater."
+        />
+
+        <CsvFileInput
+          fileName={fileName}
+          id="shopCsvFile"
+          onChange={handleFileChange}
+        />
+        <div className="mt-3">
+          <CsvTemplateButton
+            filename="reward-import-template.csv"
+            headers={csvHeaderColumns}
+            rows={shopTemplateRows}
+          />
         </div>
-      </div>
-    </div>
+
+        {message && (
+          <p className="mt-4 rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
+            {message}
+          </p>
+        )}
+        {error && (
+          <p className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong">
+            {error}
+          </p>
+        )}
+
+        {errors.length > 0 && <ImportErrors errors={errors} />}
+
+    </ImportModalLayout>
   );
 }
 

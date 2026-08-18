@@ -473,6 +473,30 @@ export function AdminGroupsPanel() {
     <AdminPageSection isFlush>
       <FixedNotification error={error} message={message} />
       <GroupListPanel
+        emptyAction={
+          groups.length === 0 ? (
+            <div className="flex flex-wrap justify-center gap-2">
+              <IconButton
+                label="New group"
+                onClick={() => {
+                  setDuplicatingGroup(null);
+                  setIsCreateModalOpen(true);
+                }}
+                text="New Group"
+                tone="primary"
+              >
+                <PlusIcon />
+              </IconButton>
+              <IconButton
+                label="Import groups: CSV"
+                onClick={() => setIsImportModalOpen(true)}
+                text="Import Groups: CSV"
+              >
+                <FileUpIcon />
+              </IconButton>
+            </div>
+          ) : undefined
+        }
         groups={filteredGroups}
         isLoading={isLoadingGroups}
         onDuplicateGroup={duplicateGroup}

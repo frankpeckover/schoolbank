@@ -4,8 +4,10 @@ import { useState, type ChangeEvent } from "react";
 import { importUsers, previewImportUsers } from "@/lib/actions";
 import { downloadCsv } from "@/lib/client-csv";
 import { parseCsvObjects } from "@/lib/csv";
+import { CsvColumnGuide } from "@/components/ui/csv-column-guide";
 import { CsvFileInput } from "@/components/ui/csv-file-input";
-import { ModalCloseButton } from "@/components/ui/modal-close-button";
+import { CsvTemplateButton } from "@/components/ui/csv-template-button";
+import { ImportModalLayout } from "@/components/ui/import-modal-layout";
 import type { Role } from "@/lib/session";
 import type {
   ImportedUserCredential,
@@ -31,6 +33,33 @@ type ParseResult =
     };
 
 const csvHeaders = "username,first_name,last_name,email,role,card_number";
+const csvHeaderColumns = csvHeaders.split(",");
+const csvColumns = [
+  { name: "username" },
+  { name: "first_name" },
+  { name: "last_name" },
+  { name: "email" },
+  { name: "role" },
+  { name: "card_number", optional: true },
+];
+const userTemplateRows = [
+  [
+    "student.0001",
+    "Avery",
+    "Nguyen",
+    "avery.nguyen@example.edu",
+    "student",
+    "100001",
+  ],
+  [
+    "teacher.demo",
+    "Jordan",
+    "Taylor",
+    "jordan.taylor@example.edu",
+    "teacher",
+    "",
+  ],
+];
 const validRoles: Role[] = ["admin", "teacher", "student"];
 
 export function UserImportModal({
@@ -118,26 +147,47 @@ export function UserImportModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="app-modal theme-panel motion-pop w-full max-w-2xl p-5 shadow-lg">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h3 className="text-xl font-semibold">Import Users</h3>
-            <p className="mt-1 text-sm text-text-muted">
-              Upload a CSV with headers: {csvHeaders}
-            </p>
-            <p className="mt-1 text-sm text-text-muted">
-              Existing usernames or emails are skipped and reported below.
-            </p>
-          </div>
-          <ModalCloseButton onClick={onClose} />
-        </div>
+    <ImportModalLayout
+      description="Existing usernames or emails are skipped and reported below."
+      footer={
+        <>
+          <button
+            className="rounded-md border border-button-border px-4 py-2 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
+            onClick={onClose}
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={isImporting || users.length === 0 || !preview}
+            onClick={handleImport}
+            type="button"
+          >
+            {isImporting ? "Importing..." : "Confirm Import"}
+          </button>
+        </>
+      }
+      onClose={onClose}
+      title="Import Users"
+    >
+        <CsvColumnGuide
+          columns={csvColumns}
+          note="Role must be admin, teacher, or student. Optional columns can be left blank but the header should stay in the file."
+        />
 
         <CsvFileInput
           fileName={fileName}
           id="csvFile"
           onChange={handleFileChange}
         />
+        <div className="mt-3">
+          <CsvTemplateButton
+            filename="user-import-template.csv"
+            headers={csvHeaderColumns}
+            rows={userTemplateRows}
+          />
+        </div>
 
         {message && (
           <p className="mt-4 rounded-md border border-success-border bg-success-soft px-3 py-2 text-sm font-semibold text-success">
@@ -160,25 +210,7 @@ export function UserImportModal({
           <GeneratedPasswords users={createdUsers} />
         )}
 
-        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <button
-            className="rounded-md border border-button-border px-4 py-2 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
-            onClick={onClose}
-            type="button"
-          >
-            Cancel
-          </button>
-          <button
-            className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70"
-            disabled={isImporting || users.length === 0 || !preview}
-            onClick={handleImport}
-            type="button"
-          >
-            {isImporting ? "Importing..." : "Confirm Import"}
-          </button>
-        </div>
-      </div>
-    </div>
+    </ImportModalLayout>
   );
 }
 

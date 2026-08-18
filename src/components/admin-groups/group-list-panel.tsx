@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { CheckIcon, CopyIcon, EyeIcon, PencilIcon, XIcon } from "@/components/ui/icons";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   MobileSelectionShell,
   RowSelectionCheckbox,
@@ -20,6 +21,7 @@ import {
 import type { GroupListItem } from "@/services/group-service";
 
 type GroupListPanelProps = {
+  emptyAction?: ReactNode;
   groups: GroupListItem[];
   isLoading: boolean;
   onDuplicateGroup: (group: GroupListItem) => void;
@@ -38,6 +40,7 @@ type GroupListPanelProps = {
 };
 
 export function GroupListPanel({
+  emptyAction,
   groups,
   isLoading,
   onDuplicateGroup,
@@ -68,7 +71,12 @@ export function GroupListPanel({
           <p className="text-sm text-text-muted">Loading groups...</p>
         )}
         {!isLoading && groups.length === 0 && (
-          <p className="text-sm text-text-muted">No groups match these filters.</p>
+          <EmptyState
+            action={emptyAction}
+            description="Create a group or import a CSV to organise students."
+            icon={<CheckIcon />}
+            title="No groups found"
+          />
         )}
         {!isLoading && groups.length > 0 && (
           <>

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { appConfig } from "@/lib/app-config";
 import { AppBrand } from "@/components/ui/app-brand";
 
@@ -19,12 +18,12 @@ export default function NotFound() {
           Check the address and try again. If this should be your organisation,
           contact your administrator.
         </p>
-        <Link
+        <a
           className="inline-flex h-10 items-center justify-center rounded-md bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-hover"
-          href="/"
+          href={appConfig.marketingSiteUrl}
         >
           Return to {appConfig.name}
-        </Link>
+        </a>
       </section>
     </main>
   );

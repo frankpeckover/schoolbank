@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import {
   getStudentBalance,
   listShopItems,
@@ -469,7 +470,29 @@ function ShopManagementList({
   if (visibleItemCount === 0) {
     return (
       <div className="mt-4">
-        <ShopEmptyState isManagementView totalItemCount={totalItemCount} />
+        <ShopEmptyState
+          action={
+            <div className="flex flex-wrap justify-center gap-2">
+              <IconButton
+                label="New item"
+                onClick={onNewItem}
+                text="New Reward"
+                tone="primary"
+              >
+                <PlusIcon />
+              </IconButton>
+              <IconButton
+                label="Import rewards: CSV"
+                onClick={onImportItems}
+                text="Import Rewards: CSV"
+              >
+                <FileUpIcon />
+              </IconButton>
+            </div>
+          }
+          isManagementView
+          totalItemCount={totalItemCount}
+        />
       </div>
     );
   }
@@ -930,14 +953,17 @@ function ShopItemStatusBadge({ item }: { item: ShopItem }) {
 }
 
 function ShopEmptyState({
+  action,
   isManagementView,
   totalItemCount,
 }: {
+  action?: ReactNode;
   isManagementView: boolean;
   totalItemCount: number;
 }) {
   return (
     <EmptyState
+      action={action}
       description={
         totalItemCount === 0
           ? isManagementView
