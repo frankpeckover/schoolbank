@@ -19,12 +19,12 @@ import {
   ListIcon,
   LogOutIcon,
   MoonIcon,
-  PackageIcon,
   SidebarCollapseIcon,
   SidebarExpandIcon,
   SunIcon,
-  TargetIcon,
-  UserCircleIcon,
+  TrendingUpIcon,
+  TrophyIcon,
+  UserIcon,
   UsersIcon,
   WalletIcon,
 } from "@/components/ui/icons";
@@ -36,6 +36,7 @@ const defaultNavigationItems = [
   "Analytics",
   "Rewards",
   "Transaction Log",
+  "Settings",
 ] as const;
 const studentNavigationItems = ["Dashboard", "Rewards"] as const;
 const adminNavigationItems = [
@@ -315,7 +316,10 @@ function SideNavAccountMenu({
   userDisplayName,
 }: Pick<
   HeaderNavMenuProps,
-  "onLogout" | "onPasswordChange" | "profileImageUrl" | "userDisplayName"
+  | "onLogout"
+  | "onPasswordChange"
+  | "profileImageUrl"
+  | "userDisplayName"
 > & {
   isExpanded: boolean;
 }) {
@@ -421,7 +425,10 @@ export function DesktopAccountMenu({
   userDisplayName,
 }: Pick<
   HeaderNavMenuProps,
-  "onLogout" | "onPasswordChange" | "profileImageUrl" | "userDisplayName"
+  | "onLogout"
+  | "onPasswordChange"
+  | "profileImageUrl"
+  | "userDisplayName"
 >) {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
@@ -785,15 +792,15 @@ function NavigationItemIcon({ item }: { item: NavigationItem }) {
     case "Dashboard":
       return <WalletIcon className={className} />;
     case "Analytics":
-      return <TargetIcon className={className} />;
+      return <TrendingUpIcon className={className} />;
     case "Rewards":
-      return <PackageIcon className={className} />;
+      return <TrophyIcon className={className} />;
     case "Transaction Log":
       return <ListIcon className={className} />;
     case "Users":
-      return <UsersIcon className={className} />;
+      return <UserIcon className={className} />;
     case "Groups":
-      return <UserCircleIcon className={className} />;
+      return <UsersIcon className={className} />;
     case "Timetable":
       return <ClockIcon className={className} />;
     case "Audit Log":

@@ -15,12 +15,16 @@ create table if not exists shop_items (
   image_url text not null default '',
   price integer not null,
   quantity integer not null default 0,
+  is_quantity_unlimited boolean not null default false,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint shop_items_price_not_negative check (price >= 0),
   constraint shop_items_quantity_not_negative check (quantity >= 0)
 );
+
+alter table shop_items
+  add column if not exists is_quantity_unlimited boolean not null default false;
 
 create table if not exists shop_purchases (
   id uuid primary key default gen_random_uuid(),
@@ -31,6 +35,7 @@ create table if not exists shop_purchases (
   decided_by_user_id uuid references users(id) on delete restrict,
   decided_at timestamptz,
   decision_note text not null default '',
+  stock_reserved boolean not null default true,
   is_voided boolean not null default false,
   voided_at timestamptz,
   purchased_at timestamptz not null default now(),
@@ -38,6 +43,9 @@ create table if not exists shop_purchases (
     status in ('pending', 'approved', 'denied')
   )
 );
+
+alter table shop_purchases
+  add column if not exists stock_reserved boolean not null default true;
 
 create index if not exists shop_items_active_idx on shop_items(is_active);
 create index if not exists shop_purchases_user_idx on shop_purchases(purchased_by_user_id);

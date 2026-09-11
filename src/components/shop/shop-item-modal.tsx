@@ -24,6 +24,7 @@ const emptyShopItemForm: ShopItemFormState = {
   imageUrl: "",
   price: "",
   quantity: "",
+  isQuantityUnlimited: false,
 };
 
 const imageHelpText = "PNG, JPG, WebP, or GIF. Max 2 MB.";
@@ -144,11 +145,29 @@ export function ShopItemModal({
             />
             <NumberField
               id="itemQuantity"
+              disabled={form.isQuantityUnlimited}
               label="Quantity"
               onChange={(value) => updateFormField("quantity", value)}
               value={form.quantity}
             />
           </div>
+
+          <label className="flex cursor-pointer items-start gap-3 rounded-md border border-border-subtle bg-surface px-3 py-3 text-sm text-text-control">
+            <input
+              checked={form.isQuantityUnlimited}
+              className="mt-0.5 h-4 w-4 accent-brand"
+              onChange={(event) =>
+                updateFormField("isQuantityUnlimited", event.target.checked)
+              }
+              type="checkbox"
+            />
+            <span>
+              <span className="block font-semibold">Unlimited quantity</span>
+              <span className="mt-0.5 block text-xs text-text-muted">
+                Requests for this reward will not reserve or reduce stock.
+              </span>
+            </span>
+          </label>
 
           {error && <p className={modalCopy.errorClassName}>{error}</p>}
 
@@ -232,11 +251,13 @@ function TextAreaField({
 }
 
 function NumberField({
+  disabled = false,
   id,
   label,
   onChange,
   value,
 }: {
+  disabled?: boolean;
   id: string;
   label: string;
   onChange: (value: string) => void;
@@ -249,6 +270,7 @@ function NumberField({
       </label>
       <input
         className={fieldClassNames.input}
+        disabled={disabled}
         id={id}
         min="0"
         onChange={(event) => onChange(event.target.value)}
@@ -362,6 +384,8 @@ function getInitialFormState(
     imageUrl: item?.imageUrl ?? emptyShopItemForm.imageUrl,
     price: item ? String(item.price) : emptyShopItemForm.price,
     quantity: item ? String(item.quantity) : emptyShopItemForm.quantity,
+    isQuantityUnlimited:
+      item?.isQuantityUnlimited ?? emptyShopItemForm.isQuantityUnlimited,
     ...initialForm,
   };
 }

@@ -60,7 +60,7 @@ export function StudentShopRequestsPanel({
           <ShoppingBagIcon />
         </span>
         <div className="min-w-0">
-          <h2 className="text-xl font-semibold">My Rewards</h2>
+          <h2 className="text-xl font-semibold">My Cart</h2>
         </div>
       </div>
 

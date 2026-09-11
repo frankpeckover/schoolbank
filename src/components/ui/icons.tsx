@@ -241,6 +241,27 @@ export function PackageIcon(props: IconProps) {
   );
 }
 
+export function TrendingUpIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="m3 17 6-6 4 4 8-9" />
+      <path d="M15 6h6v6" />
+    </IconBase>
+  );
+}
+
+export function TrophyIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M8 21h8" />
+      <path d="M12 17v4" />
+      <path d="M7 4h10v7a5 5 0 0 1-10 0V4Z" />
+      <path d="M7 6H4v1a4 4 0 0 0 4 4" />
+      <path d="M17 6h3v1a4 4 0 0 1-4 4" />
+    </IconBase>
+  );
+}
+
 export function PlusIcon(props: IconProps) {
   return (
     <IconBase {...props}>
@@ -341,6 +362,15 @@ export function UsersIcon(props: IconProps) {
       <circle cx="9" cy="7" r="4" />
       <path d="M22 21v-2a4 4 0 0 0-3-3.9" />
       <path d="M16 3.1a4 4 0 0 1 0 7.8" />
+    </IconBase>
+  );
+}
+
+export function UserIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="7" r="4" />
+      <path d="M5 21v-2a7 7 0 0 1 14 0v2" />
     </IconBase>
   );
 }

@@ -7,6 +7,7 @@ export type ShopItem = {
   imageUrl: string;
   price: number;
   quantity: number;
+  isQuantityUnlimited: boolean;
   isActive: boolean;
 };
 
@@ -17,6 +18,7 @@ export type SaveShopItemInput = {
   imageUrl: string;
   price: number;
   quantity: number;
+  isQuantityUnlimited: boolean;
 };
 
 export type ImportShopItemInput = {
@@ -25,6 +27,7 @@ export type ImportShopItemInput = {
   imageUrl: string;
   price: number;
   quantity: number;
+  isQuantityUnlimited: boolean;
 };
 
 export type ImportShopItemsInput = {
@@ -74,6 +77,7 @@ export type ShopItemRow = {
   image_url: string;
   price: number;
   quantity: number;
+  is_quantity_unlimited: boolean;
   is_active: boolean;
 };
 

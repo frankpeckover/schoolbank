@@ -7,6 +7,7 @@ import {
   listShopItems,
   removeShopItem,
   requestShopItem,
+  setShopItemActive,
 } from "@/lib/actions";
 import { downloadCsv } from "@/lib/client-csv";
 import { formatAmount, formatCurrencyAmount } from "@/lib/formatters";
@@ -27,6 +28,7 @@ import { FixedNotification } from "@/components/ui/fixed-notification";
 import { IconButton } from "@/components/ui/icon-button";
 import {
   CopyIcon,
+  CheckIcon,
   EyeIcon,
   FileDownIcon,
   FileUpIcon,
@@ -213,6 +215,20 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
     refreshItems();
   }
 
+  async function handleItemStatusChange(item: ShopItem) {
+    const nextActiveState = !item.isActive;
+    const result = await setShopItemActive(item.id, nextActiveState);
+
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+
+    setMessage(nextActiveState ? "Reward enabled." : "Reward archived.");
+    setError(null);
+    await refreshItems();
+  }
+
   function handleItemSelectionChange(itemId: string, isSelected: boolean) {
     setSelectedItemIds((currentItemIds) =>
       isSelected
@@ -260,10 +276,15 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
       return;
     }
 
-    setMessage("Request submitted.");
+    setMessage("Added to cart.");
     setViewingItem((currentItem) =>
       currentItem?.id === itemId
-        ? { ...currentItem, quantity: currentItem.quantity - 1 }
+        ? {
+            ...currentItem,
+            quantity: currentItem.isQuantityUnlimited
+              ? currentItem.quantity
+              : currentItem.quantity - 1,
+          }
         : currentItem,
     );
     setRequestedItemIds((currentItemIds) =>
@@ -332,7 +353,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
           onClearFilters={clearShopFilters}
           onPriceMaxChange={(value) => updateFilter("priceMax", value)}
           onPriceMinChange={(value) => updateFilter("priceMin", value)}
-          onRemove={handleRemove}
+          onStatusChange={handleItemStatusChange}
           onSearchChange={(field, value) => updateFilter(field, value)}
           onSelectionChange={handleItemSelectionChange}
           onVisibleItemsSelectionChange={handleVisibleItemsSelectionChange}
@@ -379,6 +400,7 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
                   name: `${duplicatingItem.name} Copy`,
                   price: String(duplicatingItem.price),
                   quantity: String(duplicatingItem.quantity),
+                  isQuantityUnlimited: duplicatingItem.isQuantityUnlimited,
                 }
               : undefined
           }
@@ -442,7 +464,7 @@ function ShopManagementList({
   onNewItem,
   onPriceMaxChange,
   onPriceMinChange,
-  onRemove,
+  onStatusChange,
   onSearchChange,
   onBulkRemove,
   onClearFilters,
@@ -465,7 +487,7 @@ function ShopManagementList({
   onNewItem: () => void;
   onPriceMaxChange: (value: string) => void;
   onPriceMinChange: (value: string) => void;
-  onRemove: (itemId: string) => void;
+  onStatusChange: (item: ShopItem) => void;
   onSearchChange: (
     field: "description" | "name",
     value: string,
@@ -597,7 +619,7 @@ function ShopManagementList({
             <th scope="col" className="py-2 pr-4 font-semibold">
               <TableHeaderFilter
                 isActive={Boolean(filters.name)}
-                label="Item"
+                label="Reward"
                 onClear={() => onSearchChange("name", "")}
               >
                 <TableHeaderFilterInput
@@ -702,7 +724,7 @@ function ShopManagementList({
                 </span>
               </td>
               <td className="py-3 pr-4 text-right text-text-muted">
-                {item.quantity}
+                {formatItemQuantity(item)}
               </td>
               <td className="py-3 pr-4">
                 <ShopItemStatusBadge item={item} />
@@ -712,7 +734,7 @@ function ShopManagementList({
                   item={item}
                   onDuplicate={onDuplicate}
                   onEdit={onEdit}
-                  onRemove={onRemove}
+                  onStatusChange={onStatusChange}
                   onView={onView}
                 />
               </td>
@@ -728,7 +750,7 @@ function ShopManagementList({
             key={item.id}
             onDuplicate={onDuplicate}
             onEdit={onEdit}
-            onRemove={onRemove}
+            onStatusChange={onStatusChange}
             onSelectionChange={onSelectionChange}
             onView={onView}
             selected={selectedItemIds.includes(item.id)}
@@ -759,7 +781,7 @@ function ShopManagementCard({
   item,
   onDuplicate,
   onEdit,
-  onRemove,
+  onStatusChange,
   onSelectionChange,
   onView,
   selected,
@@ -768,7 +790,7 @@ function ShopManagementCard({
   item: ShopItem;
   onDuplicate: (item: ShopItem) => void;
   onEdit: (item: ShopItem) => void;
-  onRemove: (itemId: string) => void;
+  onStatusChange: (item: ShopItem) => void;
   onSelectionChange: (itemId: string, isSelected: boolean) => void;
   onView: (item: ShopItem) => void;
   selected: boolean;
@@ -798,7 +820,7 @@ function ShopManagementCard({
             item={item}
             onDuplicate={onDuplicate}
             onEdit={onEdit}
-            onRemove={onRemove}
+            onStatusChange={onStatusChange}
             onView={onView}
           />
         </div>
@@ -806,7 +828,7 @@ function ShopManagementCard({
           <span>
             {formatAmount(item.price)} {currencyName}
           </span>
-          <span>{item.quantity} available</span>
+          <span>{getItemAvailabilityLabel(item)}</span>
           <ShopItemStatusBadge item={item} />
         </div>
       </MobileSelectionShell>
@@ -923,13 +945,13 @@ function ShopManagementActions({
   item,
   onDuplicate,
   onEdit,
-  onRemove,
+  onStatusChange,
   onView,
 }: {
   item: ShopItem;
   onDuplicate: (item: ShopItem) => void;
   onEdit: (item: ShopItem) => void;
-  onRemove: (itemId: string) => void;
+  onStatusChange: (item: ShopItem) => void;
   onView: (item: ShopItem) => void;
 }) {
   return (
@@ -952,11 +974,10 @@ function ShopManagementActions({
           onSelect: () => onDuplicate(item),
         },
         {
-          disabled: !item.isActive,
-          icon: <TrashIcon />,
-          label: "Archive",
-          onSelect: () => onRemove(item.id),
-          tone: "danger",
+          icon: item.isActive ? <TrashIcon /> : <CheckIcon />,
+          label: item.isActive ? "Archive" : "Enable",
+          onSelect: () => onStatusChange(item),
+          tone: item.isActive ? "danger" : "primary",
         },
       ]}
     />
@@ -972,7 +993,7 @@ function ShopItemStatusBadge({ item }: { item: ShopItem }) {
     );
   }
 
-  if (item.quantity <= 0) {
+  if (!item.isQuantityUnlimited && item.quantity <= 0) {
     return (
       <span className="inline-flex rounded-sm bg-danger-soft px-2 py-1 text-xs font-semibold text-danger-strong">
         Unavailable
@@ -1071,6 +1092,7 @@ function downloadShopItems(items: ShopItem[]) {
       "description",
       "price",
       "quantity",
+      "unlimited_quantity",
       "status",
       "image_url",
     ],
@@ -1080,8 +1102,19 @@ function downloadShopItems(items: ShopItem[]) {
       item.description,
       item.price,
       item.quantity,
+      item.isQuantityUnlimited,
       item.isActive ? "active" : "archived",
       item.imageUrl,
     ]),
   );
+}
+
+function formatItemQuantity(item: ShopItem) {
+  return item.isQuantityUnlimited ? "Unlimited" : String(item.quantity);
+}
+
+function getItemAvailabilityLabel(item: ShopItem) {
+  return item.isQuantityUnlimited
+    ? "Unlimited"
+    : `${formatItemQuantity(item)} available`;
 }

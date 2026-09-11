@@ -4,11 +4,9 @@ import { useEffect, useState, type FormEvent } from "react";
 import {
   createUser,
   listUserGroups,
-  resetUserPassword,
   updateUser,
   uploadUserProfileImage,
 } from "@/lib/actions";
-import { PasswordResetSection } from "@/components/admin-users/password-reset-section";
 import { StudentGroupsSection } from "@/components/admin-users/student-groups-section";
 import { UserFormFields } from "@/components/admin-users/user-form-fields";
 import { UserModalActions } from "@/components/admin-users/user-modal-actions";
@@ -35,7 +33,6 @@ export function UserModal({
   const [form, setForm] = useState<UserFormState>(() =>
     getInitialFormState(mode, user, initialForm),
   );
-  const [newPassword, setNewPassword] = useState("");
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [userGroups, setUserGroups] = useState<UserGroupItem[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +41,6 @@ export function UserModal({
     mode === "edit" && user?.role === "student",
   );
   const [isSaving, setIsSaving] = useState(false);
-  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const dialogRef = useDialogFocus({ onEscape: onClose });
 
   useEffect(() => {
@@ -132,27 +128,6 @@ export function UserModal({
     onSaved();
   }
 
-  async function handlePasswordReset() {
-    setIsResettingPassword(true);
-    setError(null);
-    setMessage(null);
-
-    const result = await resetUserPassword({
-      id: form.id,
-      password: newPassword,
-    });
-
-    if (!result.ok) {
-      setError(result.message);
-      setIsResettingPassword(false);
-      return;
-    }
-
-    setNewPassword("");
-    setMessage("Password reset.");
-    setIsResettingPassword(false);
-  }
-
   function updateFormField<Field extends keyof UserFormState>(
     field: Field,
     value: UserFormState[Field],
@@ -222,15 +197,6 @@ export function UserModal({
             onCancel={onClose}
           />
         </form>
-
-        {mode === "edit" && (
-          <PasswordResetSection
-            isResettingPassword={isResettingPassword}
-            newPassword={newPassword}
-            onNewPasswordChange={setNewPassword}
-            onPasswordReset={handlePasswordReset}
-          />
-        )}
       </div>
     </div>
   );

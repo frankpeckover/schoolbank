@@ -111,7 +111,11 @@ export class ShopPurchaseService {
 
       const item = await getShopItemForUpdate(client, itemId);
 
-      if (!item || !item.is_active || item.quantity <= 0) {
+      if (
+        !item ||
+        !item.is_active ||
+        (!item.is_quantity_unlimited && item.quantity <= 0)
+      ) {
         await client.query("rollback");
         return {
           ok: false,
@@ -150,6 +154,7 @@ export class ShopPurchaseService {
         itemId,
         currentUser.id,
         item.price,
+        !item.is_quantity_unlimited,
       );
 
       const ledgerEntryId = await ledgerService.createEntry(client, {
@@ -163,7 +168,9 @@ export class ShopPurchaseService {
         userId: currentUser.id,
       });
 
-      await reserveStock(client, itemId);
+      if (!item.is_quantity_unlimited) {
+        await reserveStock(client, itemId);
+      }
 
       await auditService.logWithClient(client, {
         action: "shop_purchase.requested",
@@ -235,7 +242,7 @@ function canManagePurchases(currentUser: SessionUser) {
 async function getShopItemForUpdate(client: PoolClient, itemId: string) {
   const itemResult = await client.query<ShopItemRow>(
     `
-      select id, name, description, price, quantity, is_active
+      select id, name, description, price, quantity, is_quantity_unlimited, is_active
       from shop_items
       where id = $1
       for update
@@ -268,6 +275,7 @@ async function createPendingPurchase(
   itemId: string,
   userId: string,
   price: number,
+  stockReserved: boolean,
 ) {
   const purchaseResult = await client.query<{ id: string }>(
     `
@@ -275,12 +283,13 @@ async function createPendingPurchase(
         shop_item_id,
         purchased_by_user_id,
         price_at_purchase,
-        status
+        status,
+        stock_reserved
       )
-      values ($1, $2, $3, 'pending')
+      values ($1, $2, $3, 'pending', $4)
       returning id
     `,
-    [itemId, userId, price],
+    [itemId, userId, price, stockReserved],
   );
 
   return purchaseResult.rows[0].id;
@@ -325,6 +334,7 @@ async function decidePurchaseRequest(
       price_at_purchase: number;
       purchased_by_user_id: string;
       shop_item_id: string;
+      stock_reserved: boolean;
     }>(
       `
         update shop_purchases
@@ -335,7 +345,7 @@ async function decidePurchaseRequest(
         where id = $4
           and status = 'pending'
           and is_voided = false
-        returning shop_item_id, purchased_by_user_id, price_at_purchase
+        returning shop_item_id, purchased_by_user_id, price_at_purchase, stock_reserved
       `,
       [status, decidedByUserId, decisionNote, purchaseId],
     );
@@ -351,7 +361,9 @@ async function decidePurchaseRequest(
     }
 
     if (status === "denied") {
-      await restoreReservedStock(client, purchase.shop_item_id);
+      if (purchase.stock_reserved) {
+        await restoreReservedStock(client, purchase.shop_item_id);
+      }
       await ledgerService.voidRelatedEntry(
         client,
         "shop_purchase",

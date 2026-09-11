@@ -4,7 +4,7 @@ import {
   type UserFilters,
   userRoles,
 } from "@/components/admin-users/user-management-types";
-import { CheckIcon, CopyIcon, PencilIcon, XIcon } from "@/components/ui/icons";
+import { CheckIcon, CopyIcon, KeyIcon, PencilIcon, XIcon } from "@/components/ui/icons";
 import {
   MobileSelectionShell,
   RowSelectionCheckbox,
@@ -25,6 +25,7 @@ type UsersTableProps = {
   onFiltersChange: (filters: UserFilters) => void;
   onDuplicate: (user: UserListItem) => void;
   onEdit: (user: UserListItem) => void;
+  onPasswordReset: (user: UserListItem) => void;
   onShowInactiveUsersChange: (showInactiveUsers: boolean) => void;
   onUserSelectionChange: (userId: string, isSelected: boolean) => void;
   onUserActiveChange: (user: UserListItem, isActive: boolean) => void;
@@ -40,6 +41,7 @@ export function UsersTable({
   onFiltersChange,
   onDuplicate,
   onEdit,
+  onPasswordReset,
   onShowInactiveUsersChange,
   onUserSelectionChange,
   onUserActiveChange,
@@ -67,6 +69,7 @@ export function UsersTable({
             key={user.id}
             onDuplicate={onDuplicate}
             onEdit={onEdit}
+            onPasswordReset={onPasswordReset}
             onSelectionChange={onUserSelectionChange}
             onUserActiveChange={onUserActiveChange}
             selected={selectedUserIds.includes(user.id)}
@@ -243,6 +246,7 @@ export function UsersTable({
                 <UserActions
                   onDuplicate={onDuplicate}
                   onEdit={onEdit}
+                  onPasswordReset={onPasswordReset}
                   onUserActiveChange={onUserActiveChange}
                   user={user}
                 />
@@ -258,6 +262,7 @@ export function UsersTable({
 function UserCard({
   onDuplicate,
   onEdit,
+  onPasswordReset,
   onSelectionChange,
   onUserActiveChange,
   selected,
@@ -265,6 +270,7 @@ function UserCard({
 }: {
   onDuplicate: (user: UserListItem) => void;
   onEdit: (user: UserListItem) => void;
+  onPasswordReset: (user: UserListItem) => void;
   onSelectionChange: (userId: string, isSelected: boolean) => void;
   onUserActiveChange: (user: UserListItem, isActive: boolean) => void;
   selected: boolean;
@@ -295,6 +301,7 @@ function UserCard({
           <UserActions
             onDuplicate={onDuplicate}
             onEdit={onEdit}
+            onPasswordReset={onPasswordReset}
             onUserActiveChange={onUserActiveChange}
             user={user}
           />
@@ -317,11 +324,13 @@ function UserCard({
 function UserActions({
   onDuplicate,
   onEdit,
+  onPasswordReset,
   onUserActiveChange,
   user,
 }: {
   onDuplicate: (user: UserListItem) => void;
   onEdit: (user: UserListItem) => void;
+  onPasswordReset: (user: UserListItem) => void;
   onUserActiveChange: (user: UserListItem, isActive: boolean) => void;
   user: UserListItem;
 }) {
@@ -338,6 +347,11 @@ function UserActions({
           icon: <PencilIcon />,
           label: "Edit",
           onSelect: () => onEdit(user),
+        },
+        {
+          icon: <KeyIcon />,
+          label: "Reset Password",
+          onSelect: () => onPasswordReset(user),
         },
         {
           icon: user.isActive ? <XIcon /> : <CheckIcon />,

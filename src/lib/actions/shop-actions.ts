@@ -52,6 +52,11 @@ export async function removeShopItem(itemId: string) {
   return shopItemService.removeItem(currentUser, itemId);
 }
 
+export async function setShopItemActive(itemId: string, isActive: boolean) {
+  const currentUser = await requireShopManager();
+  return shopItemService.setItemActive(currentUser, itemId, isActive);
+}
+
 export async function requestShopItem(itemId: string) {
   const currentUser = await requireUser();
   return shopPurchaseService.requestPurchase(currentUser, itemId);

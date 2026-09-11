@@ -48,7 +48,7 @@ export class ShopItemService {
   async listItems(includeInactive = false): Promise<ShopItem[]> {
     const result = await db.query<ShopItemRow>(
       `
-        select id, name, description, image_url, price, quantity, is_active
+        select id, name, description, image_url, price, quantity, is_quantity_unlimited, is_active
         from shop_items
         where $1::boolean = true or is_active = true
         order by name
@@ -104,6 +104,7 @@ export class ShopItemService {
           imageUrl,
           input.price,
           input.quantity,
+          input.isQuantityUnlimited,
         );
       } else {
         itemId = await createItem(
@@ -113,6 +114,7 @@ export class ShopItemService {
           imageUrl,
           input.price,
           input.quantity,
+          input.isQuantityUnlimited,
         );
       }
 
@@ -124,6 +126,7 @@ export class ShopItemService {
           hasImage: Boolean(imageUrl),
           price: input.price,
           quantity: input.quantity,
+          isQuantityUnlimited: input.isQuantityUnlimited,
         },
         entityId: itemId,
         entityType: "shop_item",
@@ -145,6 +148,14 @@ export class ShopItemService {
   }
 
   async removeItem(currentUser: SessionUser, itemId: string): Promise<ActionResult> {
+    return this.setItemActive(currentUser, itemId, false);
+  }
+
+  async setItemActive(
+    currentUser: SessionUser,
+    itemId: string,
+    isActive: boolean,
+  ): Promise<ActionResult> {
     if (!canManageShopItems(currentUser)) {
       return {
         ok: false,
@@ -160,15 +171,15 @@ export class ShopItemService {
       await client.query(
         `
           update shop_items
-          set is_active = false,
+          set is_active = $2,
               updated_at = now()
           where id = $1
         `,
-        [itemId],
+        [itemId, isActive],
       );
 
       await auditService.logWithClient(client, {
-        action: "shop_item.removed",
+        action: isActive ? "shop_item.enabled" : "shop_item.archived",
         actorUserId: currentUser.id,
         entityId: itemId,
         entityType: "shop_item",
@@ -177,11 +188,13 @@ export class ShopItemService {
       await client.query("commit");
     } catch (error) {
       await client.query("rollback");
-      console.error("Remove reward item failed", error);
+      console.error("Update reward item status failed", error);
 
       return {
         ok: false,
-        message: "Could not remove reward item.",
+        message: isActive
+          ? "Could not enable reward item."
+          : "Could not archive reward item.",
       };
     } finally {
       client.release();
@@ -259,6 +272,7 @@ export class ShopItemService {
             imageUrl,
             item.price,
             item.quantity,
+            item.isQuantityUnlimited,
           );
           updatedCount += 1;
         } else {
@@ -269,6 +283,7 @@ export class ShopItemService {
             imageUrl,
             item.price,
             item.quantity,
+            item.isQuantityUnlimited,
           );
           createdCount += 1;
         }
@@ -367,14 +382,22 @@ async function createItem(
   imageUrl: string,
   price: number,
   quantity: number,
+  isQuantityUnlimited: boolean,
 ) {
   const result = await client.query<{ id: string }>(
     `
-      insert into shop_items (name, description, image_url, price, quantity)
-      values ($1, $2, $3, $4, $5)
+      insert into shop_items (
+        name,
+        description,
+        image_url,
+        price,
+        quantity,
+        is_quantity_unlimited
+      )
+      values ($1, $2, $3, $4, $5, $6)
       returning id
     `,
-    [name, description, imageUrl, price, quantity],
+    [name, description, imageUrl, price, quantity, isQuantityUnlimited],
   );
 
   return result.rows[0].id;
@@ -388,6 +411,7 @@ async function updateItem(
   imageUrl: string,
   price: number,
   quantity: number,
+  isQuantityUnlimited: boolean,
 ) {
   await client.query(
     `
@@ -397,10 +421,11 @@ async function updateItem(
           image_url = $3,
           price = $4,
           quantity = $5,
+          is_quantity_unlimited = $6,
           updated_at = now()
-      where id = $6
+      where id = $7
     `,
-    [name, description, imageUrl, price, quantity, itemId],
+    [name, description, imageUrl, price, quantity, isQuantityUnlimited, itemId],
   );
 }
 
@@ -412,6 +437,7 @@ function mapShopItemRow(item: ShopItemRow): ShopItem {
     imageUrl: item.image_url,
     price: item.price,
     quantity: item.quantity,
+    isQuantityUnlimited: item.is_quantity_unlimited,
     isActive: item.is_active,
   };
 }

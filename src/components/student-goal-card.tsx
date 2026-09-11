@@ -69,7 +69,7 @@ export function StudentGoalCard({
         }
       } catch {
         if (isMounted) {
-          setMessage("Could not load goal.");
+          setMessage("Could not load savings goal.");
         }
       } finally {
         if (isMounted) {
@@ -122,7 +122,7 @@ export function StudentGoalCard({
     const parsedTargetAmount = Number.parseInt(targetAmount, 10);
 
     if (!Number.isFinite(parsedTargetAmount) || parsedTargetAmount <= 0) {
-      setMessage("Enter a goal amount greater than 0.");
+      setMessage("Enter a savings goal amount greater than 0.");
       setIsSaving(false);
       return;
     }
@@ -143,7 +143,7 @@ export function StudentGoalCard({
     setGoalTitle(refreshedGoal?.title ?? "");
     setTargetAmount(refreshedGoal ? String(refreshedGoal.targetAmount) : "");
     setIsEditing(false);
-    setMessage("Goal saved.");
+    setMessage("Savings goal saved.");
     setIsSaving(false);
   }
 
@@ -163,17 +163,17 @@ export function StudentGoalCard({
             <TargetIcon />
           </span>
           <h2 className="truncate text-base font-semibold text-foreground">
-            Goal
+            Savings Goal
           </h2>
         </div>
 
         {goal && !isEditing && (
           <TableActionMenu
-            label="Open goal actions"
+            label="Open savings goal actions"
             items={[
               {
                 icon: <PencilIcon />,
-                label: "Edit goal",
+                label: "Edit savings goal",
                 onSelect: () => setIsEditing(true),
               },
             ]}
@@ -183,7 +183,7 @@ export function StudentGoalCard({
 
       {isLoading && (
         <div className="flex min-h-48 items-center justify-center">
-          <p className="text-sm text-text-muted">Loading goal...</p>
+          <p className="text-sm text-text-muted">Loading savings goal...</p>
         </div>
       )}
 
@@ -201,7 +201,7 @@ export function StudentGoalCard({
       {!isLoading && isEditing && (
         <form className="mt-5 space-y-3" onSubmit={handleSaveGoal}>
           <label className="block text-sm font-semibold text-text-control">
-            Goal name
+            Savings goal name
             <input
               className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none transition focus:border-brand"
               maxLength={maximumGoalTitleLength}
@@ -229,7 +229,7 @@ export function StudentGoalCard({
             disabled={isSaving}
             type="submit"
           >
-            {isSaving ? "Saving..." : "Save goal"}
+            {isSaving ? "Saving..." : "Save savings goal"}
           </button>
         </form>
       )}

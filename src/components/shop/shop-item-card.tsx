@@ -62,10 +62,12 @@ export function ShopItemCard({
           <div className="flex shrink-0 flex-col items-end gap-1">
             <span
               className={`text-xs font-medium ${
-                item.quantity <= 0 ? "text-danger-strong" : "text-text-muted"
+                !item.isQuantityUnlimited && item.quantity <= 0
+                  ? "text-danger-strong"
+                  : "text-text-muted"
               }`}
             >
-              {item.quantity <= 0 ? "Unavailable" : `${item.quantity} left`}
+              {getAvailabilityLabel(item)}
             </span>
             {!item.isActive && (
               <span className="rounded-sm bg-danger-soft px-2 py-1 text-xs font-medium text-danger-strong">
@@ -140,19 +142,19 @@ function ShopItemActions({
               ? "border border-success-border bg-success-soft text-success"
               : "bg-brand text-white hover:bg-brand-hover"
           }`}
-          disabled={item.quantity <= 0 || requested}
+          disabled={(!item.isQuantityUnlimited && item.quantity <= 0) || requested}
           onClick={() => onPurchase(item.id)}
           type="button"
         >
           {requested ? (
             <>
               <CheckIcon />
-              Requested
+              Added to Cart
             </>
           ) : (
             <>
               <ShoppingBagIcon />
-              Request
+              Add to Cart
             </>
           )}
         </button>
@@ -184,4 +186,12 @@ function ShopItemActions({
       )}
     </div>
   );
+}
+
+function getAvailabilityLabel(item: ShopItem) {
+  if (item.isQuantityUnlimited) {
+    return "Unlimited";
+  }
+
+  return item.quantity <= 0 ? "Unavailable" : `${item.quantity} left`;
 }

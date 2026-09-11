@@ -6,6 +6,7 @@ import {
   themeStorageKey,
   type ThemeMode,
 } from "@/lib/theme-config";
+import { syncBrandForeground } from "@/lib/brand-contrast";
 
 export function useThemeMode() {
   const [themeMode, setThemeMode] = useState<ThemeMode>(defaultThemeMode);
@@ -38,6 +39,7 @@ export function useThemeMode() {
 
 export function applyThemeMode(themeMode: ThemeMode) {
   document.documentElement.dataset.theme = themeMode;
+  syncBrandForeground();
 }
 
 function getSavedThemeMode(): ThemeMode {

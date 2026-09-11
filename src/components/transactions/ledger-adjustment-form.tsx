@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
   createGroupLedgerAdjustment,
   createLedgerAdjustments,
-  getTransactionPresets,
+  getMyTransactionPresets,
   listGroups,
   searchStudents,
 } from "@/lib/actions";
@@ -18,6 +18,7 @@ import {
   type TransactionPresets,
 } from "@/lib/transaction-presets";
 import { formatAmount } from "@/lib/formatters";
+import { MinusIcon, PlusIcon } from "@/components/ui/icons";
 import type { GroupListItem } from "@/domains/groups/group-service";
 import type { StudentListItem } from "@/domains/users/user-service";
 
@@ -145,7 +146,7 @@ export function LedgerAdjustmentForm({
 
     async function loadPresets() {
       try {
-        const loadedPresets = await getTransactionPresets();
+        const loadedPresets = await getMyTransactionPresets();
 
         if (isActive) {
           setPresets(loadedPresets);
@@ -526,7 +527,7 @@ function DirectionToggle({
       <p className="text-sm font-semibold text-text-control">Action</p>
       <div className="mt-2 grid grid-cols-2 overflow-hidden rounded-md border border-button-border">
         <button
-          className={`px-4 py-3 text-sm font-semibold transition ${
+          className={`inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition ${
             direction === "add"
               ? "bg-success text-white"
               : "bg-surface text-text-control hover:bg-panel-soft"
@@ -534,10 +535,11 @@ function DirectionToggle({
           onClick={() => onChange("add")}
           type="button"
         >
-          Add
+          <PlusIcon className="h-4 w-4" />
+          <span>Add</span>
         </button>
         <button
-          className={`px-4 py-3 text-sm font-semibold transition ${
+          className={`inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition ${
             direction === "remove"
               ? "bg-danger text-white"
               : "bg-surface text-text-control hover:bg-panel-soft"
@@ -545,7 +547,8 @@ function DirectionToggle({
           onClick={() => onChange("remove")}
           type="button"
         >
-          Take
+          <MinusIcon className="h-4 w-4" />
+          <span>Take</span>
         </button>
       </div>
     </div>

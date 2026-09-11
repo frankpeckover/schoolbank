@@ -17,16 +17,16 @@ type GroupEditModalProps = {
   isSearchingStudents: boolean;
   members: GroupMemberItem[];
   onAddSelectedStudents: () => void;
-  onAddStudent: (student: StudentListItem) => void;
   onClose: () => void;
   onMemberSelectionToggle: (memberId: string) => void;
   onRemoveSelectedMembers: () => void;
   onRemoveStudent: (member: GroupMemberItem) => void;
   onSaved: () => void;
   onStudentQueryChange: (value: string) => void;
-  onStudentSelectionToggle: (studentId: string) => void;
+  onStudentSelectionToggle: (student: StudentListItem) => void;
   selectedMemberIds: string[];
   selectedStudentIds: string[];
+  selectedStudents: StudentListItem[];
   studentQuery: string;
 };
 
@@ -37,7 +37,6 @@ export function GroupEditModal({
   isSearchingStudents,
   members,
   onAddSelectedStudents,
-  onAddStudent,
   onClose,
   onMemberSelectionToggle,
   onRemoveSelectedMembers,
@@ -47,6 +46,7 @@ export function GroupEditModal({
   onStudentSelectionToggle,
   selectedMemberIds,
   selectedStudentIds,
+  selectedStudents,
   studentQuery,
 }: GroupEditModalProps) {
   const [name, setName] = useState(group.name);
@@ -132,7 +132,6 @@ export function GroupEditModal({
           isSearchingStudents={isSearchingStudents}
           members={members}
           onAddSelectedStudents={onAddSelectedStudents}
-          onAddStudent={onAddStudent}
           onMemberSelectionToggle={onMemberSelectionToggle}
           onRemoveSelectedMembers={onRemoveSelectedMembers}
           onRemoveStudent={onRemoveStudent}
@@ -141,6 +140,7 @@ export function GroupEditModal({
           selectedGroup={group}
           selectedMemberIds={selectedMemberIds}
           selectedStudentIds={selectedStudentIds}
+          selectedStudents={selectedStudents}
           studentQuery={studentQuery}
         />
       </div>

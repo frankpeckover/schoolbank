@@ -83,6 +83,14 @@ create table if not exists transaction_presets (
   )
 );
 
+create table if not exists user_transaction_preset_preferences (
+  user_id uuid primary key references users(id) on delete cascade,
+  amounts integer[] not null default '{}',
+  reasons text[] not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists accounts_user_idx on accounts(user_id);
 create index if not exists ledger_entries_account_idx on ledger_entries(account_id);
 create index if not exists ledger_entries_created_at_idx on ledger_entries(created_at);

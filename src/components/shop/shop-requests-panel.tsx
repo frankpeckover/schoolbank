@@ -153,7 +153,7 @@ export function ShopRequestsPanel({
     <section
       className={`${
         compact
-          ? "wallet-card rounded-3xl border border-brand-soft-strong shadow-sm"
+          ? "wallet-card reward-requests-card rounded-3xl border border-brand-soft-strong shadow-sm"
           : "theme-panel"
       } motion-panel p-4 ${className}`}
     >
@@ -302,7 +302,7 @@ function CompactShopRequestList({
         ))}
       </div>
 
-      <div className="hidden overflow-x-auto md:block">
+      <div className="hidden md:block">
         <table className="w-full table-fixed border-collapse text-left text-sm">
           <colgroup>
             <col className="w-[38%]" />

@@ -16,6 +16,7 @@ import {
 } from "@/components/app-nav";
 import { ChangePasswordModal } from "@/components/change-password-modal";
 import { ShopPanel } from "@/components/shop/shop-panel";
+import { StaffSettingsPanel } from "@/components/staff-settings-panel";
 import { StudentDashboardPanel } from "@/components/student-dashboard-panel";
 import { TeacherDashboardPanel } from "@/components/teacher-dashboard-panel";
 import { TransactionLogPanel } from "@/components/transactions/transaction-log-panel";
@@ -216,6 +217,10 @@ export function DashboardShell({
           <AdminSettingsPanel
             onSchoolInfoUpdated={setSchoolInfo}
           />
+        )}
+
+        {isTeacher(user) && activeNavItem === "Settings" && (
+          <StaffSettingsPanel />
         )}
 
         {isPasswordModalOpen && (

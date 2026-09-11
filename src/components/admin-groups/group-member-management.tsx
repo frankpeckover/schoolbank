@@ -1,5 +1,5 @@
 import { IconButton } from "@/components/ui/icon-button";
-import { TrashIcon } from "@/components/ui/icons";
+import { TrashIcon, XIcon } from "@/components/ui/icons";
 import { SearchInput } from "@/components/ui/search-input";
 import { TableActionMenu } from "@/components/ui/table-action-menu";
 import type {
@@ -14,15 +14,15 @@ type GroupMemberManagementProps = {
   isSearchingStudents: boolean;
   members: GroupMemberItem[];
   onAddSelectedStudents: () => void;
-  onAddStudent: (student: StudentListItem) => void;
   onMemberSelectionToggle: (memberId: string) => void;
   onRemoveSelectedMembers: () => void;
   onRemoveStudent: (member: GroupMemberItem) => void;
   onStudentQueryChange: (value: string) => void;
-  onStudentSelectionToggle: (studentId: string) => void;
+  onStudentSelectionToggle: (student: StudentListItem) => void;
   selectedGroup: GroupListItem;
   selectedMemberIds: string[];
   selectedStudentIds: string[];
+  selectedStudents: StudentListItem[];
   studentQuery: string;
 };
 
@@ -32,7 +32,6 @@ export function GroupMemberManagement({
   isSearchingStudents,
   members,
   onAddSelectedStudents,
-  onAddStudent,
   onMemberSelectionToggle,
   onRemoveSelectedMembers,
   onRemoveStudent,
@@ -41,6 +40,7 @@ export function GroupMemberManagement({
   selectedGroup,
   selectedMemberIds,
   selectedStudentIds,
+  selectedStudents,
   studentQuery,
 }: GroupMemberManagementProps) {
   return (
@@ -49,11 +49,11 @@ export function GroupMemberManagement({
         availableStudents={availableStudents}
         isSearching={isSearchingStudents}
         onAddSelectedStudents={onAddSelectedStudents}
-        onAddStudent={onAddStudent}
         onQueryChange={onStudentQueryChange}
         onStudentSelectionToggle={onStudentSelectionToggle}
         selectedGroup={selectedGroup}
         selectedStudentIds={selectedStudentIds}
+        selectedStudents={selectedStudents}
         studentQuery={studentQuery}
       />
 
@@ -73,21 +73,21 @@ function GroupStudentSearch({
   availableStudents,
   isSearching,
   onAddSelectedStudents,
-  onAddStudent,
   onQueryChange,
   onStudentSelectionToggle,
   selectedGroup,
   selectedStudentIds,
+  selectedStudents,
   studentQuery,
 }: {
   availableStudents: StudentListItem[];
   isSearching: boolean;
   onAddSelectedStudents: () => void;
-  onAddStudent: (student: StudentListItem) => void;
   onQueryChange: (value: string) => void;
-  onStudentSelectionToggle: (studentId: string) => void;
+  onStudentSelectionToggle: (student: StudentListItem) => void;
   selectedGroup: GroupListItem;
   selectedStudentIds: string[];
+  selectedStudents: StudentListItem[];
   studentQuery: string;
 }) {
   return (
@@ -109,37 +109,33 @@ function GroupStudentSearch({
       {isSearching && (
         <p className="mt-2 text-sm text-text-muted">Searching...</p>
       )}
+      {selectedStudents.length > 0 && (
+        <SelectedStudents
+          isGroupActive={selectedGroup.isActive}
+          onAddSelectedStudents={onAddSelectedStudents}
+          onStudentSelectionToggle={onStudentSelectionToggle}
+          students={selectedStudents}
+        />
+      )}
       {availableStudents.length > 0 && studentQuery && (
         <StudentSearchResults
-          onAddStudent={onAddStudent}
           onStudentSelectionToggle={onStudentSelectionToggle}
           selectedGroup={selectedGroup}
           selectedStudentIds={selectedStudentIds}
           students={availableStudents}
         />
       )}
-      {selectedStudentIds.length > 0 && selectedGroup.isActive && (
-        <button
-          className="mt-3 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-hover"
-          onClick={onAddSelectedStudents}
-          type="button"
-        >
-          Add Selected ({selectedStudentIds.length})
-        </button>
-      )}
     </div>
   );
 }
 
 function StudentSearchResults({
-  onAddStudent,
   onStudentSelectionToggle,
   selectedGroup,
   selectedStudentIds,
   students,
 }: {
-  onAddStudent: (student: StudentListItem) => void;
-  onStudentSelectionToggle: (studentId: string) => void;
+  onStudentSelectionToggle: (student: StudentListItem) => void;
   selectedGroup: GroupListItem;
   selectedStudentIds: string[];
   students: StudentListItem[];
@@ -156,7 +152,7 @@ function StudentSearchResults({
               checked={selectedStudentIds.includes(student.id)}
               className="h-4 w-4"
               disabled={!selectedGroup.isActive}
-              onChange={() => onStudentSelectionToggle(student.id)}
+              onChange={() => onStudentSelectionToggle(student)}
               type="checkbox"
             />
             <span className="min-w-0">
@@ -168,16 +164,61 @@ function StudentSearchResults({
               </span>
             </span>
           </label>
-          <button
-            className="rounded-md border border-button-border px-2 py-1 text-xs font-semibold text-text-control transition hover:bg-panel-soft"
-            disabled={!selectedGroup.isActive}
-            onClick={() => onAddStudent(student)}
-            type="button"
-          >
-            Add
-          </button>
         </div>
       ))}
+    </div>
+  );
+}
+
+function SelectedStudents({
+  isGroupActive,
+  onAddSelectedStudents,
+  onStudentSelectionToggle,
+  students,
+}: {
+  isGroupActive: boolean;
+  onAddSelectedStudents: () => void;
+  onStudentSelectionToggle: (student: StudentListItem) => void;
+  students: StudentListItem[];
+}) {
+  return (
+    <div className="mt-3 rounded-md border border-border-subtle bg-panel-soft p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
+          Selected students ({students.length})
+        </p>
+        {isGroupActive && (
+          <button
+            className="rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-hover"
+            onClick={onAddSelectedStudents}
+            type="button"
+          >
+            Add selected
+          </button>
+        )}
+      </div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {students.map((student) => (
+          <span
+            className="inline-flex max-w-full items-center gap-1.5 rounded-md bg-surface py-1 pl-2 pr-1 text-sm text-text-control"
+            key={student.id}
+          >
+            <span className="truncate">
+              {student.displayName}
+              <span className="text-text-muted"> ({student.username})</span>
+            </span>
+            <button
+              aria-label={`Remove ${student.displayName} from selection`}
+              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-text-muted transition hover:bg-surface-hover hover:text-text-control"
+              onClick={() => onStudentSelectionToggle(student)}
+              title={`Remove ${student.displayName} from selection`}
+              type="button"
+            >
+              <XIcon className="h-3.5 w-3.5" />
+            </button>
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

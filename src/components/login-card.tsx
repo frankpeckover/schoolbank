@@ -180,13 +180,13 @@ export function LoginCard({
             </div>
           </div>
           <form className="space-y-3" onSubmit={handleSubmit}>
-            <div className="login-entry-item overflow-hidden rounded-md border border-border bg-surface">
-              <div className="relative border-b border-border-subtle">
+            <div className="login-entry-fields login-entry-item rounded-md border border-border bg-surface">
+              <div className="login-entry-field relative border-b border-border-subtle">
                 <UserFieldIcon />
                 <input
                   aria-label="Username"
                   autoComplete="username"
-                  className="w-full border-0 bg-transparent py-2.5 pl-10 pr-3 text-sm outline-none ring-inset ring-brand transition placeholder:text-text-muted focus:ring-2"
+                  className="w-full border-0 bg-transparent py-2.5 pl-10 pr-3 text-sm outline-none transition placeholder:text-text-muted focus:ring-0"
                   disabled={isSubmitting}
                   id="username"
                   onChange={(event) => setUsername(event.target.value)}
@@ -196,12 +196,12 @@ export function LoginCard({
                 />
               </div>
 
-              <div className="relative">
+              <div className="login-entry-field relative">
                 <PasswordFieldIcon />
                 <input
                   aria-label="Password"
                   autoComplete="current-password"
-                  className="w-full border-0 bg-transparent py-2.5 pl-10 pr-11 text-sm outline-none ring-inset ring-brand transition placeholder:text-text-muted focus:ring-2"
+                  className="w-full border-0 bg-transparent py-2.5 pl-10 pr-11 text-sm outline-none transition placeholder:text-text-muted focus:ring-0"
                   disabled={isSubmitting}
                   id="password"
                   onChange={(event) => setPassword(event.target.value)}
@@ -249,7 +249,7 @@ export function LoginCard({
 
             <div className="login-entry-item text-right">
               <button
-                className="text-xs font-medium text-text-muted underline underline-offset-4 transition hover:text-text-control disabled:cursor-not-allowed disabled:opacity-70"
+                className="text-xs font-medium text-text-muted transition hover:text-text-control disabled:cursor-not-allowed disabled:opacity-70"
                 onClick={() => setIsForgotPasswordOpen(true)}
                 title="Request a password reset link"
                 type="button"

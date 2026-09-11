@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  addStudentToGroup,
   addStudentsToGroup,
   listGroupMembers,
   listGroups,
@@ -66,6 +65,9 @@ export function AdminGroupsPanel() {
     useState<StudentListItem[]>(emptyStudents);
   const [showInactiveGroups, setShowInactiveGroups] = useState(false);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+  const [selectedStudents, setSelectedStudents] = useState<StudentListItem[]>(
+    emptyStudents,
+  );
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [duplicatingGroup, setDuplicatingGroup] =
@@ -247,27 +249,6 @@ export function AdminGroupsPanel() {
     await refreshGroups();
   }
   
-  async function handleAddStudent(student: StudentListItem) {
-    if (!selectedGroupId) {
-      setError("Select a group first.");
-      return;
-    }
-
-    const result = await addStudentToGroup(selectedGroupId, student.id);
-
-    if (!result.ok) {
-      setError(result.message);
-      return;
-    }
-
-    setMessage(`${student.displayName} added to ${selectedGroup?.name ?? "group"}.`);
-    setError(null);
-    setSelectedStudentIds([]);
-    setStudentQuery("");
-    await refreshMembers(selectedGroupId);
-    await refreshGroups();
-  }
-
   async function handleAddSelectedStudents() {
     if (!selectedGroupId || selectedStudentIds.length === 0) {
       setError("Select a group and at least one student.");
@@ -286,7 +267,7 @@ export function AdminGroupsPanel() {
 
     setMessage(`${selectedStudentIds.length} students added to ${selectedGroup?.name ?? "group"}.`);
     setError(null);
-    setSelectedStudentIds([]);
+    clearSelectedStudents();
     setStudentQuery("");
     await refreshMembers(selectedGroupId);
     await refreshGroups();
@@ -412,12 +393,22 @@ export function AdminGroupsPanel() {
     await refreshGroups();
   }
 
-  function toggleSelectedStudent(studentId: string) {
+  function toggleSelectedStudent(student: StudentListItem) {
     setSelectedStudentIds((current) =>
-      current.includes(studentId)
-        ? current.filter((id) => id !== studentId)
-        : [...current, studentId],
+      current.includes(student.id)
+        ? current.filter((id) => id !== student.id)
+        : [...current, student.id],
     );
+    setSelectedStudents((current) =>
+      current.some((selectedStudent) => selectedStudent.id === student.id)
+        ? current.filter((selectedStudent) => selectedStudent.id !== student.id)
+        : [...current, student],
+    );
+  }
+
+  function clearSelectedStudents() {
+    setSelectedStudentIds([]);
+    setSelectedStudents([]);
   }
 
   function toggleSelectedMember(memberId: string) {
@@ -431,7 +422,7 @@ export function AdminGroupsPanel() {
   function selectGroup(group: GroupListItem) {
     setMembers([]);
     setSelectedMemberIds([]);
-    setSelectedStudentIds([]);
+    clearSelectedStudents();
     setDuplicatingGroup(null);
     setEditingGroup(null);
     setSelectedGroupId(group.id);
@@ -440,7 +431,7 @@ export function AdminGroupsPanel() {
   function editGroup(group: GroupListItem) {
     setMembers([]);
     setSelectedMemberIds([]);
-    setSelectedStudentIds([]);
+    clearSelectedStudents();
     setStudentQuery("");
     setDuplicatingGroup(null);
     setEditingGroup(group);
@@ -450,7 +441,7 @@ export function AdminGroupsPanel() {
   function duplicateGroup(group: GroupListItem) {
     setMembers([]);
     setSelectedMemberIds([]);
-    setSelectedStudentIds([]);
+    clearSelectedStudents();
     setStudentQuery("");
     setEditingGroup(null);
     setSelectedGroupId("");
@@ -462,7 +453,7 @@ export function AdminGroupsPanel() {
     setSelectedGroupId("");
     setMembers([]);
     setSelectedMemberIds([]);
-    setSelectedStudentIds([]);
+    clearSelectedStudents();
     setStudentQuery("");
   }
 
@@ -475,7 +466,7 @@ export function AdminGroupsPanel() {
     setMembers([]);
     setSelectedGroupId("");
     setSelectedMemberIds([]);
-    setSelectedStudentIds([]);
+    clearSelectedStudents();
     setShowInactiveGroups(showInactive);
   }
 
@@ -485,12 +476,11 @@ export function AdminGroupsPanel() {
     setSelectedGroupId("");
     setSelectedGroupIds([]);
     setSelectedMemberIds([]);
-    setSelectedStudentIds([]);
+    clearSelectedStudents();
     setShowInactiveGroups(false);
   }
 
   function handleStudentQueryChange(value: string) {
-    setSelectedStudentIds([]);
     setStudentQuery(value);
   }
 
@@ -654,7 +644,6 @@ export function AdminGroupsPanel() {
           isSearchingStudents={isSearchingStudents}
           members={members}
           onAddSelectedStudents={handleAddSelectedStudents}
-          onAddStudent={handleAddStudent}
           onClose={closeGroupEdit}
           onMemberSelectionToggle={toggleSelectedMember}
           onRemoveSelectedMembers={handleRemoveSelectedMembers}
@@ -664,6 +653,7 @@ export function AdminGroupsPanel() {
           onStudentSelectionToggle={toggleSelectedStudent}
           selectedMemberIds={selectedMemberIds}
           selectedStudentIds={selectedStudentIds}
+          selectedStudents={selectedStudents}
           studentQuery={studentQuery}
         />
       )}

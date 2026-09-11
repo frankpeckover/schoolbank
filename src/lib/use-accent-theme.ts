@@ -9,6 +9,7 @@ import {
   defaultAccentTheme,
   type AccentTheme,
 } from "@/lib/accent-theme-config";
+import { syncBrandForeground } from "@/lib/brand-contrast";
 
 const hexColorPattern = /^#[0-9a-f]{6}$/i;
 
@@ -68,6 +69,7 @@ export function applyAccentTheme(
     "--custom-accent-primary",
     customAccentColor,
   );
+  syncBrandForeground();
 }
 
 function getSavedAccentTheme(): AccentTheme {

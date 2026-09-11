@@ -28,18 +28,19 @@ type ParseResult =
       ok: false;
     };
 
-const csvHeaders = "name,description,price,quantity,image_url";
+const csvHeaders = "name,description,price,quantity,unlimited_quantity,image_url";
 const csvHeaderColumns = csvHeaders.split(",");
 const csvColumns = [
   { name: "name" },
   { name: "price" },
   { name: "quantity" },
+  { name: "unlimited_quantity", optional: true },
   { name: "description", optional: true },
   { name: "image_url", optional: true },
 ];
 const shopTemplateRows = [
-  ["Homework Pass", "One homework pass approved by staff", 50, 10, ""],
-  ["Canteen Voucher", "", 100, 5, ""],
+  ["Homework Pass", "One homework pass approved by staff", 50, 10, false, ""],
+  ["Canteen Voucher", "", 100, 0, true, ""],
 ];
 
 export function ShopImportModal({
@@ -133,7 +134,7 @@ export function ShopImportModal({
     >
         <CsvColumnGuide
           columns={csvColumns}
-          note="Optional columns can be left blank but the header should stay in the file. Price and quantity must be zero or greater."
+          note="Optional columns can be left blank but the header should stay in the file. Set unlimited_quantity to true to avoid reserving stock. Price and quantity must be zero or greater."
         />
 
         <CsvFileInput
@@ -203,25 +204,26 @@ function parseShopItemsCsv(text: string): ParseResult {
 
     const price = Number(values.price?.trim() ?? "");
     const quantity = Number(values.quantity?.trim() ?? "");
-    const item = {
-      description: values.description?.trim() ?? "",
-      imageUrl: values.imageurl?.trim() ?? "",
-      name: values.name?.trim() ?? "",
-      price,
-      quantity,
-    };
+    const isQuantityUnlimited = parseOptionalBoolean(
+      values.unlimitedquantity?.trim() ?? "",
+    );
+    const name = values.name?.trim() ?? "";
 
-    if (!item.name) {
+    if (!name) {
       return {
         ok: false,
         message: `Row ${rowNumber} is missing an item name.`,
       };
     }
 
-    if (!Number.isFinite(price) || !Number.isFinite(quantity)) {
+    if (
+      !Number.isFinite(price) ||
+      !Number.isFinite(quantity) ||
+      isQuantityUnlimited === null
+    ) {
       return {
         ok: false,
-        message: `Row ${rowNumber} has an invalid price or quantity.`,
+        message: `Row ${rowNumber} has an invalid price, quantity, or unlimited quantity value.`,
       };
     }
 
@@ -232,7 +234,14 @@ function parseShopItemsCsv(text: string): ParseResult {
       };
     }
 
-    items.push(item);
+    items.push({
+      description: values.description?.trim() ?? "",
+      imageUrl: values.imageurl?.trim() ?? "",
+      isQuantityUnlimited,
+      name,
+      price,
+      quantity,
+    });
   }
 
   if (items.length === 0) {
@@ -243,4 +252,20 @@ function parseShopItemsCsv(text: string): ParseResult {
   }
 
   return { items, ok: true };
+}
+
+function parseOptionalBoolean(value: string) {
+  if (!value) {
+    return false;
+  }
+
+  if (["true", "yes", "1"].includes(value.toLowerCase())) {
+    return true;
+  }
+
+  if (["false", "no", "0"].includes(value.toLowerCase())) {
+    return false;
+  }
+
+  return null;
 }

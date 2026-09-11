@@ -52,6 +52,7 @@
   --accent-primary: #183f3d;
   --accent-secondary: #70b895;
   --accent-highlight: #7ae4b7;
+  --login-submit-bg: #173b40;
   --custom-accent-primary: #2563eb;
   --foreground: #111827;
   --surface: #ffffff;
@@ -68,6 +69,7 @@
   --text-label: #475262;
   --text-control: #2f3948;
   --brand: var(--accent-primary);
+  --brand-foreground: #ffffff;
   --brand-hover: color-mix(in srgb, var(--accent-primary) 84%, black);
   --brand-soft: color-mix(in srgb, var(--accent-primary) 10%, white);
   --brand-soft-strong: color-mix(in srgb, var(--accent-primary) 24%, white);
@@ -247,7 +249,7 @@ html[data-accent="custom"] {
   --color-progress-track: var(--progress-track);
   --color-activity-meta: var(--activity-meta);
   --font-numeric: "App Numerals", var(--font-lato), "Segoe UI", Arial, Helvetica, sans-serif;
-  --font-sans: var(--font-numeric);
+  --font-sans: var(--font-lato), "Segoe UI", Arial, Helvetica, sans-serif;
   --font-heading: var(--font-lato), "Segoe UI", Arial, Helvetica, sans-serif;
   --font-mono: "Cascadia Code", Consolas, monospace;
 }
@@ -257,12 +259,16 @@ html {
   min-height: 100%;
 }
 
+.bg-brand.text-white {
+  color: var(--brand-foreground) !important;
+}
+
 body {
   background:
     linear-gradient(180deg, var(--background-gradient-start) 0, var(--background) 260px),
     var(--background);
   color: var(--foreground);
-  font-family: var(--font-numeric), var(--font-lato), "Segoe UI", Arial, Helvetica, sans-serif;
+  font-family: var(--font-lato), "Segoe UI", Arial, Helvetica, sans-serif;
   font-weight: 400;
   min-height: 100dvh;
 }
@@ -282,6 +288,11 @@ h6 {
 
 .font-bold {
   font-weight: 600;
+}
+
+.font-number {
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums;
 }
 
 button,
@@ -415,6 +426,10 @@ html[data-theme="dark"] .professional-shell {
   position: relative;
 }
 
+.wallet-card.reward-requests-card {
+  overflow: visible;
+}
+
 .wallet-card::before,
 .wallet-card::after {
   border-radius: 9999px;
@@ -533,20 +548,49 @@ html[data-theme="dark"] .professional-shell {
 
 .login-shell .login-panel input:focus {
   border-color: var(--foreground);
-  box-shadow: 0 0 0 1px var(--foreground);
+  box-shadow: none;
   outline: none;
+}
+
+.login-entry-field {
+  transition: background-color 140ms ease;
+}
+
+.login-shell .login-entry-field input {
+  background: transparent;
+}
+
+.login-entry-fields {
+  overflow: hidden;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.login-entry-fields:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 1px var(--brand);
+}
+
+.login-entry-field:focus-within {
+  background: var(--brand-soft);
+}
+
+.login-shell .login-entry-field input:-webkit-autofill,
+.login-shell .login-entry-field input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+  box-shadow: 0 0 0 1000px var(--surface) inset;
+  caret-color: var(--foreground);
 }
 
 .login-shell .login-panel button[type="submit"] {
   box-shadow: none;
-  background: var(--accent-primary);
+  background: var(--login-submit-bg);
   color: white;
   font-weight: 500;
 }
 
 .login-shell .login-panel button[type="submit"]:hover {
   box-shadow: none;
-  background: color-mix(in srgb, var(--accent-primary) 84%, black);
+  background: color-mix(in srgb, var(--login-submit-bg) 84%, black);
 }
 
 .login-shell .login-panel > .login-entry-item:first-child span {

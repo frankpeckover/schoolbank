@@ -9,6 +9,7 @@ import {
 } from "@/components/admin-users/user-management-types";
 import { UserImportModal } from "@/components/admin-users/user-import-modal";
 import { UserModal } from "@/components/admin-users/user-modal";
+import { ResetUserPasswordModal } from "@/components/admin-users/reset-user-password-modal";
 import { UsersTable } from "@/components/admin-users/users-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FixedNotification } from "@/components/ui/fixed-notification";
@@ -46,6 +47,8 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
   const [duplicatingUserForm, setDuplicatingUserForm] =
     useState<Partial<UserFormState> | null>(null);
   const [editingUser, setEditingUser] = useState<UserListItem | null>(null);
+  const [resettingPasswordUser, setResettingPasswordUser] =
+    useState<UserListItem | null>(null);
   const [pendingUserStatusChange, setPendingUserStatusChange] = useState<{
     isActive: boolean;
     user: UserListItem;
@@ -243,6 +246,7 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
               onFiltersChange={setFilters}
               onDuplicate={handleDuplicateUser}
               onEdit={setEditingUser}
+              onPasswordReset={setResettingPasswordUser}
               onShowInactiveUsersChange={setShowInactiveUsers}
               onUserSelectionChange={handleUserSelectionChange}
               onUserActiveChange={handleSetUserActive}
@@ -406,6 +410,17 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
           onClose={() => setEditingUser(null)}
           onSaved={() => handleUserSaved("User updated.")}
           user={editingUser}
+        />
+      )}
+
+      {resettingPasswordUser && (
+        <ResetUserPasswordModal
+          onClose={() => setResettingPasswordUser(null)}
+          onReset={() => {
+            setResettingPasswordUser(null);
+            setMessage("Password reset.");
+          }}
+          user={resettingPasswordUser}
         />
       )}
 

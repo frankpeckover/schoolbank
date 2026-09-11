@@ -66,7 +66,7 @@ export function ShopItemDetailsModal({
           <ShopItemDetail label="Cost" value={formatCurrencyAmount(item.price, currencyName)} />
           <ShopItemDetail
             label="Available"
-            value={item.quantity <= 0 ? "Unavailable" : `${item.quantity} left`}
+            value={getAvailabilityLabel(item)}
           />
         </div>
 
@@ -85,19 +85,19 @@ export function ShopItemDetailsModal({
                   ? "border border-success-border bg-success-soft text-success"
                   : "bg-brand text-white hover:bg-brand-hover"
               }`}
-              disabled={item.quantity <= 0 || requested}
+              disabled={(!item.isQuantityUnlimited && item.quantity <= 0) || requested}
               onClick={() => onPurchase(item.id)}
               type="button"
             >
               {requested ? (
                 <>
                   <CheckIcon />
-                  Requested
+                  Added to Cart
                 </>
               ) : (
                 <>
                   <ShoppingBagIcon />
-                  Request
+                  Add to Cart
                 </>
               )}
             </button>
@@ -106,6 +106,14 @@ export function ShopItemDetailsModal({
       </div>
     </div>
   );
+}
+
+function getAvailabilityLabel(item: ShopItem) {
+  if (item.isQuantityUnlimited) {
+    return "Unlimited";
+  }
+
+  return item.quantity <= 0 ? "Unavailable" : `${item.quantity} left`;
 }
 
 function ModalIconButton({

@@ -56,7 +56,9 @@ export {
   getTeacherDashboardSummary,
 } from "@/lib/actions/teacher-dashboard-actions";
 export {
+  getMyTransactionPresets,
   getTransactionPresets,
+  updateMyTransactionPresets,
   updateTransactionPresets,
 } from "@/lib/actions/transaction-preset-actions";
 export {
@@ -79,6 +81,7 @@ export {
   removeShopItem,
   requestShopItem,
   saveShopItem,
+  setShopItemActive,
   uploadShopItemImage,
 } from "@/lib/actions/shop-actions";
 export {

@@ -11,6 +11,7 @@ import {
 import { AuditService } from "@/domains/audit/audit-service";
 
 export type UpdateTransactionPresetsInput = TransactionPresets;
+export type UpdatePersonalTransactionPresetsInput = TransactionPresets;
 
 type TransactionPresetRow = {
   amount: number | null;
@@ -90,7 +91,92 @@ export class TransactionPresetService {
       client.release();
     }
   }
+
+  async getPersonalPresets(currentUser: SessionUser): Promise<TransactionPresets> {
+    try {
+      const result = await db.query<PersonalPresetRow>(
+        `
+          select amounts, reasons
+          from user_transaction_preset_preferences
+          where user_id = $1
+        `,
+        [currentUser.id],
+      );
+
+      if (result.rowCount === 0) {
+        return this.getPresets();
+      }
+
+      return normalisePresets({
+        amounts: result.rows[0]?.amounts ?? [],
+        reasons: result.rows[0]?.reasons ?? [],
+      });
+    } catch (error) {
+      if (isMissingTableError(error)) {
+        return this.getPresets();
+      }
+
+      throw error;
+    }
+  }
+
+  async updatePersonalPresets(
+    currentUser: SessionUser,
+    input: UpdatePersonalTransactionPresetsInput,
+  ): Promise<ActionResult> {
+    const presets = normalisePresets(input);
+    const validation = validatePresetLimits(presets);
+
+    if (!validation.ok) {
+      return validation;
+    }
+
+    try {
+      await db.query(
+        `
+          insert into user_transaction_preset_preferences (
+            user_id,
+            amounts,
+            reasons
+          )
+          values ($1, $2::integer[], $3::text[])
+          on conflict (user_id) do update
+          set amounts = excluded.amounts,
+              reasons = excluded.reasons,
+              updated_at = now()
+        `,
+        [currentUser.id, presets.amounts, presets.reasons],
+      );
+
+      await auditService.log({
+        action: "user_transaction_presets.updated",
+        actorUserId: currentUser.id,
+        details: {
+          amountCount: presets.amounts.length,
+          reasonCount: presets.reasons.length,
+        },
+        entityId: currentUser.id,
+        entityType: "user_transaction_preset_preferences",
+      });
+
+      return { ok: true };
+    } catch (error) {
+      console.error("Update personal transaction presets failed", error);
+
+      return {
+        ok: false,
+        message: isMissingTableError(error)
+          ? "Personal quick action settings are unavailable. Run the latest school database setup script."
+          : "Could not save your quick actions.",
+      };
+    }
+  }
 }
+
+type PersonalPresetRow = {
+  amounts: number[];
+  reasons: string[];
+};
 
 async function replacePresets(
   client: PoolClient,
@@ -156,6 +242,24 @@ function validatePresets(presets: TransactionPresets): ActionResult {
     };
   }
 
+  if (presets.amounts.length > maxQuickAmounts) {
+    return {
+      ok: false,
+      message: `Use ${maxQuickAmounts} quick amounts or fewer.`,
+    };
+  }
+
+  if (presets.reasons.length > maxQuickReasons) {
+    return {
+      ok: false,
+      message: `Use ${maxQuickReasons} quick reasons or fewer.`,
+    };
+  }
+
+  return { ok: true };
+}
+
+function validatePresetLimits(presets: TransactionPresets): ActionResult {
   if (presets.amounts.length > maxQuickAmounts) {
     return {
       ok: false,
