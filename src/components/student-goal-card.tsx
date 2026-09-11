@@ -7,7 +7,7 @@ import {
   saveStudentGoal,
 } from "@/lib/actions";
 import { formatAmount } from "@/lib/formatters";
-import type { StudentGoal } from "@/services/student-goal-service";
+import type { StudentGoal } from "@/domains/analytics/student-goal-service";
 import { PencilIcon, TargetIcon } from "@/components/ui/icons";
 import { TableActionMenu } from "@/components/ui/table-action-menu";
 

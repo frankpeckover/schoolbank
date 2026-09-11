@@ -12,10 +12,10 @@ import type {
   BulkGroupMembershipInput,
   CreateGroupInput,
   UpdateGroupInput,
-} from "@/services/group-service";
-import { GroupImportService } from "@/services/group-import-service";
-import type { ImportGroupsInput } from "@/services/group-import-service";
-import { GroupService } from "@/services/group-service";
+} from "@/domains/groups/group-service";
+import { GroupImportService } from "@/domains/groups/group-import-service";
+import type { ImportGroupsInput } from "@/domains/groups/group-import-service";
+import { GroupService } from "@/domains/groups/group-service";
 
 const groupImportService = new GroupImportService();
 const groupService = new GroupService();

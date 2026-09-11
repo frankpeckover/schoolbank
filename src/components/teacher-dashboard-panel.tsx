@@ -25,10 +25,10 @@ import {
   listStudentBalances,
 } from "@/lib/actions";
 import type { AdjustmentDirection } from "@/components/transactions/ledger-adjustment-types";
-import type { GroupListItem } from "@/services/group-service";
-import type { CurrentClass } from "@/services/timetable-service";
-import type { StudentBalanceItem } from "@/services/transaction-service";
-import type { StudentListItem } from "@/services/user-service";
+import type { GroupListItem } from "@/domains/groups/group-service";
+import type { CurrentClass } from "@/domains/timetable/timetable-service";
+import type { StudentBalanceItem } from "@/domains/ledger/transaction-service";
+import type { StudentListItem } from "@/domains/users/user-service";
 
 type TeacherDashboardPanelProps = {
   currencyName: string;

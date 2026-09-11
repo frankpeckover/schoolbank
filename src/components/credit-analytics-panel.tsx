@@ -51,7 +51,7 @@ import type {
   CreditAnalyticsScope,
   CreditAnalyticsSummary,
   CreditAnalyticsTrendPoint,
-} from "@/services/credit-analytics-service";
+} from "@/domains/analytics/credit-analytics-service";
 
 type CreditAnalyticsPanelProps = {
   currencyName: string;

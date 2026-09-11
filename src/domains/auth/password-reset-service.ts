@@ -6,8 +6,8 @@ import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/passwords";
 import { validateNewPassword } from "@/lib/security/password-policy";
 import { getRequiredServerEnvInProduction } from "@/lib/server-env";
-import { AuditService } from "@/services/audit-service";
-import { EmailService } from "@/services/email-service";
+import { AuditService } from "@/domains/audit/audit-service";
+import { EmailService } from "@/domains/integrations/email-service";
 
 type PasswordResetUserRow = {
   email: string;

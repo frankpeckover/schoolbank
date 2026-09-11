@@ -10,7 +10,7 @@ import { ImportModalLayout } from "@/components/ui/import-modal-layout";
 import type {
   ImportTimetableEntryError,
   ImportTimetableEntryInput,
-} from "@/services/timetable-import-service";
+} from "@/domains/timetable/timetable-import-service";
 
 type TimetableImportModalProps = {
   onClose: () => void;

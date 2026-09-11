@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/table-header-filter";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatDateTime } from "@/lib/formatters";
-import type { UserListItem } from "@/services/user-service";
+import type { UserListItem } from "@/domains/users/user-service";
 
 type UsersTableProps = {
   filters: UserFilters;

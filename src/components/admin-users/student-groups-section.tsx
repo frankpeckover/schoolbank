@@ -1,4 +1,4 @@
-import type { UserGroupItem } from "@/services/group-service";
+import type { UserGroupItem } from "@/domains/groups/group-service";
 
 type StudentGroupsSectionProps = {
   groups: UserGroupItem[];

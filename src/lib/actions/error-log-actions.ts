@@ -1,7 +1,7 @@
 "use server";
 
 import { requireAuditViewer } from "@/lib/actions/action-auth";
-import { ErrorLogService } from "@/services/error-log-service";
+import { ErrorLogService } from "@/domains/audit/error-log-service";
 
 const errorLogService = new ErrorLogService();
 

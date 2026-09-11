@@ -9,8 +9,8 @@ import type {
   ResetUserPasswordInput,
   UpdateUserInput,
   UploadUserProfileImageResult,
-} from "@/services/user-service";
-import { UserService } from "@/services/user-service";
+} from "@/domains/users/user-service";
+import { UserService } from "@/domains/users/user-service";
 
 const userService = new UserService();
 

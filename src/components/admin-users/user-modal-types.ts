@@ -2,7 +2,7 @@ import type { Role } from "@/lib/session";
 import type {
   CreateUserInput,
   UserListItem,
-} from "@/services/user-service";
+} from "@/domains/users/user-service";
 
 export type UserModalMode = "create" | "edit";
 

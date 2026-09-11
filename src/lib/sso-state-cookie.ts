@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { decryptServerSecret, encryptServerSecret } from "@/lib/server-crypto";
-import type { SsoState } from "@/services/sso-auth-service";
+import type { SsoState } from "@/domains/auth/sso-auth-service";
 
 const ssoStateCookieName = "app_sso_state";
 const ssoStateMaxAgeSeconds = 10 * 60;

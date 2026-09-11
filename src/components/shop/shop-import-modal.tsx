@@ -10,7 +10,7 @@ import { ImportModalLayout } from "@/components/ui/import-modal-layout";
 import type {
   ImportShopItemError,
   ImportShopItemInput,
-} from "@/services/shop-service";
+} from "@/domains/rewards/shop-service";
 
 type ShopImportModalProps = {
   onClose: () => void;

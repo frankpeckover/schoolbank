@@ -1,7 +1,7 @@
 import type {
   GroupListItem,
   GroupMemberItem,
-} from "@/services/group-service";
+} from "@/domains/groups/group-service";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 
 type GroupDetailsPanelProps = {

@@ -1,5 +1,5 @@
 import type { TransactionFilters } from "@/components/transactions/transaction-log-types";
-import type { TransactionLogItem } from "@/services/transaction-service";
+import type { TransactionLogItem } from "@/domains/ledger/transaction-service";
 
 export function matchesTransactionFilters(
   transaction: TransactionLogItem,

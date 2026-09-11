@@ -1,13 +1,13 @@
 "use server";
 
 import { requireAdmin, requireLedgerAdjuster } from "@/lib/actions/action-auth";
-import type { ImportTimetableEntriesInput } from "@/services/timetable-import-service";
-import { TimetableImportService } from "@/services/timetable-import-service";
+import type { ImportTimetableEntriesInput } from "@/domains/timetable/timetable-import-service";
+import { TimetableImportService } from "@/domains/timetable/timetable-import-service";
 import type {
   CreateTimetableEntryInput,
   UpdateTimetableEntryInput,
-} from "@/services/timetable-service";
-import { TimetableService } from "@/services/timetable-service";
+} from "@/domains/timetable/timetable-service";
+import { TimetableService } from "@/domains/timetable/timetable-service";
 
 const timetableImportService = new TimetableImportService();
 const timetableService = new TimetableService();

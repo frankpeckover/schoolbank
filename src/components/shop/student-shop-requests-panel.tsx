@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { listStudentShopRequests } from "@/lib/actions";
-import type { StudentShopRequest } from "@/services/shop-service";
+import type { StudentShopRequest } from "@/domains/rewards/shop-service";
 import { formatCurrencyAmount, formatDateTime } from "@/lib/formatters";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
 import { FixedNotification } from "@/components/ui/fixed-notification";

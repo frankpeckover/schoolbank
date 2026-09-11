@@ -2,7 +2,7 @@ import type { ActionResult } from "@/lib/action-results";
 import { db } from "@/lib/db";
 import { isStudent } from "@/lib/permissions";
 import type { SessionUser } from "@/lib/session";
-import { AuditService } from "@/services/audit-service";
+import { AuditService } from "@/domains/audit/audit-service";
 
 export type StudentGoal = {
   id: string;

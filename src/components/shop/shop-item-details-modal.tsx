@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { formatCurrencyAmount } from "@/lib/formatters";
-import type { ShopItem } from "@/services/shop-service";
+import type { ShopItem } from "@/domains/rewards/shop-service";
 import { CheckIcon, PencilIcon, ShoppingBagIcon, TicketIcon } from "@/components/ui/icons";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { useDialogFocus } from "@/components/ui/use-dialog-focus";

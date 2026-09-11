@@ -2,7 +2,7 @@ import {
   apiSuccessResult,
   handleApiRead,
 } from "@/lib/api/api-route-helpers";
-import { ApiFinanceService } from "@/services/api-finance-service";
+import { ApiFinanceService } from "@/domains/integrations/api-finance-service";
 
 const apiFinanceService = new ApiFinanceService();
 

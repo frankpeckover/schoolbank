@@ -9,17 +9,15 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { TableActionMenu } from "@/components/ui/table-action-menu";
 import {
   TableHeaderFilter,
+  TableHeaderFilterInput,
   TableHeaderFilterSelect,
 } from "@/components/ui/table-header-filter";
 import type { TimetableFiltersState } from "@/components/admin-timetable/timetable-types";
-import type { GroupListItem } from "@/services/group-service";
-import type { TimetableEntry } from "@/services/timetable-service";
-import type { TimetableTeacher } from "@/services/timetable-service";
+import type { TimetableEntry } from "@/domains/timetable/timetable-service";
 
 export function TimetableEntryTable({
   entries,
   filters,
-  groups,
   onDeleteEntry,
   onDuplicateEntry,
   onEditEntry,
@@ -27,12 +25,10 @@ export function TimetableEntryTable({
   onFiltersChange,
   onVisibleEntriesSelectionChange,
   selectedEntryIds,
-  teachers,
   toolbar,
 }: {
   entries: TimetableEntry[];
   filters: TimetableFiltersState;
-  groups: GroupListItem[];
   onDeleteEntry: (entry: TimetableEntry) => void;
   onDuplicateEntry: (entry: TimetableEntry) => void;
   onEditEntry: (entry: TimetableEntry) => void;
@@ -40,7 +36,6 @@ export function TimetableEntryTable({
   onFiltersChange: (filters: TimetableFiltersState) => void;
   onVisibleEntriesSelectionChange: (isSelected: boolean) => void;
   selectedEntryIds: string[];
-  teachers: TimetableTeacher[];
   toolbar?: ReactNode;
 }) {
   function updateFilter<Field extends keyof TimetableFiltersState>(
@@ -96,41 +91,27 @@ export function TimetableEntryTable({
             </th>
             <th scope="col" className="py-2 pr-4 font-semibold">
               <TableHeaderFilter
-                isActive={Boolean(filters.groupId)}
+                isActive={Boolean(filters.groupName)}
                 label="Group"
-                onClear={() => updateFilter("groupId", "")}
+                onClear={() => updateFilter("groupName", "")}
               >
-                <TableHeaderFilterSelect
-                  label="Group"
-                  onChange={(value) => updateFilter("groupId", value)}
-                  options={[
-                    { label: "All groups", value: "" },
-                    ...groups.map((group) => ({
-                      label: group.name,
-                      value: group.id,
-                    })),
-                  ]}
-                  value={filters.groupId}
+                <TableHeaderFilterInput
+                  label="Search groups"
+                  onChange={(value) => updateFilter("groupName", value)}
+                  value={filters.groupName}
                 />
               </TableHeaderFilter>
             </th>
             <th scope="col" className="py-2 pr-4 font-semibold">
               <TableHeaderFilter
-                isActive={Boolean(filters.teacherUserId)}
+                isActive={Boolean(filters.teacherName)}
                 label="Teacher"
-                onClear={() => updateFilter("teacherUserId", "")}
+                onClear={() => updateFilter("teacherName", "")}
               >
-                <TableHeaderFilterSelect
-                  label="Teacher"
-                  onChange={(value) => updateFilter("teacherUserId", value)}
-                  options={[
-                    { label: "All teachers", value: "" },
-                    ...teachers.map((teacher) => ({
-                      label: teacher.displayName,
-                      value: teacher.id,
-                    })),
-                  ]}
-                  value={filters.teacherUserId}
+                <TableHeaderFilterInput
+                  label="Search teachers"
+                  onChange={(value) => updateFilter("teacherName", value)}
+                  value={filters.teacherName}
                 />
               </TableHeaderFilter>
             </th>

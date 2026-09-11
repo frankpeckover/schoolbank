@@ -11,8 +11,8 @@ import {
 import { validateNewPassword } from "@/lib/security/password-policy";
 import type { ActionResult } from "@/lib/action-results";
 import type { Role, SessionUser } from "@/lib/session";
-import { AuditService } from "@/services/audit-service";
-import { LedgerService } from "@/services/ledger-service";
+import { AuditService } from "@/domains/audit/audit-service";
+import { LedgerService } from "@/domains/ledger/ledger-service";
 
 export type UserListItem = {
   id: string;

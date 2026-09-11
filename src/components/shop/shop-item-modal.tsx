@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { saveShopItem, uploadShopItemImage } from "@/lib/actions";
 import { PackageIcon, PlusIcon } from "@/components/ui/icons";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
-import type { SaveShopItemInput, ShopItem } from "@/services/shop-service";
+import type { SaveShopItemInput, ShopItem } from "@/domains/rewards/shop-service";
 
 type ShopItemModalProps = {
   initialForm?: Partial<ShopItemFormState>;

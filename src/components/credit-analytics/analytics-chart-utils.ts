@@ -2,7 +2,7 @@ import type {
   CreditAnalyticsBalanceHistoryPoint,
   CreditAnalyticsBucket,
   CreditAnalyticsTrendPoint,
-} from "@/services/credit-analytics-service";
+} from "@/domains/analytics/credit-analytics-service";
 
 export type BalanceHistoryValueKey = "averageBalance" | "totalBalance";
 

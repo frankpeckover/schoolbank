@@ -9,8 +9,8 @@ import type {
   CreateGroupLedgerAdjustmentInput,
   CreateLedgerAdjustmentInput,
   CreateLedgerAdjustmentsInput,
-} from "@/services/transaction-service";
-import { TransactionService } from "@/services/transaction-service";
+} from "@/domains/ledger/transaction-service";
+import { TransactionService } from "@/domains/ledger/transaction-service";
 
 const transactionService = new TransactionService();
 

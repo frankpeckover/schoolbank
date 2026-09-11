@@ -1,12 +1,12 @@
 "use server";
 
-import { AuthService } from "@/services/auth-service";
-import { PasswordResetService } from "@/services/password-reset-service";
-import type { CompletePasswordResetInput } from "@/services/password-reset-service";
+import { AuthService } from "@/domains/auth/auth-service";
+import { PasswordResetService } from "@/domains/auth/password-reset-service";
+import type { CompletePasswordResetInput } from "@/domains/auth/password-reset-service";
 import { sessionService } from "@/lib/actions/action-auth";
 import { assertSameOriginRequest } from "@/lib/security/origin";
 import { consumeRateLimit } from "@/lib/security/rate-limit";
-import { AuditService } from "@/services/audit-service";
+import { AuditService } from "@/domains/audit/audit-service";
 
 const authService = new AuthService();
 const auditService = new AuditService();

@@ -6,8 +6,8 @@ import {
   canRequestShopItems,
 } from "@/lib/permissions";
 import type { SessionUser } from "@/lib/session";
-import { AuditService } from "@/services/audit-service";
-import { LedgerService } from "@/services/ledger-service";
+import { AuditService } from "@/domains/audit/audit-service";
+import { LedgerService } from "@/domains/ledger/ledger-service";
 import type {
   ShopItemRow,
   ShopPurchaseRequest,
@@ -15,7 +15,7 @@ import type {
   ShopPurchaseStatus,
   StudentShopRequest,
   StudentShopRequestRow,
-} from "@/services/shop-types";
+} from "@/domains/rewards/shop-types";
 
 const ledgerService = new LedgerService();
 const auditService = new AuditService();

@@ -1,7 +1,7 @@
 "use server";
 
 import { requireAdmin } from "@/lib/actions/action-auth";
-import { DataExportService } from "@/services/data-export-service";
+import { DataExportService } from "@/domains/analytics/data-export-service";
 
 const dataExportService = new DataExportService();
 

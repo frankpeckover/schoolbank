@@ -8,7 +8,7 @@ import {
   maxQuickReasons,
   type TransactionPresets,
 } from "@/lib/transaction-presets";
-import { AuditService } from "@/services/audit-service";
+import { AuditService } from "@/domains/audit/audit-service";
 
 export type UpdateTransactionPresetsInput = TransactionPresets;
 

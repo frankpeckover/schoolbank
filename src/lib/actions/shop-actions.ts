@@ -5,12 +5,12 @@ import {
   requireShopManager,
   requireUser,
 } from "@/lib/actions/action-auth";
-import { ShopItemService } from "@/services/shop-item-service";
-import { ShopPurchaseService } from "@/services/shop-purchase-service";
+import { ShopItemService } from "@/domains/rewards/shop-item-service";
+import { ShopPurchaseService } from "@/domains/rewards/shop-purchase-service";
 import type {
   ImportShopItemsInput,
   SaveShopItemInput,
-} from "@/services/shop-service";
+} from "@/domains/rewards/shop-service";
 
 const shopItemService = new ShopItemService();
 const shopPurchaseService = new ShopPurchaseService();

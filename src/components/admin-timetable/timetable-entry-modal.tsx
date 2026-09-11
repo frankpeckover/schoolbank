@@ -5,11 +5,11 @@ import {
 } from "@/components/admin-timetable/timetable-fields";
 import { ModalShell } from "@/components/ui/modal-shell";
 import { XIcon } from "@/components/ui/icons";
-import type { GroupListItem } from "@/services/group-service";
+import type { GroupListItem } from "@/domains/groups/group-service";
 import type {
   CreateTimetableEntryInput,
   TimetableTeacher,
-} from "@/services/timetable-service";
+} from "@/domains/timetable/timetable-service";
 
 export function TimetableEntryModal({
   form,

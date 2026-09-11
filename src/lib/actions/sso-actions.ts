@@ -2,8 +2,8 @@
 
 import { requireSchoolSettingsManager } from "@/lib/actions/action-auth";
 import { assertSameOriginRequest } from "@/lib/security/origin";
-import { SsoProviderService } from "@/services/sso-provider-service";
-import type { UpdateSsoProviderInput } from "@/services/sso-provider-service";
+import { SsoProviderService } from "@/domains/auth/sso-provider-service";
+import type { UpdateSsoProviderInput } from "@/domains/auth/sso-provider-service";
 
 const ssoProviderService = new SsoProviderService();
 

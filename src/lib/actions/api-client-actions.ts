@@ -3,11 +3,11 @@
 import { requireSchoolSettingsManager } from "@/lib/actions/action-auth";
 import type { ActionResult } from "@/lib/action-results";
 import type { ApiScope } from "@/lib/api/api-types";
-import { AuditService } from "@/services/audit-service";
+import { AuditService } from "@/domains/audit/audit-service";
 import {
   ApiClientService,
   getAllowedApiScopes,
-} from "@/services/api-client-service";
+} from "@/domains/integrations/api-client-service";
 
 type CreateApiClientActionInput = {
   name: string;

@@ -6,7 +6,7 @@ import type { ActionResult } from "@/lib/action-results";
 import { appConfig } from "@/lib/app-config";
 import { defaultCurrencyName } from "@/lib/school-defaults";
 import type { SessionUser } from "@/lib/session";
-import { AuditService } from "@/services/audit-service";
+import { AuditService } from "@/domains/audit/audit-service";
 
 export type SchoolInfo = {
   name: string;

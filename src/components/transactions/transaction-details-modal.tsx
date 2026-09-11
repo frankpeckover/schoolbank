@@ -1,7 +1,7 @@
 import { TransactionStatusBadge } from "@/components/transactions/transaction-status-badge";
 import { formatCurrencyAmount, formatDateTime } from "@/lib/formatters";
 import { getSignedAmountTextClassName } from "@/lib/amount-style";
-import type { TransactionLogItem } from "@/services/transaction-service";
+import type { TransactionLogItem } from "@/domains/ledger/transaction-service";
 
 type TransactionDetailsModalProps = {
   currencyName: string;

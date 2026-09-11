@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
-import type { AuditLogItem } from "@/services/audit-service";
-import type { LedgerEntryStatus, LedgerEntryType } from "@/services/ledger-service";
+import type { AuditLogItem } from "@/domains/audit/audit-service";
+import type { LedgerEntryStatus, LedgerEntryType } from "@/domains/ledger/ledger-service";
 
 export type AdminDashboardSummary = {
   activeUsers: number;

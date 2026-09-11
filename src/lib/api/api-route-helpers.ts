@@ -10,9 +10,9 @@ import {
   ApiIdempotencyService,
   getIdempotencyKey,
   hashApiRequest,
-} from "@/services/api-idempotency-service";
-import { ApiClientService } from "@/services/api-client-service";
-import { ApiFinanceError } from "@/services/api-finance-service";
+} from "@/domains/integrations/api-idempotency-service";
+import { ApiClientService } from "@/domains/integrations/api-client-service";
+import { ApiFinanceError } from "@/domains/integrations/api-finance-service";
 
 export type ApiJsonBody = Record<string, unknown>;
 

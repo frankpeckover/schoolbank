@@ -1,6 +1,6 @@
-# Myntix
+# Myntix Ledger
 
-Myntix is an internal currency ledger for organisations. The core loop is:
+Myntix Ledger is an internal currency ledger for organisations. The core loop is:
 
 - teachers award or deduct internal currency
 - students see balances, goals, and store options
@@ -22,11 +22,11 @@ Install Node.js 20.9 or newer. Node.js 22 LTS is preferred for new installs.
 Create `.env.local` from `.env.example` and adjust the platform database credentials:
 
 ```txt
-NEXT_PUBLIC_APP_NAME=Myntix
-NEXT_PUBLIC_APP_INITIALS=MX
-NEXT_PUBLIC_APP_LOGO_URL=/brand/myntix-app-icon.png
-NEXT_PUBLIC_APP_LOCKUP_URL=/brand/myntix-lockup.png
-NEXT_PUBLIC_APP_WORDMARK_URL=/brand/myntix-wordmark.png
+NEXT_PUBLIC_APP_NAME=Myntix Ledger
+NEXT_PUBLIC_APP_INITIALS=ML
+NEXT_PUBLIC_APP_LOGO_URL=/brand/myntix-ledger-app-icon.png
+NEXT_PUBLIC_APP_LOCKUP_URL=/brand/myntix-ledger-lockup.png
+NEXT_PUBLIC_APP_WORDMARK_URL=/brand/myntix-ledger-wordmark.png
 NEXT_PUBLIC_APP_TAGLINE=Internal currency, made simple.
 
 PLATFORM_POSTGRES_HOST=localhost

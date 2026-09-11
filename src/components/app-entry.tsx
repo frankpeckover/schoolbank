@@ -13,11 +13,13 @@ import { ToastViewport } from "@/components/ui/toast-viewport";
 type AppEntryProps = {
   initialUser: SessionUser | null;
   maintenanceMessage: string;
+  returnTo?: string | null;
 };
 
 export function AppEntry({
   initialUser,
   maintenanceMessage,
+  returnTo=null,
 }: AppEntryProps) {
   const [user, setUser] = useState<SessionUser | null>(initialUser);
   const [sessionMessage, setSessionMessage] = useState<string | null>(null);
@@ -26,6 +28,8 @@ export function AppEntry({
     document.title =
       user === null ? `Sign In | ${appConfig.name}` : getDashboardTitle(user);
   }, [user]);
+
+  useEffect(()=>{if(user&&returnTo)window.location.assign(returnTo)},[user,returnTo]);
 
   useEffect(() => {
     function handleSessionExpired() {
@@ -53,6 +57,7 @@ export function AppEntry({
 
   function handleLogin(nextUser: SessionUser) {
     setSessionMessage(null);
+    if(returnTo){window.location.assign(returnTo);return}
     setUser(nextUser);
   }
 

@@ -1,8 +1,8 @@
 "use server";
 
 import { requireAuditViewer } from "@/lib/actions/action-auth";
-import { AdminDashboardService } from "@/services/admin-dashboard-service";
-import { AuditService } from "@/services/audit-service";
+import { AdminDashboardService } from "@/domains/analytics/admin-dashboard-service";
+import { AuditService } from "@/domains/audit/audit-service";
 
 const adminDashboardService = new AdminDashboardService();
 const auditService = new AuditService();

@@ -32,7 +32,7 @@ import { TableActionMenu } from "@/components/ui/table-action-menu";
 import { TableToolbar } from "@/components/ui/table-toolbar";
 import { downloadCsv } from "@/lib/client-csv";
 import { formatDateTime } from "@/lib/formatters";
-import type { UserListItem } from "@/services/user-service";
+import type { UserListItem } from "@/domains/users/user-service";
 import type { UserFormState } from "@/components/admin-users/user-modal-types";
 
 type AdminUsersPanelProps = {
@@ -225,12 +225,18 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
     totalPages,
   } = usePagedList(filteredUsers);
 
+  function clearUserFilters() {
+    setFilters(emptyFilters);
+    setShowInactiveUsers(false);
+    setSelectedUserIds([]);
+  }
+
   return (
     <AdminPageSection ariaLabel={`${schoolName} users`} isFlush>
       <FixedNotification error={error} message={message} />
       <div>
         {isLoading && <p className="text-sm text-text-muted">Loading users...</p>}
-        {!isLoading && !error && filteredUsers.length > 0 && (
+        {!isLoading && !error && users.length > 0 && (
           <>
             <UsersTable
               filters={filters}
@@ -320,44 +326,56 @@ export function AdminUsersPanel({ schoolName }: AdminUsersPanelProps) {
               }
               users={visibleUsers}
             />
-            <ListPagination
-              onPageChange={setPage}
-              page={page}
-              totalCount={filteredUsers.length}
-              totalPages={totalPages}
-            />
+            {filteredUsers.length === 0 && (
+              <EmptyState
+                action={
+                  <IconButton
+                    label="Clear user filters"
+                    onClick={clearUserFilters}
+                    text="Clear Filters"
+                  >
+                    <XIcon />
+                  </IconButton>
+                }
+                description="Try changing or clearing the filters to see more accounts."
+                icon={<UsersIcon />}
+                title="No matching users"
+              />
+            )}
+            {filteredUsers.length > 0 && (
+              <ListPagination
+                onPageChange={setPage}
+                page={page}
+                totalCount={filteredUsers.length}
+                totalPages={totalPages}
+              />
+            )}
           </>
         )}
-        {!isLoading && !error && filteredUsers.length === 0 && (
+        {!isLoading && !error && users.length === 0 && (
           <EmptyState
             action={
-              users.length === 0 ? (
-                <div className="flex flex-wrap justify-center gap-2">
-                  <IconButton
-                    label="New user"
-                    onClick={() => setIsCreateModalOpen(true)}
-                    text="New User"
-                    tone="primary"
-                  >
-                    <PlusIcon />
-                  </IconButton>
-                  <IconButton
-                    label="Import users: CSV"
-                    onClick={() => setIsImportModalOpen(true)}
-                    text="Import Users: CSV"
-                  >
-                    <FileUpIcon />
-                  </IconButton>
-                </div>
-              ) : undefined
+              <div className="flex flex-wrap justify-center gap-2">
+                <IconButton
+                  label="New user"
+                  onClick={() => setIsCreateModalOpen(true)}
+                  text="New User"
+                  tone="primary"
+                >
+                  <PlusIcon />
+                </IconButton>
+                <IconButton
+                  label="Import users: CSV"
+                  onClick={() => setIsImportModalOpen(true)}
+                  text="Import Users: CSV"
+                >
+                  <FileUpIcon />
+                </IconButton>
+              </div>
             }
-            description={
-              users.length === 0
-                ? "Add a user or import a CSV to start setting up accounts."
-                : "Try changing or clearing the filters to see more accounts."
-            }
+            description="Add a user or import a CSV to start setting up accounts."
             icon={<UsersIcon />}
-            title={users.length === 0 ? "No users yet" : "No matching users"}
+            title="No users yet"
           />
         )}
       </div>

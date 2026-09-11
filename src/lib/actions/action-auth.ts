@@ -9,7 +9,7 @@ import {
   isStaff,
 } from "@/lib/auth/permissions";
 import { assertSameOriginRequest } from "@/lib/security/origin";
-import { SessionService } from "@/services/session-service";
+import { SessionService } from "@/domains/auth/session-service";
 
 const sessionService = new SessionService();
 

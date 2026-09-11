@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { CheckIcon, CopyIcon, EyeIcon, PencilIcon, XIcon } from "@/components/ui/icons";
+import { IconButton } from "@/components/ui/icon-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   MobileSelectionShell,
@@ -18,44 +19,57 @@ import {
   TableHeaderFilterInput,
   TableHeaderFilterSelect,
 } from "@/components/ui/table-header-filter";
-import type { GroupListItem } from "@/services/group-service";
+import type { GroupListItem } from "@/domains/groups/group-service";
+
+type GroupFilters = {
+  description: string;
+  memberMax: string;
+  memberMin: string;
+  name: string;
+};
 
 type GroupListPanelProps = {
   emptyAction?: ReactNode;
+  filters: GroupFilters;
   groups: GroupListItem[];
+  hasActiveFilters: boolean;
   isLoading: boolean;
+  onClearFilters: () => void;
   onDuplicateGroup: (group: GroupListItem) => void;
   onEditGroup: (group: GroupListItem) => void;
   onGroupSelect: (group: GroupListItem) => void;
   onGroupSelectionChange: (groupId: string, isSelected: boolean) => void;
   onGroupStatusChange: (group: GroupListItem) => void;
   onVisibleGroupsSelectionChange: (isSelected: boolean) => void;
-  onSearchChange: (value: string) => void;
+  onFiltersChange: (filters: GroupFilters) => void;
   onShowArchivedChange: (showArchived: boolean) => void;
-  search: string;
   selectedGroupId: string;
   selectedGroupIds: string[];
   showArchived: boolean;
   toolbar?: ReactNode;
+  totalGroupsCount: number;
 };
 
 export function GroupListPanel({
   emptyAction,
+  filters,
   groups,
+  hasActiveFilters,
   isLoading,
+  onClearFilters,
   onDuplicateGroup,
   onEditGroup,
   onGroupSelect,
   onGroupSelectionChange,
   onGroupStatusChange,
   onVisibleGroupsSelectionChange,
-  onSearchChange,
+  onFiltersChange,
   onShowArchivedChange,
-  search,
   selectedGroupId,
   selectedGroupIds,
   showArchived,
   toolbar,
+  totalGroupsCount,
 }: GroupListPanelProps) {
   const {
     page,
@@ -70,7 +84,7 @@ export function GroupListPanel({
         {isLoading && (
           <p className="text-sm text-text-muted">Loading groups...</p>
         )}
-        {!isLoading && groups.length === 0 && (
+        {!isLoading && totalGroupsCount === 0 && (
           <EmptyState
             action={emptyAction}
             description="Create a group or import a CSV to organise students."
@@ -78,9 +92,10 @@ export function GroupListPanel({
             title="No groups found"
           />
         )}
-        {!isLoading && groups.length > 0 && (
+        {!isLoading && totalGroupsCount > 0 && (
           <>
             <GroupList
+              filters={filters}
               groups={visibleGroups}
               onDuplicateGroup={onDuplicateGroup}
               onEditGroup={onEditGroup}
@@ -88,20 +103,39 @@ export function GroupListPanel({
               onGroupSelectionChange={onGroupSelectionChange}
               onGroupStatusChange={onGroupStatusChange}
               onVisibleGroupsSelectionChange={onVisibleGroupsSelectionChange}
-              onSearchChange={onSearchChange}
+              onFiltersChange={onFiltersChange}
               onShowArchivedChange={onShowArchivedChange}
-              search={search}
               selectedGroupId={selectedGroupId}
               selectedGroupIds={selectedGroupIds}
               showArchived={showArchived}
               toolbar={toolbar}
             />
-            <ListPagination
-              onPageChange={setPage}
-              page={page}
-              totalCount={groups.length}
-              totalPages={totalPages}
-            />
+            {groups.length === 0 && (
+              <EmptyState
+                action={
+                  hasActiveFilters ? (
+                    <IconButton
+                      label="Clear group filters"
+                      onClick={onClearFilters}
+                      text="Clear Filters"
+                    >
+                      <XIcon />
+                    </IconButton>
+                  ) : undefined
+                }
+                description="Try changing or clearing the filters to see more groups."
+                icon={<CheckIcon />}
+                title="No groups match these filters"
+              />
+            )}
+            {groups.length > 0 && (
+              <ListPagination
+                onPageChange={setPage}
+                page={page}
+                totalCount={groups.length}
+                totalPages={totalPages}
+              />
+            )}
           </>
         )}
       </div>
@@ -110,6 +144,7 @@ export function GroupListPanel({
 }
 
 function GroupList({
+  filters,
   groups,
   onDuplicateGroup,
   onEditGroup,
@@ -117,14 +152,14 @@ function GroupList({
   onGroupSelectionChange,
   onGroupStatusChange,
   onVisibleGroupsSelectionChange,
-  onSearchChange,
+  onFiltersChange,
   onShowArchivedChange,
-  search,
   selectedGroupId,
   selectedGroupIds,
   showArchived,
   toolbar,
 }: {
+  filters: GroupFilters;
   groups: GroupListItem[];
   onDuplicateGroup: (group: GroupListItem) => void;
   onEditGroup: (group: GroupListItem) => void;
@@ -132,9 +167,8 @@ function GroupList({
   onGroupSelectionChange: (groupId: string, isSelected: boolean) => void;
   onGroupStatusChange: (group: GroupListItem) => void;
   onVisibleGroupsSelectionChange: (isSelected: boolean) => void;
-  onSearchChange: (value: string) => void;
+  onFiltersChange: (filters: GroupFilters) => void;
   onShowArchivedChange: (showArchived: boolean) => void;
-  search: string;
   selectedGroupId: string;
   selectedGroupIds: string[];
   showArchived: boolean;
@@ -143,6 +177,10 @@ function GroupList({
   const areAllVisibleGroupsSelected =
     groups.length > 0 &&
     groups.every((group) => selectedGroupIds.includes(group.id));
+
+  function updateFilter(field: keyof GroupFilters, value: string) {
+    onFiltersChange({ ...filters, [field]: value });
+  }
 
   return (
     <>
@@ -188,31 +226,58 @@ function GroupList({
             </th>
             <th scope="col" className="py-2 pr-4 font-semibold">
               <TableHeaderFilter
-                isActive={Boolean(search)}
+                isActive={Boolean(filters.name)}
                 label="Name"
-                onClear={() => onSearchChange("")}
+                onClear={() => updateFilter("name", "")}
               >
                 <TableHeaderFilterInput
-                  label="Search groups"
-                  onChange={onSearchChange}
-                  value={search}
+                  label="Search names"
+                  onChange={(value) => updateFilter("name", value)}
+                  value={filters.name}
                 />
               </TableHeaderFilter>
             </th>
             <th scope="col" className="py-2 pr-4 font-semibold">
               <TableHeaderFilter
-                isActive={Boolean(search)}
+                isActive={Boolean(filters.description)}
                 label="Description"
-                onClear={() => onSearchChange("")}
+                onClear={() => updateFilter("description", "")}
               >
                 <TableHeaderFilterInput
-                  label="Search groups"
-                  onChange={onSearchChange}
-                  value={search}
+                  label="Search descriptions"
+                  onChange={(value) => updateFilter("description", value)}
+                  value={filters.description}
                 />
               </TableHeaderFilter>
             </th>
-            <th scope="col" className="py-2 pr-4 font-semibold">Members</th>
+            <th scope="col" className="py-2 pr-4 font-semibold">
+              <TableHeaderFilter
+                isActive={Boolean(filters.memberMin || filters.memberMax)}
+                label="Members"
+                onClear={() =>
+                  onFiltersChange({
+                    ...filters,
+                    memberMax: "",
+                    memberMin: "",
+                  })
+                }
+              >
+                <div className="grid gap-3">
+                  <TableHeaderFilterInput
+                    label="Minimum"
+                    onChange={(value) => updateFilter("memberMin", value)}
+                    type="number"
+                    value={filters.memberMin}
+                  />
+                  <TableHeaderFilterInput
+                    label="Maximum"
+                    onChange={(value) => updateFilter("memberMax", value)}
+                    type="number"
+                    value={filters.memberMax}
+                  />
+                </div>
+              </TableHeaderFilter>
+            </th>
             <th scope="col" className="py-2 pr-4 font-semibold">
               <TableHeaderFilter
                 isActive={showArchived}

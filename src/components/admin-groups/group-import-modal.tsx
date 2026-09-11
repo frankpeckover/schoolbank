@@ -10,7 +10,7 @@ import { ImportModalLayout } from "@/components/ui/import-modal-layout";
 import type {
   ImportGroupError,
   ImportGroupMembershipInput,
-} from "@/services/group-import-service";
+} from "@/domains/groups/group-import-service";
 
 type GroupImportModalProps = {
   onClose: () => void;

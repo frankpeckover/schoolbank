@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import type { ActionResult } from "@/lib/action-results";
 import type { SessionUser } from "@/lib/session";
-import { AuditService } from "@/services/audit-service";
+import { AuditService } from "@/domains/audit/audit-service";
 
 export type TimetableEntry = {
   id: string;

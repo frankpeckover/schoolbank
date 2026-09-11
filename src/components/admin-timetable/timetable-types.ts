@@ -1,13 +1,13 @@
 export type TimetableFiltersState = {
   dayOfWeek: string;
-  groupId: string;
+  groupName: string;
   status: "" | "active" | "archived";
-  teacherUserId: string;
+  teacherName: string;
 };
 
 export const emptyTimetableFilters: TimetableFiltersState = {
   dayOfWeek: "",
-  groupId: "",
+  groupName: "",
   status: "",
-  teacherUserId: "",
+  teacherName: "",
 };

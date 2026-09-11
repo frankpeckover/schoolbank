@@ -1,8 +1,8 @@
 "use server";
 
 import { requireUser } from "@/lib/actions/action-auth";
-import type { SaveStudentGoalInput } from "@/services/student-goal-service";
-import { StudentGoalService } from "@/services/student-goal-service";
+import type { SaveStudentGoalInput } from "@/domains/analytics/student-goal-service";
+import { StudentGoalService } from "@/domains/analytics/student-goal-service";
 
 const studentGoalService = new StudentGoalService();
 

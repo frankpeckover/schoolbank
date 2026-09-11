@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import type { ApiClient } from "@/lib/api/api-types";
-import { AuditService } from "@/services/audit-service";
-import { LedgerService, type LedgerEntryType } from "@/services/ledger-service";
+import { AuditService } from "@/domains/audit/audit-service";
+import { LedgerService, type LedgerEntryType } from "@/domains/ledger/ledger-service";
 import type { PoolClient } from "pg";
 
 type ApiLedgerInput = {

@@ -6,9 +6,11 @@ import {
   denyShopRequest,
   listStaffShopRequests,
 } from "@/lib/actions";
-import type { ShopPurchaseRequest } from "@/services/shop-service";
+import type { ShopPurchaseRequest } from "@/domains/rewards/shop-service";
 import { formatAmount, formatDateTime } from "@/lib/formatters";
+import { EmptyState } from "@/components/ui/empty-state";
 import { FixedNotification } from "@/components/ui/fixed-notification";
+import { IconButton } from "@/components/ui/icon-button";
 import { CheckIcon, ShoppingBagIcon, XIcon } from "@/components/ui/icons";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
 import { TableActionMenu } from "@/components/ui/table-action-menu";
@@ -283,6 +285,10 @@ function CompactShopRequestList({
     setFilters({ ...filters, [field]: value });
   }
 
+  function clearFilters() {
+    setFilters(emptyShopRequestTableFilters);
+  }
+
   return (
     <>
       <div className="grid gap-2 md:hidden">
@@ -402,6 +408,22 @@ function CompactShopRequestList({
           </tbody>
         </table>
       </div>
+      {filteredRequests.length === 0 && (
+        <EmptyState
+          action={
+            <IconButton
+              label="Clear reward request filters"
+              onClick={clearFilters}
+              text="Clear Filters"
+            >
+              <XIcon />
+            </IconButton>
+          }
+          description="Try changing or clearing the filters to see more reward requests."
+          icon={<ShoppingBagIcon />}
+          title="No matching reward requests"
+        />
+      )}
     </>
   );
 }

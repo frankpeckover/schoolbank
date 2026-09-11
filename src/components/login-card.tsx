@@ -16,7 +16,7 @@ import { EyeIcon } from "@/components/ui/icons";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { SchoolLogo } from "@/components/ui/school-logo";
 import { useDialogFocus } from "@/components/ui/use-dialog-focus";
-import type { SchoolInfo } from "@/services/school-service";
+import type { SchoolInfo } from "@/domains/organisation/school-service";
 
 type LoginCardProps = {
   initialMessage?: string | null;
@@ -180,13 +180,13 @@ export function LoginCard({
             </div>
           </div>
           <form className="space-y-3" onSubmit={handleSubmit}>
-            <div className="login-entry-item">
-              <div className="relative">
+            <div className="login-entry-item overflow-hidden rounded-md border border-border bg-surface">
+              <div className="relative border-b border-border-subtle">
                 <UserFieldIcon />
                 <input
                   aria-label="Username"
                   autoComplete="username"
-                  className="w-full rounded-md border border-border bg-surface py-2.5 pl-10 pr-3 text-sm outline-none ring-brand transition placeholder:text-text-muted focus:border-brand focus:ring-2"
+                  className="w-full border-0 bg-transparent py-2.5 pl-10 pr-3 text-sm outline-none ring-inset ring-brand transition placeholder:text-text-muted focus:ring-2"
                   disabled={isSubmitting}
                   id="username"
                   onChange={(event) => setUsername(event.target.value)}
@@ -195,15 +195,13 @@ export function LoginCard({
                   value={username}
                 />
               </div>
-            </div>
 
-            <div className="login-entry-item">
               <div className="relative">
                 <PasswordFieldIcon />
                 <input
                   aria-label="Password"
                   autoComplete="current-password"
-                  className="w-full rounded-md border border-border bg-surface py-2.5 pl-10 pr-11 text-sm outline-none ring-brand transition placeholder:text-text-muted focus:border-brand focus:ring-2"
+                  className="w-full border-0 bg-transparent py-2.5 pl-10 pr-11 text-sm outline-none ring-inset ring-brand transition placeholder:text-text-muted focus:ring-2"
                   disabled={isSubmitting}
                   id="password"
                   onChange={(event) => setPassword(event.target.value)}

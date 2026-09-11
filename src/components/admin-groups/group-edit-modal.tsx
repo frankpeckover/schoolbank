@@ -7,8 +7,8 @@ import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import type {
   GroupListItem,
   GroupMemberItem,
-} from "@/services/group-service";
-import type { StudentListItem } from "@/services/user-service";
+} from "@/domains/groups/group-service";
+import type { StudentListItem } from "@/domains/users/user-service";
 
 type GroupEditModalProps = {
   availableStudents: StudentListItem[];

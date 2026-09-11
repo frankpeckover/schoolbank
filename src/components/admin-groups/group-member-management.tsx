@@ -5,8 +5,8 @@ import { TableActionMenu } from "@/components/ui/table-action-menu";
 import type {
   GroupListItem,
   GroupMemberItem,
-} from "@/services/group-service";
-import type { StudentListItem } from "@/services/user-service";
+} from "@/domains/groups/group-service";
+import type { StudentListItem } from "@/domains/users/user-service";
 
 type GroupMemberManagementProps = {
   availableStudents: StudentListItem[];

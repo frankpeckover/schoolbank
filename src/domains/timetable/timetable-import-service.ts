@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import type { SessionUser } from "@/lib/session";
-import { AuditService } from "@/services/audit-service";
+import { AuditService } from "@/domains/audit/audit-service";
 
 export type ImportTimetableEntryInput = {
   day: string;

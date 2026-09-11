@@ -4,7 +4,7 @@ import { requireBalanceViewer } from "@/lib/actions/action-auth";
 import {
   CreditAnalyticsService,
   type CreditAnalyticsWindowInput,
-} from "@/services/credit-analytics-service";
+} from "@/domains/analytics/credit-analytics-service";
 
 const creditAnalyticsService = new CreditAnalyticsService();
 

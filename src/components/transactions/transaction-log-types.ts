@@ -1,4 +1,4 @@
-import type { TransactionLogItem } from "@/services/transaction-service";
+import type { TransactionLogItem } from "@/domains/ledger/transaction-service";
 
 export type TransactionFilters = {
   amountDirection: "" | "positive" | "negative";

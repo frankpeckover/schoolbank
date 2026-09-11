@@ -16,7 +16,10 @@ import { TransactionLogPanel } from "@/components/transactions/transaction-log-p
 import { FixedNotification } from "@/components/ui/fixed-notification";
 import { WalletIcon } from "@/components/ui/icons";
 import { InlineSelectMenu } from "@/components/ui/inline-select-menu";
-import { getStudentBalance, listTransactionLog } from "@/lib/actions";
+import {
+  getStudentBalance,
+  listTransactionLog,
+} from "@/lib/actions";
 import {
   buildBalanceTimeSeries,
   chartTimeScaleOptions,
@@ -27,7 +30,7 @@ import {
 } from "@/lib/chart-time-scale";
 import { formatAmount, formatCurrencyAmount } from "@/lib/formatters";
 import type { SessionUser } from "@/lib/session";
-import type { TransactionLogItem } from "@/services/transaction-service";
+import type { TransactionLogItem } from "@/domains/ledger/transaction-service";
 
 type StudentDashboardPanelProps = {
   currencyName: string;

@@ -7,7 +7,7 @@ import {
 import {
   TransactionPresetService,
   type UpdateTransactionPresetsInput,
-} from "@/services/transaction-preset-service";
+} from "@/domains/ledger/transaction-preset-service";
 
 const transactionPresetService = new TransactionPresetService();
 

@@ -1,12 +1,14 @@
 import { appConfig } from "@/lib/app-config";
 
 type AppBrandProps = {
+  showLogoWithImage?: boolean;
   showNameOnMobile?: boolean;
   size?: "default" | "large";
   variant?: "default" | "wordmark";
 };
 
 export function AppBrand({
+  showLogoWithImage = false,
   showNameOnMobile = false,
   size = "default",
   variant = "default",
@@ -27,6 +29,20 @@ export function AppBrand({
     variant === "wordmark" ? appConfig.wordmarkUrl : appConfig.lockupUrl;
 
   if (showNameOnMobile && brandImageUrl) {
+    if (showLogoWithImage) {
+      return (
+        <div className="flex min-w-0 items-center gap-2.5">
+          <AppLogo className="h-8 w-8 rounded-lg" />
+          {/* eslint-disable-next-line @next/next/no-img-element -- Branding paths are runtime-configurable and may not be known to next/image. */}
+          <img
+            alt={`${appConfig.name} logo`}
+            className={`${lockupClassName} min-w-0 shrink object-contain object-left`}
+            src={brandImageUrl}
+          />
+        </div>
+      );
+    }
+
     return (
       // eslint-disable-next-line @next/next/no-img-element -- Branding paths are runtime-configurable and may not be known to next/image.
       <img

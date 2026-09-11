@@ -7,7 +7,7 @@ import {
   setApiClientActive,
 } from "@/lib/actions";
 import type { ApiScope } from "@/lib/api/api-types";
-import type { ApiClientSummary } from "@/services/api-client-service";
+import type { ApiClientSummary } from "@/domains/integrations/api-client-service";
 import { FixedNotification } from "@/components/ui/fixed-notification";
 
 const scopeOptions: Array<{

@@ -1,7 +1,7 @@
 "use server";
 
 import { requireLedgerAdjuster } from "@/lib/actions/action-auth";
-import { TeacherDashboardService } from "@/services/teacher-dashboard-service";
+import { TeacherDashboardService } from "@/domains/analytics/teacher-dashboard-service";
 
 const teacherDashboardService = new TeacherDashboardService();
 

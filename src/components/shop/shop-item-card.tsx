@@ -9,7 +9,7 @@ import {
   TrashIcon,
 } from "@/components/ui/icons";
 import { formatAmount } from "@/lib/formatters";
-import type { ShopItem } from "@/services/shop-service";
+import type { ShopItem } from "@/domains/rewards/shop-service";
 
 type ShopItemCardProps = {
   canManage: boolean;

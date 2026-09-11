@@ -9,7 +9,7 @@ import {
   canVoidTransactions,
 } from "@/lib/permissions";
 import type { SessionUser } from "@/lib/session";
-import type { TransactionLogItem } from "@/services/transaction-service";
+import type { TransactionLogItem } from "@/domains/ledger/transaction-service";
 import { getSignedAmountTextClassName } from "@/lib/amount-style";
 import {
   formatDateTime,
@@ -181,6 +181,10 @@ export function TransactionLogPanel({
     totalPages,
   } = usePagedList(filteredTransactions);
 
+  function clearTransactionFilters() {
+    setFilters(emptyTransactionFilters);
+  }
+
   return (
     <section className="theme-panel motion-panel mt-5 min-w-0 p-0">
       <FixedNotification error={error} message={message} />
@@ -195,14 +199,7 @@ export function TransactionLogPanel({
             title="No transactions yet"
           />
         )}
-        {!isLoading && !error && transactions.length > 0 && filteredTransactions.length === 0 && (
-          <EmptyState
-            description="Try changing or clearing the filters to see more ledger activity."
-            icon={<FilterIcon />}
-            title="No matching transactions"
-          />
-        )}
-        {!isLoading && !error && filteredTransactions.length > 0 && (
+        {!isLoading && !error && transactions.length > 0 && (
           <>
             <TransactionList
               canViewAllTransactions={canViewAllTransactionsForUser}
@@ -239,12 +236,30 @@ export function TransactionLogPanel({
               }
               transactions={visibleTransactions}
             />
-            <ListPagination
-              onPageChange={setPage}
-              page={page}
-              totalCount={filteredTransactions.length}
-              totalPages={totalPages}
-            />
+            {filteredTransactions.length === 0 && (
+              <EmptyState
+                action={
+                  <IconButton
+                    label="Clear transaction filters"
+                    onClick={clearTransactionFilters}
+                    text="Clear Filters"
+                  >
+                    <XIcon />
+                  </IconButton>
+                }
+                description="Try changing or clearing the filters to see more ledger activity."
+                icon={<FilterIcon />}
+                title="No matching transactions"
+              />
+            )}
+            {filteredTransactions.length > 0 && (
+              <ListPagination
+                onPageChange={setPage}
+                page={page}
+                totalCount={filteredTransactions.length}
+                totalPages={totalPages}
+              />
+            )}
           </>
         )}
       </div>

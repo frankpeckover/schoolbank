@@ -24,6 +24,7 @@ import {
   FileUpIcon,
   PlusIcon,
   TrashIcon,
+  XIcon,
 } from "@/components/ui/icons";
 import {
   ListPagination,
@@ -39,12 +40,12 @@ import {
   listTimetableTeachers,
   updateTimetableEntry,
 } from "@/lib/actions";
-import type { GroupListItem } from "@/services/group-service";
+import type { GroupListItem } from "@/domains/groups/group-service";
 import type {
   CreateTimetableEntryInput,
   TimetableEntry,
   TimetableTeacher,
-} from "@/services/timetable-service";
+} from "@/domains/timetable/timetable-service";
 
 const emptyEntryForm: CreateTimetableEntryInput = {
   dayOfWeek: defaultTimetableDayIndex,
@@ -178,6 +179,11 @@ export function AdminTimetablePanel() {
         ? [...new Set([...currentEntryIds, ...visibleEntryIds])]
         : currentEntryIds.filter((entryId) => !visibleEntryIds.includes(entryId)),
     );
+  }
+
+  function clearTimetableFilters() {
+    setFilters(emptyTimetableFilters);
+    setSelectedEntryIds([]);
   }
 
   async function confirmDeleteEntry() {
@@ -360,17 +366,11 @@ export function AdminTimetablePanel() {
             title="No timetable entries yet"
           />
         )}
-        {!isLoading && entries.length > 0 && filteredEntries.length === 0 && (
-          <p className="text-sm text-text-muted">
-            No timetable entries match these filters.
-          </p>
-        )}
-        {!isLoading && filteredEntries.length > 0 && (
+        {!isLoading && entries.length > 0 && (
           <>
             <TimetableEntryTable
               entries={visibleEntries}
               filters={filters}
-              groups={groups}
               onDeleteEntry={handleDeleteEntry}
               onDuplicateEntry={handleDuplicateEntry}
               onEntrySelectionChange={handleEntrySelectionChange}
@@ -378,7 +378,6 @@ export function AdminTimetablePanel() {
               onFiltersChange={setFilters}
               onVisibleEntriesSelectionChange={handleVisibleEntriesSelectionChange}
               selectedEntryIds={selectedEntryIds}
-              teachers={teachers}
               toolbar={
                 <TableToolbar
                   actions={
@@ -441,12 +440,30 @@ export function AdminTimetablePanel() {
                 </TableToolbar>
               }
             />
-            <ListPagination
-              onPageChange={setPage}
-              page={page}
-              totalCount={filteredEntries.length}
-              totalPages={totalPages}
-            />
+            {filteredEntries.length === 0 && (
+              <EmptyState
+                action={
+                  <IconButton
+                    label="Clear timetable filters"
+                    onClick={clearTimetableFilters}
+                    text="Clear Filters"
+                  >
+                    <XIcon />
+                  </IconButton>
+                }
+                description="Try changing or clearing the filters to see more timetable entries."
+                icon={<PlusIcon />}
+                title="No matching timetable entries"
+              />
+            )}
+            {filteredEntries.length > 0 && (
+              <ListPagination
+                onPageChange={setPage}
+                page={page}
+                totalCount={filteredEntries.length}
+                totalPages={totalPages}
+              />
+            )}
           </>
         )}
       </div>
@@ -459,10 +476,14 @@ function matchesTimetableFilters(
   filters: TimetableFiltersState,
 ) {
   return (
-    (!filters.teacherUserId || entry.teacherUserId === filters.teacherUserId) &&
-    (!filters.groupId || entry.groupId === filters.groupId) &&
+    includesFilter(entry.teacherName, filters.teacherName) &&
+    includesFilter(entry.groupName, filters.groupName) &&
     (!filters.dayOfWeek || entry.dayOfWeek === Number(filters.dayOfWeek)) &&
     (!filters.status ||
       (filters.status === "active" ? entry.isActive : !entry.isActive))
   );
+}
+
+function includesFilter(value: string, filter: string) {
+  return value.toLowerCase().includes(filter.trim().toLowerCase());
 }

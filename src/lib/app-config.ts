@@ -1,4 +1,4 @@
-const fallbackAppName = "Internal Ledger";
+const fallbackAppName = "Myntix Ledger";
 const configuredAppName = process.env.NEXT_PUBLIC_APP_NAME?.trim() || fallbackAppName;
 
 export const appConfig = {
@@ -12,16 +12,16 @@ export const appConfig = {
     getInitials(configuredAppName),
   logoUrl:
     process.env.NEXT_PUBLIC_APP_LOGO_URL?.trim() ||
-    "/brand/myntix-app-icon.png",
+    "/brand/myntix-ledger-app-icon.png",
   lockupUrl:
     process.env.NEXT_PUBLIC_APP_LOCKUP_URL?.trim() ||
-    "/brand/myntix-lockup.png",
+    "/brand/myntix-ledger-lockup.png",
   marketingSiteUrl:
     process.env.NEXT_PUBLIC_MARKETING_SITE_URL?.trim() ||
     "https://myntix.com",
   wordmarkUrl:
     process.env.NEXT_PUBLIC_APP_WORDMARK_URL?.trim() ||
-    "/brand/myntix-wordmark.png",
+    "/brand/myntix-ledger-wordmark.png",
   name: configuredAppName,
   supportEmail:
     process.env.NEXT_PUBLIC_APP_SUPPORT_EMAIL?.trim() || "support@example.com",

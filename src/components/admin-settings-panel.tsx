@@ -35,7 +35,7 @@ import {
 import { ApiKeySettings } from "@/components/admin-settings/api-key-settings";
 import { FixedNotification } from "@/components/ui/fixed-notification";
 import { SchoolLogo } from "@/components/ui/school-logo";
-import type { SchoolInfo } from "@/services/school-service";
+import type { SchoolInfo } from "@/domains/organisation/school-service";
 import type { SsoProviderSettings, SsoProviderType } from "@/lib/sso-types";
 
 type AdminSettingsPanelProps = {
@@ -511,7 +511,7 @@ export function AdminSettingsPanel({
       </SettingsGroup>
 
       <SettingsGroup
-        description="External access for approved integrations and modules."
+        description="External access for approved integrations."
         title="API"
       >
         <SettingsPanel icon={<KeyIcon />} title="API Keys">

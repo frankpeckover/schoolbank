@@ -18,8 +18,8 @@ import {
   type TransactionPresets,
 } from "@/lib/transaction-presets";
 import { formatAmount } from "@/lib/formatters";
-import type { GroupListItem } from "@/services/group-service";
-import type { StudentListItem } from "@/services/user-service";
+import type { GroupListItem } from "@/domains/groups/group-service";
+import type { StudentListItem } from "@/domains/users/user-service";
 
 type LedgerAdjustmentFormProps = {
   currencyName: string;

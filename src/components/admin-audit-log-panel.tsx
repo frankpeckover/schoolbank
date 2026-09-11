@@ -5,11 +5,12 @@ import type { ReactNode } from "react";
 import { listAuditLog } from "@/lib/actions";
 import { downloadCsv } from "@/lib/client-csv";
 import { formatDateTime } from "@/lib/formatters";
-import type { AuditLogItem } from "@/services/audit-service";
+import type { AuditLogItem } from "@/domains/audit/audit-service";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
+import { EmptyState } from "@/components/ui/empty-state";
 import { FixedNotification } from "@/components/ui/fixed-notification";
 import { IconButton } from "@/components/ui/icon-button";
-import { EyeIcon, FileDownIcon } from "@/components/ui/icons";
+import { EyeIcon, FileDownIcon, XIcon } from "@/components/ui/icons";
 import {
   ListPagination,
   usePagedList,
@@ -84,6 +85,10 @@ export function AdminAuditLogPanel() {
     totalPages,
   } = usePagedList(filteredEntries);
 
+  function clearAuditFilters() {
+    setFilters(emptyAuditFilters);
+  }
+
   return (
     <AdminPageSection isFlush>
       <FixedNotification error={error} />
@@ -94,12 +99,7 @@ export function AdminAuditLogPanel() {
         {!isLoading && !error && entries.length === 0 && (
           <p className="text-sm text-text-muted">No audit events recorded yet.</p>
         )}
-        {!isLoading && !error && entries.length > 0 && filteredEntries.length === 0 && (
-          <p className="text-sm text-text-muted">
-            No audit events match these filters.
-          </p>
-        )}
-        {!isLoading && !error && filteredEntries.length > 0 && (
+        {!isLoading && !error && entries.length > 0 && (
           <>
             <AuditLogList
               entries={visibleEntries}
@@ -128,12 +128,29 @@ export function AdminAuditLogPanel() {
                 </TableToolbar>
               }
             />
-            <ListPagination
-              onPageChange={setPage}
-              page={page}
-              totalCount={filteredEntries.length}
-              totalPages={totalPages}
-            />
+            {filteredEntries.length === 0 && (
+              <EmptyState
+                action={
+                  <IconButton
+                    label="Clear audit filters"
+                    onClick={clearAuditFilters}
+                    text="Clear Filters"
+                  >
+                    <XIcon />
+                  </IconButton>
+                }
+                description="Try changing or clearing the filters to see more audit events."
+                title="No matching audit events"
+              />
+            )}
+            {filteredEntries.length > 0 && (
+              <ListPagination
+                onPageChange={setPage}
+                page={page}
+                totalCount={filteredEntries.length}
+                totalPages={totalPages}
+              />
+            )}
           </>
         )}
       </div>

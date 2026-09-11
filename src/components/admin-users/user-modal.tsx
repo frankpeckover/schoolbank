@@ -22,8 +22,8 @@ import {
 import type {
   UpdateUserInput,
   UserListItem,
-} from "@/services/user-service";
-import type { UserGroupItem } from "@/services/group-service";
+} from "@/domains/users/user-service";
+import type { UserGroupItem } from "@/domains/groups/group-service";
 
 export function UserModal({
   initialForm,

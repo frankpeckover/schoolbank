@@ -8,4 +8,4 @@ export type {
   ShopPurchaseRequest,
   ShopPurchaseStatus,
   StudentShopRequest,
-} from "@/services/shop-types";
+} from "@/domains/rewards/shop-types";

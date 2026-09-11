@@ -3,8 +3,8 @@ import { WalletIcon } from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/page-header";
 import { getSignedAmountTextClassName } from "@/lib/amount-style";
 import { formatDateTime, formatSignedCurrencyAmount } from "@/lib/formatters";
-import type { AuditLogItem } from "@/services/audit-service";
-import type { AdminDashboardEntry } from "@/services/admin-dashboard-service";
+import type { AuditLogItem } from "@/domains/audit/audit-service";
+import type { AdminDashboardEntry } from "@/domains/analytics/admin-dashboard-service";
 
 export function RecentLedgerActivity({
   currencyName,

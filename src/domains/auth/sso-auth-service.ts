@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { decryptServerSecret } from "@/lib/server-crypto";
 import type { Role, SessionUser } from "@/lib/session";
 import type { SsoProviderType } from "@/lib/sso-types";
-import { AuditService } from "@/services/audit-service";
+import { AuditService } from "@/domains/audit/audit-service";
 
 export type SsoAuthProvider = {
   allowedDomain: string;

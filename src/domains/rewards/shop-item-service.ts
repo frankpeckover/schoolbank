@@ -5,14 +5,14 @@ import type { ActionResult } from "@/lib/action-results";
 import { db } from "@/lib/db";
 import { canManageShopItems } from "@/lib/permissions";
 import type { SessionUser } from "@/lib/session";
-import { AuditService } from "@/services/audit-service";
+import { AuditService } from "@/domains/audit/audit-service";
 import type {
   ImportShopItemsInput,
   ImportShopItemsResult,
   SaveShopItemInput,
   ShopItem,
   ShopItemRow,
-} from "@/services/shop-types";
+} from "@/domains/rewards/shop-types";
 
 const auditService = new AuditService();
 const imageUploadDirectory = path.join(

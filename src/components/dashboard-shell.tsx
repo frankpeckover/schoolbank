@@ -36,7 +36,7 @@ import {
 } from "@/lib/permissions";
 import { defaultCurrencyName } from "@/lib/school-defaults";
 import { type SessionUser } from "@/lib/session";
-import type { SchoolInfo } from "@/services/school-service";
+import type { SchoolInfo } from "@/domains/organisation/school-service";
 
 type DashboardShellProps = {
   maintenanceMessage: string;

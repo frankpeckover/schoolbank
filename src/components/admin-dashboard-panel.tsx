@@ -35,7 +35,7 @@ import type {
   AdminDashboardEntry,
   AdminDashboardSummary,
   TeacherIssuerSummary,
-} from "@/services/admin-dashboard-service";
+} from "@/domains/analytics/admin-dashboard-service";
 import {
   ArrowDownIcon,
   ArrowUpIcon,

@@ -3,7 +3,7 @@ import { getDatabaseErrorMessage } from "@/lib/database-error-message";
 import { appConfig } from "@/lib/app-config";
 import { verifyPassword } from "@/lib/passwords";
 import type { Role, SessionUser } from "@/lib/session";
-import { AuditService } from "@/services/audit-service";
+import { AuditService } from "@/domains/audit/audit-service";
 
 type UserRow = {
   email: string;

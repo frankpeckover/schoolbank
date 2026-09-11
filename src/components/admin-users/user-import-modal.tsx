@@ -14,7 +14,7 @@ import type {
   ImportUserInput,
   ImportUserError,
   ImportUsersPreviewResult,
-} from "@/services/user-service";
+} from "@/domains/users/user-service";
 
 type UserImportModalProps = {
   onClose: () => void;

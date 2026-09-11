@@ -1,4 +1,4 @@
-import type { UserListItem } from "@/services/user-service";
+import type { UserListItem } from "@/domains/users/user-service";
 import type { UserFilters } from "@/components/admin-users/user-management-types";
 
 export function matchesUserFilters(

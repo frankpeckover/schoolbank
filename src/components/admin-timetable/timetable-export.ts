@@ -1,6 +1,6 @@
 import { weekDays } from "@/components/admin-timetable/timetable-constants";
 import { downloadCsv } from "@/lib/client-csv";
-import type { TimetableEntry } from "@/services/timetable-service";
+import type { TimetableEntry } from "@/domains/timetable/timetable-service";
 
 export function downloadTimetableEntries(entries: TimetableEntry[]) {
   downloadCsv(

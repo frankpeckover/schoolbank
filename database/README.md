@@ -6,7 +6,7 @@ The platform database is still a single setup file:
 
 - `create-platform-database.sql`
 
-Each school/app schema is split by service/module under:
+Each school/app schema is split by service area under:
 
 - `school/00-core-settings.sql`
 - `school/01-auth.sql`
@@ -33,7 +33,7 @@ The app supports two tenant modes:
 3. For `database` mode, create one database for the school and connect to it.
 4. For `schema` mode, create one schema inside the shared app database and set the SQL editor search path to that schema.
 5. Run the required core school setup scripts.
-6. Run only the optional module scripts that organisation needs.
+6. Run only the optional feature scripts that organisation needs.
 7. Run `school/99-grants.sql` last.
 8. Put the platform database connection in the app `.env.local`.
 9. Put each organisation target in the platform database `organisations` table.
@@ -239,7 +239,7 @@ school_app_user_riverside
 
 Then add that username and password to the matching `organisations` row in the platform database for database-mode tenants. For schema-mode tenants, put the shared app database login in `.env.local`.
 
-## Module Notes
+## Feature Notes
 
 The current app still expects the enabled UI features to have their matching database tables.
 
@@ -249,8 +249,6 @@ For example:
 - If groups or timetables are visible in the app, run `03-groups-timetable.sql`.
 - If SSO is enabled, run `05-sso.sql`.
 - If external API clients are enabled, run `06-api-clients.sql`.
-
-Do not run optional module scripts for organisations that will not use those modules.
 
 ## Useful Checks
 

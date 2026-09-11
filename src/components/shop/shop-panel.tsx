@@ -12,7 +12,7 @@ import { downloadCsv } from "@/lib/client-csv";
 import { formatAmount, formatCurrencyAmount } from "@/lib/formatters";
 import { canManageShopItems } from "@/lib/permissions";
 import type { SessionUser } from "@/lib/session";
-import type { ShopItem } from "@/services/shop-service";
+import type { ShopItem } from "@/domains/rewards/shop-service";
 import { ShopImportModal } from "@/components/shop/shop-import-modal";
 import { ShopItemCard } from "@/components/shop/shop-item-card";
 import { ShopItemDetailsModal } from "@/components/shop/shop-item-details-modal";
@@ -36,6 +36,7 @@ import {
   ShoppingBagIcon,
   TrashIcon,
   WalletIcon,
+  XIcon,
 } from "@/components/ui/icons";
 import {
   ListPagination,
@@ -56,9 +57,10 @@ type ShopPanelProps = {
 };
 
 type ShopFiltersState = {
+  description: string;
+  name: string;
   priceMax: string;
   priceMin: string;
-  search: string;
   showArchivedItems: boolean;
 };
 
@@ -66,9 +68,10 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
   const canManage = canManageShopItems(currentUser);
   const [items, setItems] = useState<ShopItem[]>([]);
   const [filters, setFilters] = useState<ShopFiltersState>({
+    description: "",
+    name: "",
     priceMax: "",
     priceMin: "",
-    search: "",
     showArchivedItems: false,
   });
   const [balance, setBalance] = useState<number | null>(null);
@@ -279,6 +282,17 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
     refreshItems();
   }
 
+  function clearShopFilters() {
+    setFilters({
+      description: "",
+      name: "",
+      priceMax: "",
+      priceMin: "",
+      showArchivedItems: false,
+    });
+    setSelectedItemIds([]);
+  }
+
   const visibleItems = useMemo(
     () =>
       items.filter((item) =>
@@ -315,10 +329,11 @@ export function ShopPanel({ currencyName, currentUser }: ShopPanelProps) {
           onImportItems={() => setIsImportModalOpen(true)}
           onItemsExport={() => downloadShopItems(visibleItems)}
           onNewItem={openNewItemModal}
+          onClearFilters={clearShopFilters}
           onPriceMaxChange={(value) => updateFilter("priceMax", value)}
           onPriceMinChange={(value) => updateFilter("priceMin", value)}
           onRemove={handleRemove}
-          onSearchChange={(value) => updateFilter("search", value)}
+          onSearchChange={(field, value) => updateFilter(field, value)}
           onSelectionChange={handleItemSelectionChange}
           onVisibleItemsSelectionChange={handleVisibleItemsSelectionChange}
           onShowArchivedItemsChange={(value) =>
@@ -430,6 +445,7 @@ function ShopManagementList({
   onRemove,
   onSearchChange,
   onBulkRemove,
+  onClearFilters,
   onSelectionChange,
   onVisibleItemsSelectionChange,
   onShowArchivedItemsChange,
@@ -450,8 +466,12 @@ function ShopManagementList({
   onPriceMaxChange: (value: string) => void;
   onPriceMinChange: (value: string) => void;
   onRemove: (itemId: string) => void;
-  onSearchChange: (value: string) => void;
+  onSearchChange: (
+    field: "description" | "name",
+    value: string,
+  ) => void;
   onBulkRemove: (itemIds: string[]) => void;
+  onClearFilters: () => void;
   onSelectionChange: (itemId: string, isSelected: boolean) => void;
   onVisibleItemsSelectionChange: (isSelected: boolean) => void;
   onShowArchivedItemsChange: (value: boolean) => void;
@@ -467,7 +487,7 @@ function ShopManagementList({
     return <p className="mt-4 text-sm text-text-muted">Loading rewards...</p>;
   }
 
-  if (visibleItemCount === 0) {
+  if (totalItemCount === 0) {
     return (
       <div className="mt-4">
         <ShopEmptyState
@@ -576,27 +596,27 @@ function ShopManagementList({
             </th>
             <th scope="col" className="py-2 pr-4 font-semibold">
               <TableHeaderFilter
-                isActive={Boolean(filters.search)}
+                isActive={Boolean(filters.name)}
                 label="Item"
-                onClear={() => onSearchChange("")}
+                onClear={() => onSearchChange("name", "")}
               >
                 <TableHeaderFilterInput
                   label="Search items"
-                  onChange={onSearchChange}
-                  value={filters.search}
+                  onChange={(value) => onSearchChange("name", value)}
+                  value={filters.name}
                 />
               </TableHeaderFilter>
             </th>
             <th scope="col" className="py-2 pr-4 font-semibold">
               <TableHeaderFilter
-                isActive={Boolean(filters.search)}
+                isActive={Boolean(filters.description)}
                 label="Description"
-                onClear={() => onSearchChange("")}
+                onClear={() => onSearchChange("description", "")}
               >
                 <TableHeaderFilterInput
                   label="Search descriptions"
-                  onChange={onSearchChange}
-                  value={filters.search}
+                  onChange={(value) => onSearchChange("description", value)}
+                  value={filters.description}
                 />
               </TableHeaderFilter>
             </th>
@@ -715,6 +735,21 @@ function ShopManagementList({
           />
         ))}
       </div>
+      {visibleItemCount === 0 && (
+        <ShopEmptyState
+          action={
+            <IconButton
+              label="Clear reward filters"
+              onClick={onClearFilters}
+              text="Clear Filters"
+            >
+              <XIcon />
+            </IconButton>
+          }
+          isManagementView
+          totalItemCount={totalItemCount}
+        />
+      )}
     </>
   );
 }
@@ -986,15 +1021,14 @@ function matchesShopFilters(item: ShopItem, filters: ShopFiltersState) {
     return false;
   }
 
-  const query = filters.search.trim().toLowerCase();
-
-  if (!query) {
-    return true;
-  }
-
-  return [item.name, item.description].some((value) =>
-    value.toLowerCase().includes(query),
+  return (
+    includesFilter(item.name, filters.name) &&
+    includesFilter(item.description, filters.description)
   );
+}
+
+function includesFilter(value: string, filter: string) {
+  return value.toLowerCase().includes(filter.trim().toLowerCase());
 }
 
 function matchesPriceFilter(price: number, minimum: string, maximum: string) {

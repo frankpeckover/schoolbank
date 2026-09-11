@@ -35,17 +35,32 @@ import { formatDateTime } from "@/lib/formatters";
 import type {
   GroupListItem,
   GroupMemberItem,
-} from "@/services/group-service";
-import type { StudentListItem } from "@/services/user-service";
+} from "@/domains/groups/group-service";
+import type { StudentListItem } from "@/domains/users/user-service";
 
 const studentSearchDebounceMs = 250;
 const emptyStudents: StudentListItem[] = [];
+
+type GroupFilters = {
+  description: string;
+  memberMax: string;
+  memberMin: string;
+  name: string;
+};
+
+const emptyGroupFilters: GroupFilters = {
+  description: "",
+  memberMax: "",
+  memberMin: "",
+  name: "",
+};
 
 export function AdminGroupsPanel() {
   const [groups, setGroups] = useState<GroupListItem[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [members, setMembers] = useState<GroupMemberItem[]>([]);
-  const [groupSearch, setGroupSearch] = useState("");
+  const [groupFilters, setGroupFilters] =
+    useState<GroupFilters>(emptyGroupFilters);
   const [studentQuery, setStudentQuery] = useState("");
   const [studentResults, setStudentResults] =
     useState<StudentListItem[]>(emptyStudents);
@@ -83,7 +98,7 @@ export function AdminGroupsPanel() {
     (student) => !memberIds.has(student.id),
   );
   const filteredGroups = groups.filter((group) =>
-    matchesGroupSearch(group, groupSearch),
+    matchesGroupFilters(group, groupFilters),
   );
 
   useEffect(() => {
@@ -464,6 +479,16 @@ export function AdminGroupsPanel() {
     setShowInactiveGroups(showInactive);
   }
 
+  function clearGroupFilters() {
+    setGroupFilters(emptyGroupFilters);
+    setMembers([]);
+    setSelectedGroupId("");
+    setSelectedGroupIds([]);
+    setSelectedMemberIds([]);
+    setSelectedStudentIds([]);
+    setShowInactiveGroups(false);
+  }
+
   function handleStudentQueryChange(value: string) {
     setSelectedStudentIds([]);
     setStudentQuery(value);
@@ -498,19 +523,28 @@ export function AdminGroupsPanel() {
           ) : undefined
         }
         groups={filteredGroups}
+        hasActiveFilters={Boolean(
+          groupFilters.name ||
+            groupFilters.description ||
+            groupFilters.memberMin ||
+            groupFilters.memberMax ||
+            showInactiveGroups,
+        )}
         isLoading={isLoadingGroups}
+        onClearFilters={clearGroupFilters}
         onDuplicateGroup={duplicateGroup}
         onEditGroup={editGroup}
         onGroupSelect={selectGroup}
         onGroupSelectionChange={handleGroupSelectionChange}
         onGroupStatusChange={handleGroupStatusChange}
         onVisibleGroupsSelectionChange={handleVisibleGroupsSelectionChange}
-        onSearchChange={setGroupSearch}
+        onFiltersChange={setGroupFilters}
         onShowArchivedChange={handleShowInactiveGroupsChange}
-        search={groupSearch}
+        filters={groupFilters}
         selectedGroupId={selectedGroupId}
         selectedGroupIds={selectedGroupIds}
         showArchived={showInactiveGroups}
+        totalGroupsCount={groups.length}
         toolbar={
           <TableToolbar
             actions={
@@ -683,14 +717,50 @@ export function AdminGroupsPanel() {
   );
 }
 
-function matchesGroupSearch(group: GroupListItem, search: string) {
-  const query = search.trim().toLowerCase();
+function matchesGroupFilters(group: GroupListItem, filters: GroupFilters) {
+  return (
+    includesFilter(group.name, filters.name) &&
+    includesFilter(group.description, filters.description) &&
+    matchesMemberCountFilter(group.memberCount, filters)
+  );
+}
 
-  if (!query) {
-    return true;
+function includesFilter(value: string, filter: string) {
+  return value.toLowerCase().includes(filter.trim().toLowerCase());
+}
+
+function matchesMemberCountFilter(
+  memberCount: number,
+  filters: GroupFilters,
+) {
+  const minimum = parseNumberFilter(filters.memberMin);
+  const maximum = parseNumberFilter(filters.memberMax);
+
+  if (minimum !== null && memberCount < minimum) {
+    return false;
   }
 
-  return `${group.name} ${group.description}`.toLowerCase().includes(query);
+  if (maximum !== null && memberCount > maximum) {
+    return false;
+  }
+
+  return true;
+}
+
+function parseNumberFilter(value: string) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return null;
+  }
+
+  const parsedValue = Number(trimmedValue);
+
+  if (!Number.isFinite(parsedValue)) {
+    return null;
+  }
+
+  return parsedValue;
 }
 
 function downloadGroups(groups: GroupListItem[]) {

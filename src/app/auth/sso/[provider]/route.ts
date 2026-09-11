@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { setSsoStateCookie } from "@/lib/sso-state-cookie";
 import type { SsoProviderType } from "@/lib/sso-types";
-import { SsoAuthService } from "@/services/sso-auth-service";
+import { SsoAuthService } from "@/domains/auth/sso-auth-service";
 
 type SsoStartContext = {
   params: Promise<{

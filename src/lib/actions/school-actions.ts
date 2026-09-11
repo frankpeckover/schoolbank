@@ -5,8 +5,8 @@ import {
   requireUser,
 } from "@/lib/actions/action-auth";
 import { assertSameOriginRequest } from "@/lib/security/origin";
-import { SchoolService } from "@/services/school-service";
-import type { UpdateSchoolInfoInput } from "@/services/school-service";
+import { SchoolService } from "@/domains/organisation/school-service";
+import type { UpdateSchoolInfoInput } from "@/domains/organisation/school-service";
 
 const schoolService = new SchoolService();
 

@@ -4,9 +4,9 @@ import {
   getSsoStateCookie,
 } from "@/lib/sso-state-cookie";
 import type { SsoProviderType } from "@/lib/sso-types";
-import { SessionService } from "@/services/session-service";
-import { SsoAuthError, SsoAuthService } from "@/services/sso-auth-service";
-import { ErrorLogService } from "@/services/error-log-service";
+import { SessionService } from "@/domains/auth/session-service";
+import { SsoAuthError, SsoAuthService } from "@/domains/auth/sso-auth-service";
+import { ErrorLogService } from "@/domains/audit/error-log-service";
 
 type SsoCallbackContext = {
   params: Promise<{

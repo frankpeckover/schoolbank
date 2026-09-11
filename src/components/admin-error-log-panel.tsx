@@ -4,11 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { listErrorLog } from "@/lib/actions";
 import { formatDateTime } from "@/lib/formatters";
-import type { ErrorLogItem } from "@/services/error-log-service";
+import type { ErrorLogItem } from "@/domains/audit/error-log-service";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
+import { EmptyState } from "@/components/ui/empty-state";
 import { FixedNotification } from "@/components/ui/fixed-notification";
 import { IconButton } from "@/components/ui/icon-button";
-import { EyeIcon } from "@/components/ui/icons";
+import { EyeIcon, XIcon } from "@/components/ui/icons";
 import {
   ListPagination,
   usePagedList,
@@ -47,6 +48,10 @@ export function AdminErrorLogPanel() {
     setPage,
     totalPages,
   } = usePagedList(filteredEntries);
+
+  function clearErrorFilters() {
+    setFilters(emptyErrorFilters);
+  }
 
   useEffect(() => {
     let isMounted = true;
@@ -87,12 +92,7 @@ export function AdminErrorLogPanel() {
         {!isLoading && !error && entries.length === 0 && (
           <p className="text-sm text-text-muted">No server errors recorded.</p>
         )}
-        {!isLoading && !error && entries.length > 0 && filteredEntries.length === 0 && (
-          <p className="text-sm text-text-muted">
-            No server errors match these filters.
-          </p>
-        )}
-        {!isLoading && !error && filteredEntries.length > 0 && (
+        {!isLoading && !error && entries.length > 0 && (
           <>
             <ErrorLogList
               entries={visibleEntries}
@@ -107,12 +107,29 @@ export function AdminErrorLogPanel() {
                 </TableToolbar>
               }
             />
-            <ListPagination
-              onPageChange={setPage}
-              page={page}
-              totalCount={filteredEntries.length}
-              totalPages={totalPages}
-            />
+            {filteredEntries.length === 0 && (
+              <EmptyState
+                action={
+                  <IconButton
+                    label="Clear error filters"
+                    onClick={clearErrorFilters}
+                    text="Clear Filters"
+                  >
+                    <XIcon />
+                  </IconButton>
+                }
+                description="Try changing or clearing the filters to see more errors."
+                title="No matching errors"
+              />
+            )}
+            {filteredEntries.length > 0 && (
+              <ListPagination
+                onPageChange={setPage}
+                page={page}
+                totalCount={filteredEntries.length}
+                totalPages={totalPages}
+              />
+            )}
           </>
         )}
       </div>

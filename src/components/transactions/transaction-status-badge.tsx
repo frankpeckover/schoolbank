@@ -2,7 +2,7 @@ import {
   StatusBadge,
   type StatusTone,
 } from "@/components/ui/status-badge";
-import type { TransactionLogItem } from "@/services/transaction-service";
+import type { TransactionLogItem } from "@/domains/ledger/transaction-service";
 
 export function TransactionStatusBadge({
   transaction,

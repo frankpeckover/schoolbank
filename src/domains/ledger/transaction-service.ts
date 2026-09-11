@@ -11,10 +11,10 @@ import {
   LedgerService,
   type LedgerEntryStatus,
   type LedgerEntryType,
-} from "@/services/ledger-service";
-import { AuditService } from "@/services/audit-service";
-import { ErrorLogService } from "@/services/error-log-service";
-import type { ShopPurchaseStatus } from "@/services/shop-service";
+} from "@/domains/ledger/ledger-service";
+import { AuditService } from "@/domains/audit/audit-service";
+import { ErrorLogService } from "@/domains/audit/error-log-service";
+import type { ShopPurchaseStatus } from "@/domains/rewards/shop-service";
 
 export type TransactionLogItem = {
   accountName: string;

@@ -3,8 +3,8 @@ import type {
 } from "@/components/transactions/ledger-adjustment-types";
 import { XIcon } from "@/components/ui/icons";
 import { SearchInput } from "@/components/ui/search-input";
-import type { GroupListItem } from "@/services/group-service";
-import type { StudentListItem } from "@/services/user-service";
+import type { GroupListItem } from "@/domains/groups/group-service";
+import type { StudentListItem } from "@/domains/users/user-service";
 
 type AdjustmentRecipientPanelProps = {
   groups: GroupListItem[];
