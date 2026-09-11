@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { saveShopItem, uploadShopItemImage } from "@/lib/actions";
 import { PackageIcon, PlusIcon } from "@/components/ui/icons";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import type { SaveShopItemInput, ShopItem } from "@/domains/rewards/shop-service";
 
@@ -110,11 +111,11 @@ export function ShopItemModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="theme-panel motion-pop w-full max-w-lg p-5 shadow-lg">
+    <div className="app-modal-backdrop fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+      <div className="app-modal theme-panel motion-pop w-full max-w-lg p-5 shadow-lg">
         <ModalHeader item={item} onClose={onClose} />
 
-        <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+        <form className="app-modal-body space-y-4" onSubmit={handleSubmit}>
           <TextField
             id="itemName"
             label="Name"
@@ -152,22 +153,25 @@ export function ShopItemModal({
             />
           </div>
 
-          <label className="flex cursor-pointer items-start gap-3 rounded-md border border-border-subtle bg-surface px-3 py-3 text-sm text-text-control">
-            <input
-              checked={form.isQuantityUnlimited}
-              className="mt-0.5 h-4 w-4 accent-brand"
-              onChange={(event) =>
-                updateFormField("isQuantityUnlimited", event.target.checked)
-              }
-              type="checkbox"
-            />
-            <span>
-              <span className="block font-semibold">Unlimited quantity</span>
-              <span className="mt-0.5 block text-xs text-text-muted">
-                Requests for this reward will not reserve or reduce stock.
+          <div className="flex items-start justify-between gap-3 rounded-md border border-border-subtle bg-surface px-3 py-3 text-sm text-text-control">
+            <label className="flex min-w-0 cursor-pointer items-start gap-3">
+              <input
+                checked={form.isQuantityUnlimited}
+                className="mt-0.5 h-4 w-4 accent-brand"
+                onChange={(event) =>
+                  updateFormField("isQuantityUnlimited", event.target.checked)
+                }
+                type="checkbox"
+              />
+              <span>
+                <span className="block font-semibold">Unlimited quantity</span>
+                <span className="mt-0.5 block text-xs text-text-muted">
+                  Requests for this reward will not reserve or reduce stock.
+                </span>
               </span>
-            </span>
-          </label>
+            </label>
+            <InfoTooltip label="Students still spend the reward price. Unlimited quantity only means there is no stock limit to reserve or reduce." />
+          </div>
 
           {error && <p className={modalCopy.errorClassName}>{error}</p>}
 
@@ -186,7 +190,7 @@ function ModalHeader({
   onClose,
 }: Pick<ShopItemModalProps, "item" | "onClose">) {
   return (
-    <div className="flex items-start justify-between gap-4">
+    <div className="app-modal-header flex items-start justify-between gap-4">
       <div className="min-w-0">
         <h3 className="text-2xl font-semibold">
           {item ? modalCopy.editTitle : modalCopy.newTitle}

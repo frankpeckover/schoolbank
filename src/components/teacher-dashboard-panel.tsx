@@ -3,9 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { ShopRequestsPanel } from "@/components/shop/shop-requests-panel";
-import { StudentBalanceCard } from "@/components/student-balance-card";
+import {
+  StudentBalanceCard,
+  type StudentBalanceCardStudent,
+} from "@/components/student-balance-card";
 import { LedgerAdjustmentForm } from "@/components/transactions/ledger-adjustment-form";
 import { FixedNotification } from "@/components/ui/fixed-notification";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import {
   PlusIcon,
   SparkleIcon,
@@ -20,10 +24,18 @@ import { CreditActionControl } from "@/components/ui/credit-action-control";
 import { SearchInput } from "@/components/ui/search-input";
 import { useDialogFocus } from "@/components/ui/use-dialog-focus";
 import {
+  createLedgerAdjustment,
   getCurrentTeacherClass,
+  getMyTransactionPresets,
+  listGroupMembers,
   listGroups,
   listStudentBalances,
 } from "@/lib/actions";
+import {
+  defaultTransactionPresets,
+  getDefaultQuickAdjustments,
+  type PersonalTransactionPresets,
+} from "@/lib/transaction-presets";
 import type { AdjustmentDirection } from "@/components/transactions/ledger-adjustment-types";
 import type { GroupListItem } from "@/domains/groups/group-service";
 import type { CurrentClass } from "@/domains/timetable/timetable-service";
@@ -49,6 +61,18 @@ type AdjustmentTargetSelection =
       version: number;
     };
 
+type StudentDisplayScope = "all-students" | "current-class";
+
+type SelectedGroupView = {
+  memberIds: Set<string>;
+  name: string;
+};
+
+const defaultPersonalPresets: PersonalTransactionPresets = {
+  ...defaultTransactionPresets,
+  ...getDefaultQuickAdjustments(defaultTransactionPresets),
+};
+
 export function TeacherDashboardPanel({
   currencyName,
 }: TeacherDashboardPanelProps) {
@@ -58,11 +82,21 @@ export function TeacherDashboardPanel({
   );
   const [groups, setGroups] = useState<GroupListItem[]>([]);
   const [search, setSearch] = useState("");
+  const [selectedGroupView, setSelectedGroupView] =
+    useState<SelectedGroupView | null>(null);
+  const [studentDisplayScope, setStudentDisplayScope] =
+    useState<StudentDisplayScope>("current-class");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [personalPresets, setPersonalPresets] =
+    useState<PersonalTransactionPresets>(defaultPersonalPresets);
+  const [quickActionStudentId, setQuickActionStudentId] = useState<
+    string | null
+  >(null);
   const [selection, setSelection] =
     useState<AdjustmentTargetSelection | null>(null);
+  const quickActionPendingRef = useRef(false);
   const selectionVersionRef = useRef(0);
 
   useEffect(() => {
@@ -70,17 +104,19 @@ export function TeacherDashboardPanel({
 
     async function loadDashboard() {
       try {
-        const [loadedCurrentClass, loadedBalances, loadedGroups] =
+        const [loadedCurrentClass, loadedBalances, loadedGroups, loadedPresets] =
           await Promise.all([
             getCurrentTeacherClass(),
             listStudentBalances(),
             listGroups(false),
+            getMyTransactionPresets(),
           ]);
 
         if (isMounted) {
           setCurrentClass(loadedCurrentClass);
           setStudentBalances(loadedBalances.filter((student) => student.isActive));
           setGroups(loadedGroups.filter((group) => group.isActive));
+          setPersonalPresets(loadedPresets);
           setError(null);
         }
       } catch {
@@ -102,8 +138,21 @@ export function TeacherDashboardPanel({
   }, []);
 
   const visibleStudents = useMemo(
-    () => getVisibleStudents(search, currentClass, studentBalances),
-    [currentClass, search, studentBalances],
+    () =>
+      getVisibleStudents(
+        search,
+        currentClass,
+        studentBalances,
+        studentDisplayScope,
+        selectedGroupView,
+      ),
+    [
+      currentClass,
+      search,
+      selectedGroupView,
+      studentBalances,
+      studentDisplayScope,
+    ],
   );
   const visibleGroups = useMemo(
     () => getVisibleGroups(search, groups),
@@ -115,7 +164,10 @@ export function TeacherDashboardPanel({
     setPage: setStudentPage,
     totalPages: studentTotalPages,
   } = usePagedList(visibleStudents);
-  const isDefaultingToCurrentClass = search.trim().length === 0;
+  const isDefaultingToCurrentClass =
+    search.trim().length === 0 &&
+    studentDisplayScope === "current-class" &&
+    !selectedGroupView;
 
   function handleStudentsSelected(
     students: StudentListItem[],
@@ -151,6 +203,85 @@ export function TeacherDashboardPanel({
     }
 
     handleStudentsSelected(visibleStudents.map(toStudentListItem), "add");
+  }
+
+  async function handleQuickAdjustment(
+    student: StudentBalanceCardStudent,
+    direction: AdjustmentDirection,
+  ) {
+    if (quickActionPendingRef.current) {
+      return;
+    }
+
+    const preset =
+      direction === "add"
+        ? personalPresets.quickAdd
+        : personalPresets.quickRemove;
+
+    quickActionPendingRef.current = true;
+    setQuickActionStudentId(student.id);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const result = await createLedgerAdjustment({
+        amount: direction === "add" ? preset.amount : -preset.amount,
+        reason: preset.reason,
+        studentUserId: student.id,
+      });
+
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+
+      const successMessage =
+        result.message ??
+        `${direction === "add" ? "Added" : "Removed"} ${preset.amount} ${currencyName} ${direction === "add" ? "to" : "from"} ${student.displayName} for ${preset.reason}.`;
+
+      setMessage(successMessage);
+
+      try {
+        await refreshStudentData();
+      } catch {
+        setMessage(`${successMessage} Refresh the page if balances look stale.`);
+      }
+    } catch {
+      setError("Could not create quick transaction.");
+    } finally {
+      quickActionPendingRef.current = false;
+      setQuickActionStudentId(null);
+    }
+  }
+
+  function toggleStudentDisplayScope() {
+    setSelectedGroupView(null);
+    setStudentDisplayScope((currentScope) =>
+      currentScope === "current-class" ? "all-students" : "current-class",
+    );
+    setStudentPage(1);
+  }
+
+  async function handleGroupExpanded(group: GroupListItem) {
+    setError(null);
+
+    try {
+      const members = await listGroupMembers(group.id);
+      setSearch("");
+      setSelectedGroupView({
+        memberIds: new Set(members.map((member) => member.id)),
+        name: group.name,
+      });
+      setStudentPage(1);
+    } catch {
+      setError(`Could not load students in ${group.name}.`);
+    }
+  }
+
+  function handleSearchChanged(value: string) {
+    setSelectedGroupView(null);
+    setSearch(value);
+    setStudentPage(1);
   }
 
   async function refreshStudentData() {
@@ -191,6 +322,7 @@ export function TeacherDashboardPanel({
               className="mb-4"
               compact
               currencyName={currencyName}
+              helpText="Students add rewards to their cart first. Their balance and reward stock are reserved until you approve or deny the request."
               maxVisibleRequests={4}
               showViewToggle={false}
               title="Reward Requests"
@@ -202,19 +334,31 @@ export function TeacherDashboardPanel({
                   aria-label="Search students or groups"
                   className="min-w-0 flex-1"
                   id="teacherDashboardSearch"
-                  onChange={setSearch}
+                  onChange={handleSearchChanged}
                   placeholder="Search students or groups, or separate multiple searches with a semicolon"
                   value={search}
                 />
                 <button
-                  className="inline-flex h-[46px] shrink-0 items-center justify-center gap-2 rounded-md border border-brand bg-brand px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:border-button-border disabled:bg-panel-soft disabled:text-text-muted disabled:shadow-none"
-                  disabled={visibleStudents.length === 0}
-                  onClick={handleIssueAllShown}
+                  className="inline-flex h-[46px] shrink-0 items-center justify-center rounded-md border border-button-border px-4 text-sm font-semibold text-text-control transition hover:bg-panel-soft"
+                  onClick={toggleStudentDisplayScope}
                   type="button"
                 >
-                  <PlusIcon />
-                  <span>Issue all</span>
+                  {studentDisplayScope === "current-class"
+                    ? "Show all students"
+                    : "Show current class"}
                 </button>
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    className="inline-flex h-[46px] items-center justify-center gap-2 rounded-md border border-brand bg-brand px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:border-button-border disabled:bg-panel-soft disabled:text-text-muted disabled:shadow-none"
+                    disabled={visibleStudents.length === 0}
+                    onClick={handleIssueAllShown}
+                    type="button"
+                  >
+                    <PlusIcon />
+                    <span>Issue all</span>
+                  </button>
+                  <InfoTooltip label="Opens one credit workflow for every student currently shown. Review the student count before submitting." />
+                </div>
               </div>
 
               {isDefaultingToCurrentClass && !currentClass && (
@@ -237,6 +381,23 @@ export function TeacherDashboardPanel({
                   )}
                 </div>
               )}
+
+              {selectedGroupView && (
+                <div className="mt-3 flex items-center gap-2 text-sm text-text-muted">
+                  <span>
+                    Showing <strong className="font-semibold text-foreground">{selectedGroupView.name}</strong>
+                  </span>
+                  <button
+                    aria-label={`Clear ${selectedGroupView.name} group filter`}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-md text-text-muted transition hover:bg-panel-soft hover:text-foreground"
+                    onClick={() => setSelectedGroupView(null)}
+                    title="Clear group filter"
+                    type="button"
+                  >
+                    <XIcon />
+                  </button>
+                </div>
+              )}
             </div>
 
             {visibleStudents.length > 0 && (
@@ -245,16 +406,17 @@ export function TeacherDashboardPanel({
                   {visibleStudentPage.map((student) => (
                     <StudentBalanceCard
                       currencyName={currencyName}
+                      isQuickActionPending={quickActionStudentId === student.id}
                       key={student.id}
-                      onAdd={() =>
+                      onAdjust={() =>
                         handleStudentsSelected([toStudentListItem(student)], "add")
                       }
-                      onRemove={() =>
-                        handleStudentsSelected(
-                          [toStudentListItem(student)],
-                          "remove",
-                        )
+                      onQuickAdd={() => handleQuickAdjustment(student, "add")}
+                      onQuickRemove={() =>
+                        handleQuickAdjustment(student, "remove")
                       }
+                      quickAddAmount={personalPresets.quickAdd.amount}
+                      quickRemoveAmount={personalPresets.quickRemove.amount}
                       student={student}
                     />
                   ))}
@@ -275,6 +437,7 @@ export function TeacherDashboardPanel({
                     group={group}
                     key={group.id}
                     onAdd={() => handleGroupSelected(group, "add")}
+                    onExpand={() => handleGroupExpanded(group)}
                     onRemove={() => handleGroupSelected(group, "remove")}
                   />
                 ))}
@@ -285,7 +448,9 @@ export function TeacherDashboardPanel({
               visibleGroups.length === 0 &&
               !isDefaultingToCurrentClass && (
                 <p className="text-sm text-text-muted">
-                  No matching students or groups.
+                  {selectedGroupView
+                    ? `No active students are assigned to ${selectedGroupView.name}.`
+                    : "No matching students or groups."}
                 </p>
               )}
           </div>
@@ -322,15 +487,22 @@ function CountChip({
 function GroupCreditCard({
   group,
   onAdd,
+  onExpand,
   onRemove,
 }: {
   group: GroupListItem;
   onAdd: () => void;
+  onExpand: () => void;
   onRemove: () => void;
 }) {
   return (
     <article className="theme-card p-3">
-      <div className="flex items-center gap-3">
+      <button
+        aria-label={`Show students in ${group.name}`}
+        className="flex w-full items-center gap-3 text-left"
+        onClick={onExpand}
+        type="button"
+      >
         <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-panel-soft text-text-muted">
           <UsersIcon />
         </span>
@@ -342,7 +514,7 @@ function GroupCreditCard({
             {group.memberCount} students
           </p>
         </div>
-      </div>
+      </button>
       <div className="mt-3 flex justify-end">
         <CreditActionControl
           addAriaLabel={`Add credits to ${group.name}`}
@@ -377,16 +549,16 @@ function QuickAdjustmentModal({
         }`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+    <div className="app-modal-backdrop fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
       <div
         aria-label={`${selection.direction === "add" ? "Add" : "Take"} ${currencyName}`}
         aria-modal="true"
-        className="theme-panel motion-pop max-h-[90vh] w-full max-w-xl overflow-y-auto p-5 shadow-lg"
+        className="app-modal theme-panel motion-pop max-h-[90vh] w-full max-w-xl overflow-y-auto p-5 shadow-lg"
         ref={dialogRef}
         role="dialog"
         tabIndex={-1}
       >
-        <div className="flex items-start justify-between gap-3">
+        <div className="app-modal-header flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3 className="truncate text-lg font-semibold">
               {selection.direction === "add" ? "Add" : "Take"} {currencyName}
@@ -405,32 +577,34 @@ function QuickAdjustmentModal({
           </button>
         </div>
 
-        <LedgerAdjustmentForm
-          currencyName={currencyName}
-          onCreated={onCreated}
-          onError={setError}
-          preferredDirection={selection.direction}
-          preferredGroup={
-            selection.kind === "group" ? selection.group : undefined
-          }
-          preferredGroupId={
-            selection.kind === "group" ? selection.group.id : undefined
-          }
-          preferredGroupSelectionVersion={selection.version}
-          preferredStudents={
-            selection.kind === "students" ? selection.students : undefined
-          }
-          preferredStudentSelectionVersion={selection.version}
-        />
+        <div className="app-modal-body">
+          <LedgerAdjustmentForm
+            currencyName={currencyName}
+            onCreated={onCreated}
+            onError={setError}
+            preferredDirection={selection.direction}
+            preferredGroup={
+              selection.kind === "group" ? selection.group : undefined
+            }
+            preferredGroupId={
+              selection.kind === "group" ? selection.group.id : undefined
+            }
+            preferredGroupSelectionVersion={selection.version}
+            preferredStudents={
+              selection.kind === "students" ? selection.students : undefined
+            }
+            preferredStudentSelectionVersion={selection.version}
+          />
 
-        {error && (
-          <p
-            className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong"
-            role="alert"
-          >
-            {error}
-          </p>
-        )}
+          {error && (
+            <p
+              className="mt-4 rounded-md border border-danger-border bg-danger-soft px-3 py-2 text-sm font-semibold text-danger-strong"
+              role="alert"
+            >
+              {error}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -440,11 +614,21 @@ function getVisibleStudents(
   search: string,
   currentClass: CurrentClass | null,
   studentBalances: StudentBalanceItem[],
+  studentDisplayScope: StudentDisplayScope,
+  selectedGroupView: SelectedGroupView | null,
 ) {
   const trimmedSearch = search.trim();
 
   if (!trimmedSearch) {
-    return currentClass?.students ?? [];
+    if (selectedGroupView) {
+      return studentBalances.filter((student) =>
+        selectedGroupView.memberIds.has(student.id),
+      );
+    }
+
+    return studentDisplayScope === "all-students"
+      ? studentBalances
+      : currentClass?.students ?? [];
   }
 
   const terms = splitSearchTerms(trimmedSearch);

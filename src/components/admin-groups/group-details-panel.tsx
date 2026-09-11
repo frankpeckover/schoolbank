@@ -22,14 +22,16 @@ export function GroupDetailsPanel({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="theme-panel motion-pop max-h-full w-full max-w-4xl overflow-y-auto p-5 shadow-lg">
-        <div className="flex items-start justify-between gap-4">
+    <div className="app-modal-backdrop fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+      <div className="app-modal theme-panel motion-pop max-h-full w-full max-w-4xl overflow-y-auto p-5 shadow-lg">
+        <div className="app-modal-header flex items-start justify-between gap-4">
           <GroupSummary memberCount={members.length} selectedGroup={selectedGroup} />
           <ModalCloseButton onClick={onClose} />
         </div>
 
-        <GroupMembersList isLoading={isLoadingMembers} members={members} />
+        <div className="app-modal-body">
+          <GroupMembersList isLoading={isLoadingMembers} members={members} />
+        </div>
       </div>
     </div>
   );

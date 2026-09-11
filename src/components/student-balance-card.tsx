@@ -4,6 +4,7 @@ import {
   ArrowDownIcon,
   ArrowUpIcon,
   MinusIcon,
+  PencilIcon,
 } from "@/components/ui/icons";
 import { CreditActionControl } from "@/components/ui/credit-action-control";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -20,18 +21,26 @@ export type StudentBalanceCardStudent = {
 
 type StudentBalanceCardProps = {
   currencyName: string;
-  onAdd?: (student: StudentBalanceCardStudent) => void;
-  onRemove?: (student: StudentBalanceCardStudent) => void;
+  isQuickActionPending?: boolean;
+  onAdjust?: (student: StudentBalanceCardStudent) => void;
+  onQuickAdd?: (student: StudentBalanceCardStudent) => void;
+  onQuickRemove?: (student: StudentBalanceCardStudent) => void;
+  quickAddAmount?: number;
+  quickRemoveAmount?: number;
   student: StudentBalanceCardStudent;
 };
 
 export function StudentBalanceCard({
   currencyName,
-  onAdd,
-  onRemove,
+  isQuickActionPending = false,
+  onAdjust,
+  onQuickAdd,
+  onQuickRemove,
+  quickAddAmount,
+  quickRemoveAmount,
   student,
 }: StudentBalanceCardProps) {
-  const hasActions = Boolean(onAdd || onRemove);
+  const hasActions = Boolean(onAdjust || onQuickAdd || onQuickRemove);
 
   return (
     <article className="theme-card p-3">
@@ -50,19 +59,48 @@ export function StudentBalanceCard({
         </div>
       </div>
 
-      <div className="mt-3 flex items-end justify-between gap-3">
+      <div className="mt-3">
         <BalanceAmount
           amount={student.balance}
           currencyName={currencyName}
         />
 
         {hasActions && (
-          <CreditActionControl
-            addAriaLabel={`Add ${currencyName} to ${student.displayName}`}
-            onAdd={onAdd ? () => onAdd(student) : undefined}
-            onRemove={onRemove ? () => onRemove(student) : undefined}
-            removeAriaLabel={`Remove ${currencyName} from ${student.displayName}`}
-          />
+          <div className="mt-3 flex items-center gap-2">
+            {onAdjust && (
+              <button
+                className="inline-flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md border border-button-border bg-surface px-3 text-xs font-semibold text-text-control transition hover:bg-panel-soft"
+                onClick={() => onAdjust(student)}
+                type="button"
+              >
+                <PencilIcon className="h-3.5 w-3.5" />
+                Custom
+              </button>
+            )}
+            {(onQuickAdd || onQuickRemove) && (
+              <CreditActionControl
+                addAriaLabel={`Quick add ${quickAddAmount ?? "credits"} to ${student.displayName}`}
+                addLabel={quickAddAmount ? formatAmount(quickAddAmount) : "Add"}
+                amountLabels
+                onAdd={
+                  onQuickAdd && !isQuickActionPending
+                    ? () => onQuickAdd(student)
+                    : undefined
+                }
+                onRemove={
+                  onQuickRemove && !isQuickActionPending
+                    ? () => onQuickRemove(student)
+                    : undefined
+                }
+                removeAriaLabel={`Quick remove ${quickRemoveAmount ?? "credits"} from ${student.displayName}`}
+                removeLabel={
+                  quickRemoveAmount
+                    ? formatAmount(quickRemoveAmount)
+                    : "Remove"
+                }
+              />
+            )}
+          </div>
         )}
       </div>
     </article>

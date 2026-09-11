@@ -1,7 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { CheckIcon, CopyIcon, EyeIcon, PencilIcon, XIcon } from "@/components/ui/icons";
+import {
+  CheckIcon,
+  CopyIcon,
+  EyeIcon,
+  PencilIcon,
+  UsersIcon,
+  XIcon,
+} from "@/components/ui/icons";
 import { IconButton } from "@/components/ui/icon-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -37,6 +44,7 @@ type GroupListPanelProps = {
   onClearFilters: () => void;
   onDuplicateGroup: (group: GroupListItem) => void;
   onEditGroup: (group: GroupListItem) => void;
+  onEditMembers: (group: GroupListItem) => void;
   onGroupSelect: (group: GroupListItem) => void;
   onGroupSelectionChange: (groupId: string, isSelected: boolean) => void;
   onGroupStatusChange: (group: GroupListItem) => void;
@@ -59,6 +67,7 @@ export function GroupListPanel({
   onClearFilters,
   onDuplicateGroup,
   onEditGroup,
+  onEditMembers,
   onGroupSelect,
   onGroupSelectionChange,
   onGroupStatusChange,
@@ -99,6 +108,7 @@ export function GroupListPanel({
               groups={visibleGroups}
               onDuplicateGroup={onDuplicateGroup}
               onEditGroup={onEditGroup}
+              onEditMembers={onEditMembers}
               onGroupSelect={onGroupSelect}
               onGroupSelectionChange={onGroupSelectionChange}
               onGroupStatusChange={onGroupStatusChange}
@@ -148,6 +158,7 @@ function GroupList({
   groups,
   onDuplicateGroup,
   onEditGroup,
+  onEditMembers,
   onGroupSelect,
   onGroupSelectionChange,
   onGroupStatusChange,
@@ -163,6 +174,7 @@ function GroupList({
   groups: GroupListItem[];
   onDuplicateGroup: (group: GroupListItem) => void;
   onEditGroup: (group: GroupListItem) => void;
+  onEditMembers: (group: GroupListItem) => void;
   onGroupSelect: (group: GroupListItem) => void;
   onGroupSelectionChange: (groupId: string, isSelected: boolean) => void;
   onGroupStatusChange: (group: GroupListItem) => void;
@@ -193,6 +205,7 @@ function GroupList({
             key={group.id}
             onDuplicateGroup={onDuplicateGroup}
             onEditGroup={onEditGroup}
+            onEditMembers={onEditMembers}
             onGroupSelect={onGroupSelect}
             onGroupSelectionChange={onGroupSelectionChange}
             onGroupStatusChange={onGroupStatusChange}
@@ -334,6 +347,7 @@ function GroupList({
                   group={group}
                   onDuplicateGroup={onDuplicateGroup}
                   onEditGroup={onEditGroup}
+                  onEditMembers={onEditMembers}
                   onGroupSelect={onGroupSelect}
                   onGroupStatusChange={onGroupStatusChange}
                 />
@@ -351,6 +365,7 @@ function GroupCard({
   isSelected,
   onDuplicateGroup,
   onEditGroup,
+  onEditMembers,
   onGroupSelect,
   onGroupSelectionChange,
   onGroupStatusChange,
@@ -360,6 +375,7 @@ function GroupCard({
   isSelected: boolean;
   onDuplicateGroup: (group: GroupListItem) => void;
   onEditGroup: (group: GroupListItem) => void;
+  onEditMembers: (group: GroupListItem) => void;
   onGroupSelect: (group: GroupListItem) => void;
   onGroupSelectionChange: (groupId: string, isSelected: boolean) => void;
   onGroupStatusChange: (group: GroupListItem) => void;
@@ -399,6 +415,7 @@ function GroupCard({
             group={group}
             onDuplicateGroup={onDuplicateGroup}
             onEditGroup={onEditGroup}
+            onEditMembers={onEditMembers}
             onGroupSelect={onGroupSelect}
             onGroupStatusChange={onGroupStatusChange}
           />
@@ -416,12 +433,14 @@ function GroupActions({
   group,
   onDuplicateGroup,
   onEditGroup,
+  onEditMembers,
   onGroupSelect,
   onGroupStatusChange,
 }: {
   group: GroupListItem;
   onDuplicateGroup: (group: GroupListItem) => void;
   onEditGroup: (group: GroupListItem) => void;
+  onEditMembers: (group: GroupListItem) => void;
   onGroupSelect: (group: GroupListItem) => void;
   onGroupStatusChange: (group: GroupListItem) => void;
 }) {
@@ -441,8 +460,13 @@ function GroupActions({
         },
         {
           icon: <PencilIcon />,
-          label: "Edit",
+          label: "Edit Group",
           onSelect: () => onEditGroup(group),
+        },
+        {
+          icon: <UsersIcon />,
+          label: "Edit Members",
+          onSelect: () => onEditMembers(group),
         },
         {
           icon: group.isActive ? <XIcon /> : <CheckIcon />,

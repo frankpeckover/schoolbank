@@ -39,16 +39,16 @@ export function ResetUserPasswordModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3 py-2 sm:px-4 sm:py-6">
+    <div className="app-modal-backdrop fixed inset-0 z-50 flex items-center justify-center px-3 py-2 sm:px-4 sm:py-6">
       <div
         aria-label={`Reset password for ${user.displayName}`}
         aria-modal="true"
-        className="theme-panel motion-pop w-full max-w-md p-4 shadow-lg sm:p-5"
+        className="app-modal theme-panel motion-pop w-full max-w-md p-4 shadow-lg sm:p-5"
         ref={dialogRef}
         role="dialog"
         tabIndex={-1}
       >
-        <div className="flex items-start justify-between gap-4">
+        <div className="app-modal-header flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h3 className="text-xl font-semibold sm:text-2xl">Reset Password</h3>
             <p className="mt-1 text-sm text-text-muted">
@@ -58,7 +58,7 @@ export function ResetUserPasswordModal({
           <ModalCloseButton onClick={onClose} />
         </div>
 
-        <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+        <form className="app-modal-body space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="text-sm font-semibold text-text-control" htmlFor="resetUserPassword">
               New password

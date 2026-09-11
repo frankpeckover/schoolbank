@@ -194,10 +194,24 @@ const exportTables: ExportTable[] = [
         issuer_url,
         allowed_domain,
         is_enabled,
+        is_jit_enabled,
         created_at,
         updated_at
       from sso_identity_providers
       order by provider_type
+    `,
+  },
+  {
+    fileName: "sso_user_identities.csv",
+    query: `
+      select
+        user_id,
+        provider_type,
+        provider_subject,
+        created_at,
+        last_login_at
+      from sso_user_identities
+      order by created_at, id
     `,
   },
   {

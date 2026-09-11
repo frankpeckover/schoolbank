@@ -6,6 +6,7 @@ export type SsoProviderSettings = {
   displayName: string;
   hasClientSecret: boolean;
   isEnabled: boolean;
+  isJitEnabled: boolean;
   issuerUrl: string;
   providerType: SsoProviderType;
   tenantId: string;
@@ -32,4 +33,3 @@ export const ssoProviderDefaults: Record<
     issuerUrl: "https://login.microsoftonline.com",
   },
 };
-

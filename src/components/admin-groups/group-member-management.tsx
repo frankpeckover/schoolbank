@@ -44,7 +44,7 @@ export function GroupMemberManagement({
   studentQuery,
 }: GroupMemberManagementProps) {
   return (
-    <div className="mt-5 border-t border-border-subtle pt-5">
+    <div className="space-y-5">
       <GroupStudentSearch
         availableStudents={availableStudents}
         isSearching={isSearchingStudents}

@@ -335,6 +335,7 @@ function PasswordFieldIcon() {
 
 function getSsoErrorMessage(status: string) {
   const messages: Record<string, string> = {
+    account_disabled: "This account has been disabled. Contact your administrator.",
     expired_token: "SSO sign-in failed because the provider token expired.",
     email_domain_mismatch: "SSO sign-in failed because the account email domain does not match the allowed domains in SSO settings.",
     hosted_domain_missing: "SSO sign-in failed because Google did not return a Workspace domain.",
@@ -413,16 +414,16 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+    <div className="app-modal-backdrop fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
       <div
         aria-label="Reset password"
         aria-modal="true"
-        className="theme-panel login-panel motion-pop w-full max-w-md p-5 shadow-lg"
+        className="app-modal theme-panel login-panel motion-pop w-full max-w-md p-5 shadow-lg"
         ref={dialogRef}
         role="dialog"
         tabIndex={-1}
       >
-        <div className="flex items-start justify-between gap-4">
+        <div className="app-modal-header flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2 className="text-2xl font-semibold">Reset password</h2>
             <p className="mt-1 text-sm text-text-muted">
@@ -432,7 +433,7 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
           <ModalCloseButton onClick={onClose} />
         </div>
 
-        <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+        <form className="app-modal-body space-y-4" onSubmit={handleSubmit}>
           <div>
             <label
               className="text-sm font-semibold text-text-control"

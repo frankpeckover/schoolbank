@@ -2,52 +2,19 @@
 
 import { useState, type FormEvent } from "react";
 import { updateGroup } from "@/lib/actions";
-import { GroupMemberManagement } from "@/components/admin-groups/group-member-management";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
-import type {
-  GroupListItem,
-  GroupMemberItem,
-} from "@/domains/groups/group-service";
-import type { StudentListItem } from "@/domains/users/user-service";
+import type { GroupListItem } from "@/domains/groups/group-service";
 
 type GroupEditModalProps = {
-  availableStudents: StudentListItem[];
   group: GroupListItem;
-  isLoadingMembers: boolean;
-  isSearchingStudents: boolean;
-  members: GroupMemberItem[];
-  onAddSelectedStudents: () => void;
   onClose: () => void;
-  onMemberSelectionToggle: (memberId: string) => void;
-  onRemoveSelectedMembers: () => void;
-  onRemoveStudent: (member: GroupMemberItem) => void;
   onSaved: () => void;
-  onStudentQueryChange: (value: string) => void;
-  onStudentSelectionToggle: (student: StudentListItem) => void;
-  selectedMemberIds: string[];
-  selectedStudentIds: string[];
-  selectedStudents: StudentListItem[];
-  studentQuery: string;
 };
 
 export function GroupEditModal({
-  availableStudents,
   group,
-  isLoadingMembers,
-  isSearchingStudents,
-  members,
-  onAddSelectedStudents,
   onClose,
-  onMemberSelectionToggle,
-  onRemoveSelectedMembers,
-  onRemoveStudent,
   onSaved,
-  onStudentQueryChange,
-  onStudentSelectionToggle,
-  selectedMemberIds,
-  selectedStudentIds,
-  selectedStudents,
-  studentQuery,
 }: GroupEditModalProps) {
   const [name, setName] = useState(group.name);
   const [description, setDescription] = useState(group.description ?? "");
@@ -76,19 +43,19 @@ export function GroupEditModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="theme-panel motion-pop max-h-full w-full max-w-4xl overflow-y-auto p-5 shadow-lg">
-        <div className="flex items-start justify-between gap-4">
+    <div className="app-modal-backdrop fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+      <div className="app-modal theme-panel motion-pop max-h-full w-full max-w-4xl overflow-y-auto p-5 shadow-lg">
+        <div className="app-modal-header flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h3 className="text-2xl font-semibold">Edit Group</h3>
             <p className="mt-1 text-sm text-text-muted">
-              Update group details and student membership.
+              Update the group name and description.
             </p>
           </div>
           <ModalCloseButton onClick={onClose} />
         </div>
 
-        <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+        <form className="app-modal-body space-y-4" onSubmit={handleSubmit}>
           <TextField
             id="editGroupName"
             label="Group Name"
@@ -126,23 +93,6 @@ export function GroupEditModal({
           </div>
         </form>
 
-        <GroupMemberManagement
-          availableStudents={availableStudents}
-          isLoadingMembers={isLoadingMembers}
-          isSearchingStudents={isSearchingStudents}
-          members={members}
-          onAddSelectedStudents={onAddSelectedStudents}
-          onMemberSelectionToggle={onMemberSelectionToggle}
-          onRemoveSelectedMembers={onRemoveSelectedMembers}
-          onRemoveStudent={onRemoveStudent}
-          onStudentQueryChange={onStudentQueryChange}
-          onStudentSelectionToggle={onStudentSelectionToggle}
-          selectedGroup={group}
-          selectedMemberIds={selectedMemberIds}
-          selectedStudentIds={selectedStudentIds}
-          selectedStudents={selectedStudents}
-          studentQuery={studentQuery}
-        />
       </div>
     </div>
   );

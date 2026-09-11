@@ -29,7 +29,7 @@ export function ShopItemDetailsModal({
   const dialogRef = useDialogFocus({ onEscape: onClose });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+    <div className="app-modal-backdrop fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
       <div
         aria-label={`Reward details: ${item.name}`}
         aria-modal="true"
@@ -40,7 +40,7 @@ export function ShopItemDetailsModal({
       >
         <ShopItemDetailsImage item={item} />
 
-        <div className="mt-4 flex items-start justify-between gap-4">
+        <div className="app-modal-header mt-4 flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h3 className="text-2xl font-semibold">{item.name}</h3>
             {!item.isActive && (
@@ -62,7 +62,7 @@ export function ShopItemDetailsModal({
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="app-modal-body grid gap-3 sm:grid-cols-2">
           <ShopItemDetail label="Cost" value={formatCurrencyAmount(item.price, currencyName)} />
           <ShopItemDetail
             label="Available"

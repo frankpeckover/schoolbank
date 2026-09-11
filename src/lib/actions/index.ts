@@ -94,6 +94,10 @@ export {
   voidTransaction,
 } from "@/lib/actions/transaction-actions";
 export {
+  listUnseenTransactions,
+  markTransactionsSeen,
+} from "@/lib/actions/transaction-notification-actions";
+export {
   changeOwnPassword,
   createUser,
   importUsers,

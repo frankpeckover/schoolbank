@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/icons";
 import { ApiKeySettings } from "@/components/admin-settings/api-key-settings";
 import { FixedNotification } from "@/components/ui/fixed-notification";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { SchoolLogo } from "@/components/ui/school-logo";
 import type { SchoolInfo } from "@/domains/organisation/school-service";
 import type { SsoProviderSettings, SsoProviderType } from "@/lib/sso-types";
@@ -404,7 +405,11 @@ export function AdminSettingsPanel({
         title="Appearance"
       >
         <form className="space-y-4" onSubmit={handleAppearanceSubmit}>
-          <SettingsPanel icon={<FileUpIcon />} title="Logo">
+          <SettingsPanel
+            icon={<FileUpIcon />}
+            info="This logo appears beside the school name on the sign-in screen and in dashboard headers."
+            title="Logo"
+          >
             <LogoUploadField
               currentLogoUrl={form.logoUrl}
               fileName={logoFile?.name ?? ""}
@@ -426,10 +431,15 @@ export function AdminSettingsPanel({
         title="Rewards"
       >
         <form className="space-y-4" onSubmit={handleRewardRulesSubmit}>
-          <SettingsPanel icon={<WalletIcon />} title="Currency Rules">
+          <SettingsPanel
+            icon={<WalletIcon />}
+            info="These rules apply to every student account in this organisation."
+            title="Currency Rules"
+          >
             <div className="grid gap-4 md:grid-cols-2">
               <TextField
                 id="currencyName"
+                info="Changes the name used for this organisation's currency throughout the app. It does not convert existing balances."
                 label="Currency name"
                 onChange={(value) => updateField("currencyName", value)}
                 required
@@ -437,6 +447,7 @@ export function AdminSettingsPanel({
               />
               <NumberField
                 id="balanceCap"
+                info="An optional maximum balance for each student. Credit adjustments that would exceed this limit are blocked. Leave it blank to allow any balance."
                 label="Balance cap"
                 min={1}
                 onChange={(value) => updateField("balanceCap", value)}
@@ -459,7 +470,11 @@ export function AdminSettingsPanel({
         title="Teacher Workflow"
       >
         <form className="space-y-5" onSubmit={handlePresetsSubmit}>
-          <SettingsPanel icon={<WalletIcon />} title="Quick Transactions">
+          <SettingsPanel
+            icon={<WalletIcon />}
+            info="These are the organisation defaults. Teachers can personalise their own quick amounts and reasons in their Settings."
+            title="Quick Transactions"
+          >
             <div className="grid gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
               <QuickAmountFields
                 amounts={presetAmounts}
@@ -485,7 +500,11 @@ export function AdminSettingsPanel({
         description="Single sign-on providers shown on the login page."
         title="Auth"
       >
-        <SettingsPanel icon={<KeyIcon />} title="Single Sign-On">
+        <SettingsPanel
+          icon={<KeyIcon />}
+          info="Single sign-on matches existing users by email. Optionally, verified users from an allowed domain can receive a new student account on first sign-in."
+          title="Single Sign-On"
+        >
           <div className="grid gap-4 lg:grid-cols-2">
             {ssoProviders.map((provider) => (
               <SsoProviderForm
@@ -514,7 +533,11 @@ export function AdminSettingsPanel({
         description="External access for approved integrations."
         title="API"
       >
-        <SettingsPanel icon={<KeyIcon />} title="API Keys">
+        <SettingsPanel
+          icon={<KeyIcon />}
+          info="API keys let approved integrations act within the permissions you assign. Copy a new key when it is shown because it cannot be displayed again."
+          title="API Keys"
+        >
           <ApiKeySettings />
         </SettingsPanel>
       </SettingsGroup>
@@ -523,7 +546,11 @@ export function AdminSettingsPanel({
         description="Administrative export tools for portability and retention."
         title="Data"
       >
-        <SettingsPanel icon={<FileDownIcon />} title="Data Export">
+        <SettingsPanel
+          icon={<FileDownIcon />}
+          info="The export is for organisation data only. Sensitive authentication and platform data is intentionally excluded."
+          title="Data Export"
+        >
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-text-control">
@@ -623,10 +650,12 @@ function SettingsActionRow({
 function SettingsPanel({
   children,
   icon,
+  info,
   title,
 }: {
   children: ReactNode;
   icon: ReactNode;
+  info?: string;
   title: string;
 }) {
   return (
@@ -636,7 +665,10 @@ function SettingsPanel({
           {icon}
         </span>
         <div className="min-w-0">
-          <h3 className="text-lg font-semibold">{title}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold">{title}</h3>
+            {info && <InfoTooltip label={info} />}
+          </div>
         </div>
       </div>
       <div className="mt-5 min-w-0">{children}</div>
@@ -718,6 +750,7 @@ function SsoProviderForm({
         )}
         <TextAreaField
           id={`${provider.providerType}-allowed-domain`}
+          info="Only verified email addresses from these domains can use this provider. Enter one domain per line or separate domains with commas."
           label={isMicrosoft ? "Allowed domains" : "Google Workspace domains"}
           onChange={(value) =>
             onChange(provider.providerType, "allowedDomain", value)
@@ -742,6 +775,27 @@ function SsoProviderForm({
         />
       </div>
 
+      <label className="flex items-start gap-3 rounded-md bg-panel-soft px-3 py-3 text-sm text-text-control">
+        <input
+          checked={provider.isJitEnabled}
+          className="mt-0.5 h-4 w-4 accent-[var(--color-brand)]"
+          onChange={(event) =>
+            onChange(
+              provider.providerType,
+              "isJitEnabled",
+              event.target.checked,
+            )
+          }
+          type="checkbox"
+        />
+        <span>
+          <span className="block font-semibold">Create student accounts on first sign-in</span>
+          <span className="mt-0.5 block text-text-muted">
+            Only verified accounts matching an allowed domain can be created.
+          </span>
+        </span>
+      </label>
+
       <div className="flex justify-end">
         <button
           className="rounded-md bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70"
@@ -757,6 +811,7 @@ function SsoProviderForm({
 
 function TextField({
   id,
+  info,
   label,
   onChange,
   placeholder = "",
@@ -765,6 +820,7 @@ function TextField({
   value,
 }: {
   id: string;
+  info?: string;
   label: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -774,9 +830,12 @@ function TextField({
 }) {
   return (
     <div className="min-w-0">
-      <label className="text-sm font-semibold text-text-control" htmlFor={id}>
-        {label}
-      </label>
+      <div className="flex items-center gap-2">
+        <label className="text-sm font-semibold text-text-control" htmlFor={id}>
+          {label}
+        </label>
+        {info && <InfoTooltip label={info} />}
+      </div>
       <input
         className="mt-2 block w-full min-w-0 max-w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition focus:ring-2"
         id={id}
@@ -792,6 +851,7 @@ function TextField({
 
 function NumberField({
   id,
+  info,
   label,
   min,
   onChange,
@@ -799,6 +859,7 @@ function NumberField({
   value,
 }: {
   id: string;
+  info?: string;
   label: string;
   min?: number;
   onChange: (value: number | null) => void;
@@ -807,9 +868,12 @@ function NumberField({
 }) {
   return (
     <div className="min-w-0">
-      <label className="text-sm font-semibold text-text-control" htmlFor={id}>
-        {label}
-      </label>
+      <div className="flex items-center gap-2">
+        <label className="text-sm font-semibold text-text-control" htmlFor={id}>
+          {label}
+        </label>
+        {info && <InfoTooltip label={info} />}
+      </div>
       <input
         className="mt-2 block w-full min-w-0 max-w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition focus:ring-2"
         id={id}
@@ -832,12 +896,14 @@ function NumberField({
 
 function TextAreaField({
   id,
+  info,
   label,
   onChange,
   placeholder = "",
   value,
 }: {
   id: string;
+  info?: string;
   label: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -845,9 +911,12 @@ function TextAreaField({
 }) {
   return (
     <div className="min-w-0">
-      <label className="text-sm font-semibold text-text-control" htmlFor={id}>
-        {label}
-      </label>
+      <div className="flex items-center gap-2">
+        <label className="text-sm font-semibold text-text-control" htmlFor={id}>
+          {label}
+        </label>
+        {info && <InfoTooltip label={info} />}
+      </div>
       <textarea
         className="mt-2 block min-h-28 w-full min-w-0 max-w-full rounded-md border border-border bg-surface px-3 py-3 text-sm outline-none ring-brand transition focus:ring-2"
         id={id}

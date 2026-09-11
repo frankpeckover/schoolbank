@@ -14,6 +14,7 @@ import { GroupDetailsPanel } from "@/components/admin-groups/group-details-panel
 import { GroupEditModal } from "@/components/admin-groups/group-edit-modal";
 import { GroupImportModal } from "@/components/admin-groups/group-import-modal";
 import { GroupListPanel } from "@/components/admin-groups/group-list-panel";
+import { GroupMembersModal } from "@/components/admin-groups/group-members-modal";
 import { GroupModal } from "@/components/admin-groups/group-modal";
 import { AdminPageSection } from "@/components/ui/admin-page-section";
 import { BulkSelectionControls } from "@/components/ui/bulk-selection-controls";
@@ -73,6 +74,8 @@ export function AdminGroupsPanel() {
   const [duplicatingGroup, setDuplicatingGroup] =
     useState<GroupListItem | null>(null);
   const [editingGroup, setEditingGroup] = useState<GroupListItem | null>(null);
+  const [editingMembersGroup, setEditingMembersGroup] =
+    useState<GroupListItem | null>(null);
   const [pendingGroupStatusChange, setPendingGroupStatusChange] =
     useState<GroupListItem | null>(null);
   const [pendingBulkGroupStatusChange, setPendingBulkGroupStatusChange] =
@@ -425,6 +428,7 @@ export function AdminGroupsPanel() {
     clearSelectedStudents();
     setDuplicatingGroup(null);
     setEditingGroup(null);
+    setEditingMembersGroup(null);
     setSelectedGroupId(group.id);
   }
 
@@ -434,8 +438,21 @@ export function AdminGroupsPanel() {
     clearSelectedStudents();
     setStudentQuery("");
     setDuplicatingGroup(null);
+    setEditingMembersGroup(null);
     setEditingGroup(group);
     setSelectedGroupId(group.id);
+  }
+
+  function editGroupMembers(group: GroupListItem) {
+    setMembers([]);
+    setSelectedMemberIds([]);
+    clearSelectedStudents();
+    setStudentQuery("");
+    setDuplicatingGroup(null);
+    setEditingGroup(null);
+    setEditingMembersGroup(group);
+    setSelectedGroupId(group.id);
+    void refreshMembers(group.id);
   }
 
   function duplicateGroup(group: GroupListItem) {
@@ -444,6 +461,7 @@ export function AdminGroupsPanel() {
     clearSelectedStudents();
     setStudentQuery("");
     setEditingGroup(null);
+    setEditingMembersGroup(null);
     setSelectedGroupId("");
     setDuplicatingGroup(group);
     setIsCreateModalOpen(true);
@@ -459,6 +477,11 @@ export function AdminGroupsPanel() {
 
   function closeGroupEdit() {
     setEditingGroup(null);
+    closeGroupDetails();
+  }
+
+  function closeGroupMembers() {
+    setEditingMembersGroup(null);
     closeGroupDetails();
   }
 
@@ -524,6 +547,7 @@ export function AdminGroupsPanel() {
         onClearFilters={clearGroupFilters}
         onDuplicateGroup={duplicateGroup}
         onEditGroup={editGroup}
+        onEditMembers={editGroupMembers}
         onGroupSelect={selectGroup}
         onGroupSelectionChange={handleGroupSelectionChange}
         onGroupStatusChange={handleGroupStatusChange}
@@ -613,7 +637,7 @@ export function AdminGroupsPanel() {
         }
       />
 
-      {selectedGroup && !editingGroup && (
+      {selectedGroup && !editingGroup && !editingMembersGroup && (
         <GroupDetailsPanel
           isLoadingMembers={isLoadingMembers}
           members={members}
@@ -638,17 +662,24 @@ export function AdminGroupsPanel() {
 
       {editingGroup && selectedGroup && (
         <GroupEditModal
+          group={selectedGroup}
+          onClose={closeGroupEdit}
+          onSaved={handleGroupUpdated}
+        />
+      )}
+
+      {editingMembersGroup && selectedGroup && (
+        <GroupMembersModal
           availableStudents={availableStudentResults}
           group={selectedGroup}
           isLoadingMembers={isLoadingMembers}
           isSearchingStudents={isSearchingStudents}
           members={members}
           onAddSelectedStudents={handleAddSelectedStudents}
-          onClose={closeGroupEdit}
+          onClose={closeGroupMembers}
           onMemberSelectionToggle={toggleSelectedMember}
           onRemoveSelectedMembers={handleRemoveSelectedMembers}
           onRemoveStudent={handleRemoveStudent}
-          onSaved={handleGroupUpdated}
           onStudentQueryChange={handleStudentQueryChange}
           onStudentSelectionToggle={toggleSelectedStudent}
           selectedMemberIds={selectedMemberIds}

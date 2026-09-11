@@ -51,16 +51,16 @@ export function ChangePasswordModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+    <div className="app-modal-backdrop fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
       <div
         aria-label="Change password"
         aria-modal="true"
-        className="theme-panel motion-pop w-full max-w-md p-5 shadow-lg"
+        className="app-modal theme-panel motion-pop w-full max-w-md p-5 shadow-lg"
         ref={dialogRef}
         role="dialog"
         tabIndex={-1}
       >
-        <div className="flex items-start justify-between gap-4">
+        <div className="app-modal-header flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h3 className="text-xl font-semibold">Change Password</h3>
             <p className="mt-1 text-sm text-text-muted">
@@ -70,7 +70,7 @@ export function ChangePasswordModal({
           <ModalCloseButton onClick={onClose} />
         </div>
 
-        <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+        <form className="app-modal-body space-y-4" onSubmit={handleSubmit}>
           <PasswordField
             autoComplete="current-password"
             id="currentPassword"

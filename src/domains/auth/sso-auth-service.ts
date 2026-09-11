@@ -1,6 +1,7 @@
 import { createPublicKey, randomBytes, verify } from "crypto";
 import { db } from "@/lib/db";
 import { decryptServerSecret } from "@/lib/server-crypto";
+import { hashPassword } from "@/lib/passwords";
 import type { Role, SessionUser } from "@/lib/session";
 import type { SsoProviderType } from "@/lib/sso-types";
 import { AuditService } from "@/domains/audit/audit-service";
@@ -12,6 +13,7 @@ export type SsoAuthProvider = {
   clientSecret: string;
   displayName: string;
   issuerUrl: string;
+  isJitEnabled: boolean;
   jwksUri: string;
   providerType: SsoProviderType;
   tenantId: string;
@@ -32,6 +34,7 @@ type SsoProviderRow = {
   client_secret_encrypted: string;
   display_name: string;
   issuer_url: string;
+  is_jit_enabled: boolean;
   provider_type: SsoProviderType;
   tenant_id: string;
 };
@@ -63,6 +66,8 @@ type IdTokenClaims = {
   email?: string;
   email_verified?: boolean;
   exp?: number;
+  family_name?: string;
+  given_name?: string;
   hd?: string;
   iss?: string;
   nonce?: string;
@@ -77,6 +82,7 @@ type UserRow = {
   email: string;
   first_name: string;
   id: string;
+  is_active: boolean;
   last_name: string;
   profile_image_url: string;
   role: Role;
@@ -113,7 +119,8 @@ export class SsoAuthService {
           client_id,
           client_secret_encrypted,
           issuer_url,
-          allowed_domain
+          allowed_domain,
+          is_jit_enabled
         from sso_identity_providers
         where provider_type = $1
           and is_enabled = true
@@ -194,7 +201,11 @@ export class SsoAuthService {
     );
     const email = getVerifiedEmail(claims, input.provider);
 
-    const user = await findActiveUserByEmail(email);
+    const user = await resolveSsoUser({
+      claims,
+      email,
+      provider: input.provider,
+    });
 
     if (!user) {
       await logSsoEvent({
@@ -240,6 +251,7 @@ function buildProvider(row: SsoProviderRow): SsoAuthProvider {
     clientSecret: decryptServerSecret(row.client_secret_encrypted),
     displayName: row.display_name,
     issuerUrl,
+    isJitEnabled: row.is_jit_enabled,
     jwksUri: getJwksUri(row),
     providerType: row.provider_type,
     tenantId: row.tenant_id,
@@ -551,8 +563,77 @@ function getEmailClaim(claims: IdTokenClaims, provider: SsoAuthProvider) {
   );
 }
 
-async function findActiveUserByEmail(email: string): Promise<SessionUser | null> {
-  const result = await db.query<UserRow>(
+async function resolveSsoUser(input: {
+  claims: IdTokenClaims;
+  email: string;
+  provider: SsoAuthProvider;
+}): Promise<SessionUser | null> {
+  const subject = input.claims.sub;
+
+  if (!subject) {
+    throw new SsoAuthError(
+      "missing_subject",
+      "The SSO account did not provide a stable subject identifier.",
+    );
+  }
+
+  const client = await db.connect();
+
+  try {
+    await client.query("begin");
+    let user = await findUserBySsoIdentity(
+      client,
+      input.provider.providerType,
+      subject,
+    );
+
+    if (!user) {
+      user = await findUserByEmail(client, input.email);
+    }
+
+    if (user && !user.is_active) {
+      throw new SsoAuthError("account_disabled", "This account is disabled.");
+    }
+
+    if (!user && !input.provider.isJitEnabled) {
+      await client.query("rollback");
+      return null;
+    }
+
+    if (!user) {
+      user = await createJitStudent(client, input.email, input.claims);
+    }
+
+    await client.query(
+      `
+        insert into sso_user_identities (
+          user_id,
+          provider_type,
+          provider_subject
+        )
+        values ($1, $2, $3)
+        on conflict (provider_type, provider_subject) do update
+        set last_login_at = now()
+      `,
+      [user.id, input.provider.providerType, subject],
+    );
+    await client.query("commit");
+
+    return mapSessionUser(user);
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function findUserBySsoIdentity(
+  client: Awaited<ReturnType<typeof db.connect>>,
+  providerType: SsoProviderType,
+  subject: string,
+) {
+  const result = await client.query<UserRow>(
     `
       select
         users.id,
@@ -561,21 +642,124 @@ async function findActiveUserByEmail(email: string): Promise<SessionUser | null>
         users.first_name,
         users.last_name,
         users.profile_image_url,
+        users.is_active,
+        roles.role_key as role
+      from sso_user_identities
+      join users on users.id = sso_user_identities.user_id
+      join roles on roles.id = users.role_id and roles.is_active = true
+      where sso_user_identities.provider_type = $1
+        and sso_user_identities.provider_subject = $2
+      limit 1
+    `,
+    [providerType, subject],
+  );
+
+  return result.rows[0] ?? null;
+}
+
+async function findUserByEmail(
+  client: Awaited<ReturnType<typeof db.connect>>,
+  email: string,
+) {
+  const result = await client.query<UserRow>(
+    `
+      select
+        users.id,
+        users.email,
+        users.username,
+        users.first_name,
+        users.last_name,
+        users.profile_image_url,
+        users.is_active,
         roles.role_key as role
       from users
       join roles on roles.id = users.role_id
       where lower(users.email) = $1
-        and users.is_active = true
         and roles.is_active = true
       limit 1
     `,
     [email],
   );
+  return result.rows[0] ?? null;
+}
+
+async function createJitStudent(
+  client: Awaited<ReturnType<typeof db.connect>>,
+  email: string,
+  claims: IdTokenClaims,
+) {
+  const names = getJitNames(email, claims);
+  const passwordHash = await hashPassword(randomBytes(32).toString("base64url"));
+  const result = await client.query<UserRow>(
+    `
+      insert into users (
+        role_id,
+        username,
+        first_name,
+        last_name,
+        email,
+        password_hash
+      )
+      values (
+        (select id from roles where role_key = 'student' and is_active = true),
+        $1,
+        $2,
+        $3,
+        $1,
+        $4
+      )
+      returning
+        id,
+        email,
+        username,
+        first_name,
+        last_name,
+        profile_image_url,
+        is_active,
+        'student'::text as role
+    `,
+    [email, names.firstName, names.lastName, passwordHash],
+  );
   const user = result.rows[0];
 
-  if (!user) {
-    return null;
-  }
+  await client.query(
+    "insert into accounts (user_id, account_name) values ($1, 'Primary account')",
+    [user.id],
+  );
+  await auditService.logWithClient(client, {
+    action: "auth.sso_jit_user_created",
+    actorUserId: user.id,
+    details: { email },
+    entityId: user.id,
+    entityType: "auth",
+  });
+
+  return user;
+}
+
+function getJitNames(email: string, claims: IdTokenClaims) {
+  const localParts = email
+    .split("@")[0]
+    .split(/[._-]+/)
+    .filter(Boolean);
+
+  return {
+    firstName: normaliseName(claims.given_name || localParts[0] || "Student"),
+    lastName: normaliseName(
+      claims.family_name || localParts.slice(1).join(" ") || "User",
+    ),
+  };
+}
+
+function normaliseName(value: string) {
+  return value
+    .trim()
+    .split(/\s+/)
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1).toLowerCase()}`)
+    .join(" ");
+}
+
+function mapSessionUser(user: UserRow): SessionUser {
 
   return {
     displayName: `${user.first_name} ${user.last_name}`.trim(),

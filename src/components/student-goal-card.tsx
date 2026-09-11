@@ -9,6 +9,7 @@ import {
 import { formatAmount } from "@/lib/formatters";
 import type { StudentGoal } from "@/domains/analytics/student-goal-service";
 import { PencilIcon, TargetIcon } from "@/components/ui/icons";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { TableActionMenu } from "@/components/ui/table-action-menu";
 
 type StudentGoalCardProps = {
@@ -153,7 +154,7 @@ export function StudentGoalCard({
 
   return (
     <article
-      className={`relative h-full overflow-hidden rounded-3xl border border-transparent bg-surface p-5 ${className}`}
+      className={`student-dashboard-card student-goal-card relative h-full overflow-hidden rounded-3xl border border-transparent bg-surface p-5 ${className}`}
     >
       <GoalCelebration isVisible={showGoalCelebration} />
 
@@ -165,6 +166,7 @@ export function StudentGoalCard({
           <h2 className="truncate text-base font-semibold text-foreground">
             Savings Goal
           </h2>
+          <InfoTooltip label="Your savings goal is a personal tracker. It does not set credits aside, so you can still use your balance on rewards." />
         </div>
 
         {goal && !isEditing && (

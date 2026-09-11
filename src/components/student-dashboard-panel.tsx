@@ -12,13 +12,16 @@ import {
 } from "recharts";
 import { StudentShopRequestsPanel } from "@/components/shop/student-shop-requests-panel";
 import { StudentGoalCard } from "@/components/student-goal-card";
+import { StudentTransactionNotificationModal } from "@/components/student-transaction-notification-modal";
 import { TransactionLogPanel } from "@/components/transactions/transaction-log-panel";
 import { FixedNotification } from "@/components/ui/fixed-notification";
 import { WalletIcon } from "@/components/ui/icons";
 import { InlineSelectMenu } from "@/components/ui/inline-select-menu";
 import {
   getStudentBalance,
+  listUnseenTransactions,
   listTransactionLog,
+  markTransactionsSeen,
 } from "@/lib/actions";
 import {
   buildBalanceTimeSeries,
@@ -31,6 +34,7 @@ import {
 import { formatAmount, formatCurrencyAmount } from "@/lib/formatters";
 import type { SessionUser } from "@/lib/session";
 import type { TransactionLogItem } from "@/domains/ledger/transaction-service";
+import type { UnseenTransaction } from "@/domains/ledger/transaction-notification-service";
 
 type StudentDashboardPanelProps = {
   currencyName: string;
@@ -66,6 +70,14 @@ export function StudentDashboardPanel({
   const [transactions, setTransactions] = useState<TransactionLogItem[]>([]);
   const [isTransactionsLoading, setIsTransactionsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [unseenTransactions, setUnseenTransactions] = useState<
+    UnseenTransaction[]
+  >([]);
+  const [notificationError, setNotificationError] = useState<string | null>(
+    null,
+  );
+  const [isDismissingNotifications, setIsDismissingNotifications] =
+    useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -91,6 +103,52 @@ export function StudentDashboardPanel({
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadUnseenTransactions() {
+      try {
+        const loadedTransactions = await listUnseenTransactions();
+
+        if (isMounted) {
+          setUnseenTransactions(loadedTransactions);
+        }
+      } catch {
+        if (isMounted) {
+          setUnseenTransactions([]);
+        }
+      }
+    }
+
+    loadUnseenTransactions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  async function dismissTransactionNotifications() {
+    if (isDismissingNotifications || unseenTransactions.length === 0) {
+      return;
+    }
+
+    setIsDismissingNotifications(true);
+    setNotificationError(null);
+
+    const result = await markTransactionsSeen(
+      unseenTransactions.map((transaction) => transaction.id),
+    );
+
+    if (!result.ok) {
+      setNotificationError(result.message);
+      setIsDismissingNotifications(false);
+      return;
+    }
+
+    setUnseenTransactions([]);
+    setIsDismissingNotifications(false);
+  }
 
   useEffect(() => {
     let isMounted = true;
@@ -123,7 +181,7 @@ export function StudentDashboardPanel({
   return (
     <>
       <FixedNotification error={error} />
-      <section className="dashboard-grid motion-panel mt-2">
+      <section className="student-dashboard-section dashboard-grid motion-panel mt-2">
         <StudentWalletCard
           balance={balance}
           currencyName={currencyName}
@@ -142,13 +200,13 @@ export function StudentDashboardPanel({
         />
       </section>
 
-      <section className="dashboard-grid mt-5">
+      <section className="student-dashboard-section dashboard-grid mt-5">
         <StudentShopRequestsPanel
           className="dashboard-unit-3"
           currencyName={currencyName}
         />
         <StudentMetricStrip
-          className="dashboard-unit-1"
+          className="student-dashboard-card student-metric-strip dashboard-unit-1"
           currencyName={currencyName}
           transactions={transactions}
         />
@@ -159,6 +217,16 @@ export function StudentDashboardPanel({
         currentUser={currentUser}
         title="Recent Activity"
       />
+
+      {unseenTransactions.length > 0 && (
+        <StudentTransactionNotificationModal
+          currencyName={currencyName}
+          error={notificationError}
+          isDismissing={isDismissingNotifications}
+          onDismiss={dismissTransactionNotifications}
+          transactions={unseenTransactions}
+        />
+      )}
     </>
   );
 }
@@ -177,38 +245,40 @@ function StudentWalletCard({
   const balanceAmount = useAnimatedWholeNumber(Math.abs(balance));
 
   return (
-    <article className="dashboard-unit-2 wallet-card rounded-3xl border border-transparent p-5 text-foreground sm:p-6">
-      <div className="relative flex h-full min-h-52 flex-col gap-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-text-kicker">
-              Student Wallet
-            </p>
-            <h2 className="mt-2 truncate text-2xl font-semibold sm:text-3xl">
-              {currentUser.displayName}
-            </h2>
+    <article className="student-dashboard-card student-wallet-card dashboard-unit-2 wallet-card rounded-3xl border border-transparent text-foreground">
+      <div className="relative flex h-full min-h-52 flex-col">
+        <div className="relative z-10 flex flex-1 flex-col gap-5 p-5 sm:p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-text-kicker">
+                Student Wallet
+              </p>
+            </div>
+            <span className="shrink-0 rounded-md bg-surface/55 px-3 py-1 text-xs font-semibold text-text-muted">
+              Primary
+            </span>
           </div>
-          <span className="shrink-0 rounded-md bg-surface/55 px-3 py-1 text-xs font-semibold text-text-muted">
-            Primary
-          </span>
+
+          <div>
+            <p className="text-sm font-semibold text-text-muted">
+              My Credits
+            </p>
+            <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 break-words text-brand-ink">
+              <span className="wallet-balance-number text-6xl leading-none sm:text-7xl">
+                {formatAmount(balanceAmount)}
+              </span>
+              <span className="text-lg font-semibold text-text-control sm:text-xl">
+                {currencyName}
+              </span>
+            </p>
+          </div>
         </div>
 
-        <div>
-          <p className="text-sm font-semibold text-text-muted">
-            My Credits
-          </p>
-          <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 break-words text-brand-ink">
-            <span className="wallet-balance-number text-6xl leading-none sm:text-7xl">
-              {formatAmount(balanceAmount)}
-            </span>
-            <span className="text-lg font-semibold text-text-control sm:text-xl">
-              {currencyName}
-            </span>
-          </p>
-        </div>
-
-        <div className="mt-auto flex justify-end pt-2">
-          <p className="max-w-56 truncate text-right text-xs font-medium uppercase tracking-[0.18em] text-text-muted/75">
+        <div className="student-wallet-holder relative z-10 flex items-center justify-between gap-4 px-5 py-4 sm:px-6">
+          <h2 className="min-w-0 truncate text-lg font-semibold text-[color:var(--wallet-holder-name)] sm:text-xl">
+            {currentUser.displayName}
+          </h2>
+          <p className="max-w-56 shrink-0 truncate text-right text-xs font-medium uppercase tracking-[0.18em] text-text-muted/75">
             {schoolName}
           </p>
         </div>
@@ -232,7 +302,7 @@ function BalanceTrendCard({
   const timeTicks = getTimeAxisTicks(chartPoints);
 
   return (
-    <article className="dashboard-unit-1 flex min-h-52 rounded-3xl border border-transparent bg-surface p-4 sm:p-5">
+    <article className="student-dashboard-card student-balance-trend-card dashboard-unit-1 flex min-h-52 rounded-3xl border border-transparent bg-surface p-4 sm:p-5">
       <div className="flex min-h-56 w-full flex-col rounded-2xl bg-surface">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">

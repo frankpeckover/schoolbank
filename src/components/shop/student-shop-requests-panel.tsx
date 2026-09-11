@@ -6,6 +6,7 @@ import type { StudentShopRequest } from "@/domains/rewards/shop-service";
 import { formatCurrencyAmount, formatDateTime } from "@/lib/formatters";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
 import { FixedNotification } from "@/components/ui/fixed-notification";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { ClockIcon, PackageIcon, ShoppingBagIcon } from "@/components/ui/icons";
 
 type StudentShopRequestsPanelProps = {
@@ -52,7 +53,7 @@ export function StudentShopRequestsPanel({
 
   return (
     <section
-      className={`rounded-3xl border border-transparent bg-surface p-4 sm:p-5 ${className}`}
+      className={`student-dashboard-card student-cart-card rounded-3xl border border-transparent bg-surface p-4 sm:p-5 ${className}`}
     >
       <FixedNotification error={error} />
       <div className="flex items-start gap-3">
@@ -60,7 +61,10 @@ export function StudentShopRequestsPanel({
           <ShoppingBagIcon />
         </span>
         <div className="min-w-0">
-          <h2 className="text-xl font-semibold">My Cart</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-semibold">My Cart</h2>
+            <InfoTooltip label="Adding a reward reserves its cost from your balance while a staff member reviews the request. A denied request returns the reserved credits." />
+          </div>
         </div>
       </div>
 

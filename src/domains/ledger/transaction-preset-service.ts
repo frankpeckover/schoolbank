@@ -4,14 +4,16 @@ import { db } from "@/lib/db";
 import type { SessionUser } from "@/lib/session";
 import {
   defaultTransactionPresets,
+  getDefaultQuickAdjustments,
   maxQuickAmounts,
   maxQuickReasons,
+  type PersonalTransactionPresets,
   type TransactionPresets,
 } from "@/lib/transaction-presets";
 import { AuditService } from "@/domains/audit/audit-service";
 
 export type UpdateTransactionPresetsInput = TransactionPresets;
-export type UpdatePersonalTransactionPresetsInput = TransactionPresets;
+export type UpdatePersonalTransactionPresetsInput = PersonalTransactionPresets;
 
 type TransactionPresetRow = {
   amount: number | null;
@@ -92,11 +94,18 @@ export class TransactionPresetService {
     }
   }
 
-  async getPersonalPresets(currentUser: SessionUser): Promise<TransactionPresets> {
+  async getPersonalPresets(
+    currentUser: SessionUser,
+  ): Promise<PersonalTransactionPresets> {
     try {
       const result = await db.query<PersonalPresetRow>(
         `
-          select amounts, reasons
+          select amounts,
+                 reasons,
+                 quick_add_amount,
+                 quick_add_reason,
+                 quick_remove_amount,
+                 quick_remove_reason
           from user_transaction_preset_preferences
           where user_id = $1
         `,
@@ -104,16 +113,32 @@ export class TransactionPresetService {
       );
 
       if (result.rowCount === 0) {
-        return this.getPresets();
+        return getPersonalPresetDefaults(await this.getPresets());
       }
 
-      return normalisePresets({
+      const presets = normalisePresets({
         amounts: result.rows[0]?.amounts ?? [],
         reasons: result.rows[0]?.reasons ?? [],
       });
+      const defaults = getDefaultQuickAdjustments(presets);
+      const row = result.rows[0];
+
+      return {
+        ...presets,
+        quickAdd: normaliseQuickAdjustment(
+          row?.quick_add_amount,
+          row?.quick_add_reason,
+          defaults.quickAdd,
+        ),
+        quickRemove: normaliseQuickAdjustment(
+          row?.quick_remove_amount,
+          row?.quick_remove_reason,
+          defaults.quickRemove,
+        ),
+      };
     } catch (error) {
-      if (isMissingTableError(error)) {
-        return this.getPresets();
+      if (isMissingTableError(error) || isMissingColumnError(error)) {
+        return getPersonalPresetDefaults(await this.getPresets());
       }
 
       throw error;
@@ -125,7 +150,18 @@ export class TransactionPresetService {
     input: UpdatePersonalTransactionPresetsInput,
   ): Promise<ActionResult> {
     const presets = normalisePresets(input);
-    const validation = validatePresetLimits(presets);
+    const personalPresets: PersonalTransactionPresets = {
+      ...presets,
+      quickAdd: {
+        amount: Number(input.quickAdd.amount),
+        reason: input.quickAdd.reason.trim(),
+      },
+      quickRemove: {
+        amount: Number(input.quickRemove.amount),
+        reason: input.quickRemove.reason.trim(),
+      },
+    };
+    const validation = validatePersonalPresets(personalPresets);
 
     if (!validation.ok) {
       return validation;
@@ -137,15 +173,31 @@ export class TransactionPresetService {
           insert into user_transaction_preset_preferences (
             user_id,
             amounts,
-            reasons
+            reasons,
+            quick_add_amount,
+            quick_add_reason,
+            quick_remove_amount,
+            quick_remove_reason
           )
-          values ($1, $2::integer[], $3::text[])
+          values ($1, $2::integer[], $3::text[], $4, $5, $6, $7)
           on conflict (user_id) do update
           set amounts = excluded.amounts,
               reasons = excluded.reasons,
+              quick_add_amount = excluded.quick_add_amount,
+              quick_add_reason = excluded.quick_add_reason,
+              quick_remove_amount = excluded.quick_remove_amount,
+              quick_remove_reason = excluded.quick_remove_reason,
               updated_at = now()
         `,
-        [currentUser.id, presets.amounts, presets.reasons],
+        [
+          currentUser.id,
+          personalPresets.amounts,
+          personalPresets.reasons,
+          personalPresets.quickAdd.amount,
+          personalPresets.quickAdd.reason,
+          personalPresets.quickRemove.amount,
+          personalPresets.quickRemove.reason,
+        ],
       );
 
       await auditService.log({
@@ -153,6 +205,8 @@ export class TransactionPresetService {
         actorUserId: currentUser.id,
         details: {
           amountCount: presets.amounts.length,
+          quickAddAmount: personalPresets.quickAdd.amount,
+          quickRemoveAmount: personalPresets.quickRemove.amount,
           reasonCount: presets.reasons.length,
         },
         entityId: currentUser.id,
@@ -165,7 +219,7 @@ export class TransactionPresetService {
 
       return {
         ok: false,
-        message: isMissingTableError(error)
+        message: isMissingTableError(error) || isMissingColumnError(error)
           ? "Personal quick action settings are unavailable. Run the latest school database setup script."
           : "Could not save your quick actions.",
       };
@@ -175,8 +229,38 @@ export class TransactionPresetService {
 
 type PersonalPresetRow = {
   amounts: number[];
+  quick_add_amount: number | null;
+  quick_add_reason: string | null;
+  quick_remove_amount: number | null;
+  quick_remove_reason: string | null;
   reasons: string[];
 };
+
+function getPersonalPresetDefaults(
+  presets: TransactionPresets,
+): PersonalTransactionPresets {
+  return {
+    ...presets,
+    ...getDefaultQuickAdjustments(presets),
+  };
+}
+
+function normaliseQuickAdjustment(
+  amount: number | null | undefined,
+  reason: string | null | undefined,
+  fallback: PersonalTransactionPresets["quickAdd"],
+) {
+  const normalisedAmount = Number(amount);
+  const normalisedReason = reason?.trim() ?? "";
+
+  return {
+    amount:
+      Number.isInteger(normalisedAmount) && normalisedAmount > 0
+        ? normalisedAmount
+        : fallback.amount,
+    reason: normalisedReason || fallback.reason,
+  };
+}
 
 async function replacePresets(
   client: PoolClient,
@@ -277,11 +361,51 @@ function validatePresetLimits(presets: TransactionPresets): ActionResult {
   return { ok: true };
 }
 
+function validatePersonalPresets(
+  presets: PersonalTransactionPresets,
+): ActionResult {
+  const presetLimitValidation = validatePresetLimits(presets);
+
+  if (!presetLimitValidation.ok) {
+    return presetLimitValidation;
+  }
+
+  if (
+    !Number.isInteger(presets.quickAdd.amount) ||
+    presets.quickAdd.amount <= 0 ||
+    !presets.quickAdd.reason
+  ) {
+    return { ok: false, message: "Enter a valid quick-add amount and reason." };
+  }
+
+  if (
+    !Number.isInteger(presets.quickRemove.amount) ||
+    presets.quickRemove.amount <= 0 ||
+    !presets.quickRemove.reason
+  ) {
+    return {
+      ok: false,
+      message: "Enter a valid quick-remove amount and reason.",
+    };
+  }
+
+  return { ok: true };
+}
+
 function isMissingTableError(error: unknown) {
   return (
     typeof error === "object" &&
     error !== null &&
     "code" in error &&
     error.code === "42P01"
+  );
+}
+
+function isMissingColumnError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "42703"
   );
 }

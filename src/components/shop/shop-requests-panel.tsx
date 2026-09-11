@@ -10,6 +10,7 @@ import type { ShopPurchaseRequest } from "@/domains/rewards/shop-service";
 import { formatAmount, formatDateTime } from "@/lib/formatters";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FixedNotification } from "@/components/ui/fixed-notification";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { IconButton } from "@/components/ui/icon-button";
 import { CheckIcon, ShoppingBagIcon, XIcon } from "@/components/ui/icons";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
@@ -37,6 +38,7 @@ type ShopRequestsPanelProps = {
   className?: string;
   compact?: boolean;
   currencyName: string;
+  helpText?: string;
   maxVisibleRequests?: number;
   onRequestActioned?: () => void;
   showViewToggle?: boolean;
@@ -46,6 +48,7 @@ type ShopRequestsPanelProps = {
 export function ShopRequestsPanel({
   className = "mt-5",
   compact = false,
+  helpText,
   maxVisibleRequests,
   onRequestActioned,
   showViewToggle = true,
@@ -164,7 +167,10 @@ export function ShopRequestsPanel({
             <ShoppingBagIcon />
           </span>
           <div className="min-w-0">
-            <h3 className="text-lg font-semibold">{title}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold">{title}</h3>
+              {helpText && <InfoTooltip label={helpText} />}
+            </div>
             {!compact && (
               <p className="mt-2 inline-flex rounded-md bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent">
                 {pendingRequestCount} pending

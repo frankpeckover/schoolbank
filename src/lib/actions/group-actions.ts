@@ -31,7 +31,12 @@ export async function listGroups(includeInactive = false) {
 }
 
 export async function listGroupMembers(groupId: string) {
-  await requireGroupManager();
+  const currentUser = await requireUser();
+
+  if (!canManageGroups(currentUser) && !canCreateLedgerAdjustments(currentUser)) {
+    return [];
+  }
+
   return groupService.listGroupMembers(groupId);
 }
 

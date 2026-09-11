@@ -16,6 +16,7 @@ export type UpdateSsoProviderInput = {
   clientSecret: string;
   displayName: string;
   isEnabled: boolean;
+  isJitEnabled: boolean;
   issuerUrl: string;
   providerType: SsoProviderType;
   tenantId: string;
@@ -27,6 +28,7 @@ type SsoProviderRow = {
   client_secret_encrypted: string;
   display_name: string;
   is_enabled: boolean;
+  is_jit_enabled: boolean;
   issuer_url: string;
   provider_type: SsoProviderType;
   tenant_id: string;
@@ -106,6 +108,13 @@ export class SsoProviderService {
       };
     }
 
+    if (input.isJitEnabled && !allowedDomain) {
+      return {
+        ok: false,
+        message: "At least one allowed domain is required before enabling account creation.",
+      };
+    }
+
     const existing = await this.getProviderRow(input.providerType);
 
     if (input.isEnabled && !clientSecret && !existing?.client_secret_encrypted) {
@@ -133,9 +142,10 @@ export class SsoProviderService {
             client_secret_encrypted,
             issuer_url,
             allowed_domain,
-            is_enabled
+            is_enabled,
+            is_jit_enabled
           )
-          values ($1, $2, $3, $4, $5, $6, $7, $8)
+          values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
           on conflict (provider_type) do update
           set display_name = excluded.display_name,
               tenant_id = excluded.tenant_id,
@@ -144,6 +154,7 @@ export class SsoProviderService {
               issuer_url = excluded.issuer_url,
               allowed_domain = excluded.allowed_domain,
               is_enabled = excluded.is_enabled,
+              is_jit_enabled = excluded.is_jit_enabled,
               updated_at = now()
         `,
         [
@@ -155,6 +166,7 @@ export class SsoProviderService {
           issuerUrl,
           allowedDomain,
           input.isEnabled,
+          input.isJitEnabled,
         ],
       );
 
@@ -165,6 +177,7 @@ export class SsoProviderService {
           allowedDomain,
           hasClientSecret: Boolean(encryptedSecret),
           isEnabled: input.isEnabled,
+          isJitEnabled: input.isJitEnabled,
           providerType: input.providerType,
           tenantId,
         },
@@ -197,7 +210,8 @@ export class SsoProviderService {
         client_secret_encrypted,
         issuer_url,
         allowed_domain,
-        is_enabled
+        is_enabled,
+        is_jit_enabled
       from sso_identity_providers
       order by provider_type
     `);
@@ -216,7 +230,8 @@ export class SsoProviderService {
           client_secret_encrypted,
           issuer_url,
           allowed_domain,
-          is_enabled
+          is_enabled,
+          is_jit_enabled
         from sso_identity_providers
         where provider_type = $1
         limit 1
@@ -240,6 +255,7 @@ function mapSettingsRow(
     displayName: row?.display_name || defaults.displayName,
     hasClientSecret: Boolean(row?.client_secret_encrypted),
     isEnabled: row?.is_enabled ?? false,
+    isJitEnabled: row?.is_jit_enabled ?? false,
     issuerUrl: row?.issuer_url || defaults.issuerUrl,
     providerType,
     tenantId: row?.tenant_id ?? "",

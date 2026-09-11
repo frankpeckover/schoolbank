@@ -1,4 +1,5 @@
 import { TransactionStatusBadge } from "@/components/transactions/transaction-status-badge";
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { formatCurrencyAmount, formatDateTime } from "@/lib/formatters";
 import { getSignedAmountTextClassName } from "@/lib/amount-style";
 import type { TransactionLogItem } from "@/domains/ledger/transaction-service";
@@ -20,19 +21,22 @@ export function TransactionDetailsModal({
       : `-${formatCurrencyAmount(transaction.amount, currencyName)}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-6">
-      <div className="theme-panel motion-pop max-h-full w-full max-w-2xl overflow-y-auto p-5 shadow-lg">
-        <div className="flex items-start justify-between gap-4">
+    <div className="app-modal-backdrop fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+      <div className="app-modal theme-panel motion-pop max-h-full w-full max-w-2xl overflow-y-auto p-5 shadow-lg">
+        <div className="app-modal-header flex items-start justify-between gap-4">
           <div>
             <h3 className="text-xl font-semibold">Transaction Details</h3>
             <p className="mt-1 text-sm text-text-muted">
               {formatDateTime(transaction.createdAt)}
             </p>
           </div>
-          <TransactionStatusBadge transaction={transaction} />
+          <div className="flex shrink-0 items-center gap-2">
+            <TransactionStatusBadge transaction={transaction} />
+            <ModalCloseButton onClick={onClose} />
+          </div>
         </div>
 
-        <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
+        <dl className="app-modal-body grid gap-3 text-sm sm:grid-cols-2">
           <TransactionDetail label="Description" value={transaction.reason} />
           <TransactionDetail label="Type" value={transaction.description} />
           <TransactionDetail
@@ -80,7 +84,7 @@ export function TransactionDetailsModal({
           />
         </dl>
 
-        <div className="mt-5 flex justify-end">
+        <div className="app-modal-footer flex justify-end">
           <button
             className="rounded-md border border-button-border px-4 py-2 text-sm font-semibold text-text-control transition hover:bg-surface-hover"
             onClick={onClose}

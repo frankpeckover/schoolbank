@@ -136,16 +136,16 @@ export function UserModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3 py-2 sm:px-4 sm:py-6">
+    <div className="app-modal-backdrop fixed inset-0 z-50 flex items-center justify-center px-3 py-2 sm:px-4 sm:py-6">
       <div
         aria-label={mode === "create" ? "New user" : "Edit user"}
         aria-modal="true"
-        className="theme-panel motion-pop max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto p-4 shadow-lg sm:max-h-[90vh] sm:p-5"
+        className="app-modal theme-panel motion-pop max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto p-4 shadow-lg sm:max-h-[90vh] sm:p-5"
         ref={dialogRef}
         role="dialog"
         tabIndex={-1}
       >
-        <div className="flex items-start justify-between gap-4">
+        <div className="app-modal-header flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h3 className="text-xl font-semibold sm:text-2xl">
               {mode === "create" ? "New User" : "Edit User"}
@@ -159,7 +159,7 @@ export function UserModal({
           <ModalCloseButton onClick={onClose} />
         </div>
 
-        <form className="mt-4 space-y-3 sm:mt-5 sm:space-y-4" onSubmit={handleSubmit}>
+        <form className="app-modal-body space-y-3 sm:space-y-4" onSubmit={handleSubmit}>
           <UserFormFields
             imageFileName={profileImageFile?.name ?? ""}
             form={form}

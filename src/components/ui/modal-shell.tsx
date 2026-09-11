@@ -26,7 +26,7 @@ export function ModalShell({
   const dialogRef = useDialogFocus({ onEscape: onClose });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-6">
+    <div className="app-modal-backdrop fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
       <div
         aria-label={title}
         aria-modal="true"
@@ -35,7 +35,7 @@ export function ModalShell({
         role="dialog"
         tabIndex={-1}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-border-subtle pb-4">
+        <div className="app-modal-header flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h3 className="text-xl font-semibold">{title}</h3>
             {description && (
@@ -48,10 +48,10 @@ export function ModalShell({
           </div>
         </div>
 
-        <div className="mt-5">{children}</div>
+        <div className="app-modal-body">{children}</div>
 
         {footer && (
-          <div className="mt-5 flex justify-end border-t border-border-subtle pt-4">
+          <div className="app-modal-footer flex justify-end">
             {footer}
           </div>
         )}

@@ -52,6 +52,13 @@ create table if not exists ledger_entries (
   )
 );
 
+create table if not exists ledger_entry_receipts (
+  ledger_entry_id uuid not null references ledger_entries(id) on delete cascade,
+  user_id uuid not null references users(id) on delete cascade,
+  seen_at timestamptz not null default now(),
+  primary key (ledger_entry_id, user_id)
+);
+
 create table if not exists student_goals (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null unique references users(id) on delete cascade,
@@ -87,9 +94,25 @@ create table if not exists user_transaction_preset_preferences (
   user_id uuid primary key references users(id) on delete cascade,
   amounts integer[] not null default '{}',
   reasons text[] not null default '{}',
+  quick_add_amount integer,
+  quick_add_reason text,
+  quick_remove_amount integer,
+  quick_remove_reason text,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint user_presets_quick_add_amount_positive check (
+    quick_add_amount is null or quick_add_amount > 0
+  ),
+  constraint user_presets_quick_remove_amount_positive check (
+    quick_remove_amount is null or quick_remove_amount > 0
+  )
 );
+
+alter table user_transaction_preset_preferences
+  add column if not exists quick_add_amount integer,
+  add column if not exists quick_add_reason text,
+  add column if not exists quick_remove_amount integer,
+  add column if not exists quick_remove_reason text;
 
 create index if not exists accounts_user_idx on accounts(user_id);
 create index if not exists ledger_entries_account_idx on ledger_entries(account_id);
@@ -98,6 +121,8 @@ create index if not exists ledger_entries_status_idx on ledger_entries(status);
 create index if not exists ledger_entries_type_idx on ledger_entries(entry_type);
 create index if not exists ledger_entries_related_entity_idx
   on ledger_entries(related_entity_type, related_entity_id);
+create index if not exists ledger_entry_receipts_user_idx
+  on ledger_entry_receipts(user_id, seen_at);
 create unique index if not exists ledger_entries_source_unique_idx
   on ledger_entries(related_entity_type, related_entity_id, entry_type)
   where reversal_of_ledger_entry_id is null

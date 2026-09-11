@@ -104,6 +104,10 @@
   --wallet-card-background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.68) 0%, rgba(255, 255, 255, 0.18) 52%, transparent 100%),
     linear-gradient(145deg, #eff6fd 0%, #e8f4fb 48%, #edf8f3 100%);
+  --wallet-holder-background: rgba(255, 255, 255, 0.2);
+  --wallet-holder-border: rgba(255, 255, 255, 0.38);
+  --wallet-holder-name: color-mix(in srgb, var(--accent-primary) 86%, black);
+  --wallet-card-shadow: 0 8px 20px color-mix(in srgb, var(--shadow-panel) 56%, transparent);
   --progress-track: #d7dee7;
   --activity-meta: #687386;
   --shell-gradient-accent: color-mix(in srgb, var(--accent-primary) 10%, transparent);
@@ -171,6 +175,10 @@ html[data-theme="dark"] {
   --wallet-card-background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 52%, transparent 100%),
     linear-gradient(145deg, #1c2a35 0%, #172830 48%, #172b25 100%);
+  --wallet-holder-background: rgba(255, 255, 255, 0.05);
+  --wallet-holder-border: rgba(255, 255, 255, 0.1);
+  --wallet-holder-name: color-mix(in srgb, var(--accent-secondary) 68%, white);
+  --wallet-card-shadow: 0 10px 24px color-mix(in srgb, var(--shadow-panel) 76%, transparent);
   --progress-track: #3d444f;
   --activity-meta: #b3bbc6;
   --shell-gradient-accent: color-mix(in srgb, var(--accent-primary) 14%, transparent);
@@ -430,6 +438,46 @@ html[data-theme="dark"] .professional-shell {
   overflow: visible;
 }
 
+.student-wallet-card {
+  box-shadow: var(--wallet-card-shadow);
+}
+
+.student-dashboard-card {
+  animation: student-dashboard-enter 460ms var(--motion-ease) both;
+}
+
+.student-dashboard-section > .student-dashboard-card:nth-child(1) {
+  animation-delay: 40ms;
+}
+
+.student-dashboard-section > .student-dashboard-card:nth-child(2) {
+  animation-delay: 100ms;
+}
+
+.student-dashboard-section > .student-dashboard-card:nth-child(3) {
+  animation-delay: 160ms;
+}
+
+.student-balance-trend-card,
+.student-goal-card,
+.student-metric-strip {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--brand) 6%, var(--surface)),
+      var(--surface) 58%
+    );
+}
+
+.student-balance-trend-card > div {
+  background: transparent;
+}
+
+.student-wallet-holder {
+  background: var(--wallet-holder-background);
+  border-top: 1px solid var(--wallet-holder-border);
+}
+
 .wallet-card::before,
 .wallet-card::after {
   border-radius: 9999px;
@@ -655,6 +703,42 @@ html[data-theme="dark"] .professional-shell {
   border-color: var(--border-subtle);
   border-radius: 10px;
   box-shadow: 0 18px 48px rgba(13, 18, 16, 0.18);
+}
+
+.app-modal-backdrop {
+  background: color-mix(in srgb, var(--foreground) 28%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.app-modal.theme-panel {
+  background: var(--surface);
+  border-color: var(--border);
+  border-radius: 12px;
+  box-shadow: 0 24px 64px color-mix(in srgb, var(--shadow-panel) 86%, transparent);
+}
+
+.app-modal-header {
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 1rem;
+}
+
+.app-modal-body {
+  margin-top: 1.25rem;
+}
+
+.app-modal-footer {
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+}
+
+.app-modal.flex .app-modal-body,
+.app-modal.flex .app-modal-footer {
+  margin-top: 0;
+}
+
+html[data-theme="dark"] .app-modal.theme-panel {
+  box-shadow: 0 26px 72px color-mix(in srgb, var(--shadow-panel) 96%, transparent);
 }
 
 table {
@@ -932,6 +1016,16 @@ html[data-theme="dark"] .professional-shell .motion-pop.theme-panel {
   box-shadow: 0 22px 58px rgba(0, 0, 0, 0.58);
 }
 
+.professional-shell .app-modal.theme-panel {
+  border-color: var(--border);
+  border-radius: 12px;
+  box-shadow: 0 24px 64px color-mix(in srgb, var(--shadow-panel) 86%, transparent);
+}
+
+html[data-theme="dark"] .professional-shell .app-modal.theme-panel {
+  box-shadow: 0 26px 72px color-mix(in srgb, var(--shadow-panel) 96%, transparent);
+}
+
 .professional-shell .motion-pop.theme-panel h3 {
   color: var(--foreground);
   font-size: 1.05rem;
@@ -959,6 +1053,10 @@ html[data-theme="dark"] .professional-shell .motion-pop.theme-panel {
 
 .wallet-card:hover {
   box-shadow: none !important;
+}
+
+.student-wallet-card:hover {
+  box-shadow: var(--wallet-card-shadow) !important;
 }
 
 .professional-shell .theme-panel:hover,
@@ -1018,6 +1116,17 @@ html[data-theme="dark"] .professional-shell .motion-pop.theme-panel {
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@keyframes student-dashboard-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

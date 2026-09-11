@@ -1,6 +1,7 @@
 import type {
   AdjustmentTarget,
 } from "@/components/transactions/ledger-adjustment-types";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { XIcon } from "@/components/ui/icons";
 import { SearchInput } from "@/components/ui/search-input";
 import type { GroupListItem } from "@/domains/groups/group-service";
@@ -85,10 +86,17 @@ function RecipientHeading({
 }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <div>
+      <div className="flex items-center gap-2">
         <h3 className="text-base font-semibold">
           {target === "student" ? "Student" : "Group"}
         </h3>
+        <InfoTooltip
+          label={
+            target === "student"
+              ? "Choose more than one student before continuing. Each selected student receives a separate ledger entry."
+              : "A group adjustment applies to every active student currently assigned to that group."
+          }
+        />
       </div>
       {target === "student" && isSearching && (
         <span className="text-xs font-semibold text-text-muted">
